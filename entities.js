@@ -237,3 +237,128 @@ class GlitchHunter {
         return false;
     }
 }
+
+class CursedCaptcha {
+    constructor(w, h) {
+        this.w = 300; this.h = 100;
+        this.x = UTILS.rand(50, w - 350);
+        this.y = UTILS.rand(50, h - 150);
+        this.life = 10.0; // 10 секунд чтобы подтвердить
+        this.active = true;
+        this.isEye = false;
+
+        // Позиция чекбокса внутри окна
+        this.cbX = 20;
+        this.cbY = 30;
+        this.cbSize = 24;
+    }
+
+    update(dt, mx, my, w, h) {
+        if (!this.active) return;
+        this.life -= dt;
+        if (this.life <= 0) return 'timeout';
+
+        // Check distance to checkbox center (absolute coords)
+        const absCbX = this.x + this.cbX + this.cbSize / 2;
+        const absCbY = this.y + this.cbY + this.cbSize / 2;
+
+        const dist = Math.hypot(mx - absCbX, my - absCbY);
+
+        // 1. Превращение в глаз
+        if (dist < 100) {
+            this.isEye = true;
+        } else {
+            this.isEye = false;
+        }
+
+        // 2. Убегание
+        if (dist < 80) {
+            // Вектор от мыши
+            const dx = absCbX - mx;
+            const dy = absCbY - my;
+
+            // Двигаем само окно
+            this.x += dx * 0.1;
+            this.y += dy * 0.1;
+
+            // Borders
+            if (this.x < 0) this.x = 0;
+            if (this.x > w - this.w) this.x = w - this.w;
+            if (this.y < 0) this.y = 0;
+            if (this.y > h - this.h) this.y = h - this.h;
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(this.x + 5, this.y + 5, this.w, this.h);
+
+        // BG like reCAPTCHA
+        ctx.fillStyle = '#f9f9f9';
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        // Border
+        ctx.strokeStyle = '#d3d3d3';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x, this.y, this.w, this.h);
+
+        // Checkbox area
+        if (this.isEye) {
+            // Глаз вместо чекбокса
+            const cx = this.x + this.cbX + this.cbSize / 2;
+            const cy = this.y + this.cbY + this.cbSize / 2;
+
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Зрачок (бегает)
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(cx + (Math.random() - 0.5) * 5, cy + (Math.random() - 0.5) * 5, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else {
+            // Обычный чекбокс
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(this.x + this.cbX, this.y + this.cbY, this.cbSize, this.cbSize);
+            ctx.strokeStyle = '#c1c1c1';
+            ctx.strokeRect(this.x + this.cbX, this.y + this.cbY, this.cbSize, this.cbSize);
+        }
+
+        // Text
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText("I'm not a robot", this.x + 60, this.y + 48);
+
+        // Recaptcha logo fake
+        ctx.fillStyle = '#555';
+        ctx.font = '10px Arial';
+        ctx.fillText("reCAPTCHA", this.x + 230, this.y + 80);
+        ctx.fillText("Privacy - Terms", this.x + 220, this.y + 92);
+
+        // Timer bar
+        ctx.fillStyle = '#f00';
+        ctx.fillRect(this.x, this.y + this.h - 4, this.w * (this.life / 10), 4);
+    }
+
+    checkClick(mx, my) {
+        const valMargin = 10; // Погрешность для клика, так как оно убегает
+        const absCbX = this.x + this.cbX;
+        const absCbY = this.y + this.cbY;
+
+        // Клик должен быть именно по чекбоксу
+        if (mx >= absCbX - valMargin && mx <= absCbX + this.cbSize + valMargin &&
+            my >= absCbY - valMargin && my <= absCbY + this.cbSize + valMargin) {
+            this.active = false;
+            return true; // Success
+        }
+        return false;
+    }
+}

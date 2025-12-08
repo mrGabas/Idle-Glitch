@@ -29,27 +29,107 @@ class Game {
         this.chat = new ChatSystem();
         this.debris = [];
         this.popups = [];
+        this.captchas = [];
         this.fakeUIElements = [];
 
         this.mouse = { x: 0, y: 0, down: false };
         this.shake = 0;
 
         this.resize();
-        this.initFakeUI(); // Создаем CrazyFaces
-
-        window.addEventListener('resize', () => this.resize());
-        this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
-        window.addEventListener('mousemove', (e) => {
-            this.mouse.x = e.clientX;
-            this.mouse.y = e.clientY;
-        });
-
         this.lastTime = 0;
+        this.resize();
+
+        // UI State
+        this.gameState = 'MENU'; // MENU, PLAYING, PAUSED, SETTINGS
+        this.previousState = 'MENU';
+
+        // Bind UI Elements
+        this.bindUI();
+
         requestAnimationFrame((t) => this.loop(t));
     }
 
     loadThemeUpgrades() {
         this.upgrades = this.currentTheme.upgrades.map(u => ({ ...u, count: 0, cost: u.baseCost }));
+    }
+
+    bindUI() {
+        // Menu Elements
+        const screens = {
+            start: document.getElementById('start-menu'),
+            pause: document.getElementById('pause-menu'),
+            settings: document.getElementById('settings-menu')
+        };
+
+        // Buttons
+        document.getElementById('btn-start').onclick = () => this.startGame();
+        document.getElementById('btn-settings').onclick = () => this.openSettings('start-menu');
+        document.getElementById('btn-resume').onclick = () => this.togglePause();
+        document.getElementById('btn-pause-settings').onclick = () => this.openSettings('pause-menu');
+        document.getElementById('btn-back').onclick = () => this.closeSettings();
+
+        // Volume Sliders
+        const sfx = document.getElementById('vol-sfx');
+        const music = document.getElementById('vol-music');
+
+        sfx.oninput = (e) => this.audio.setSFXVolume(e.target.value);
+        music.oninput = (e) => this.audio.setMusicVolume(e.target.value);
+
+        // Input Listeners
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (this.gameState === 'PLAYING') this.togglePause();
+                else if (this.gameState === 'PAUSED') this.togglePause();
+                else if (this.gameState === 'SETTINGS') this.closeSettings();
+            }
+        });
+
+        this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
+        window.addEventListener('mousemove', (e) => {
+            if (this.gameState === 'PLAYING') {
+                this.mouse.x = e.clientX;
+                this.mouse.y = e.clientY;
+            }
+        });
+    }
+
+    startGame() {
+        this.audio.resume();
+        this.setScreen(null);
+        this.gameState = 'PLAYING';
+    }
+
+    togglePause() {
+        if (this.gameState === 'PLAYING') {
+            this.gameState = 'PAUSED';
+            this.setScreen('pause-menu');
+        } else if (this.gameState === 'PAUSED') {
+            this.gameState = 'PLAYING';
+            this.setScreen(null);
+        }
+    }
+
+    openSettings(fromIds) {
+        this.previousState = this.gameState;
+        this.gameState = 'SETTINGS';
+        this.returnScreenId = fromIds;
+        this.setScreen('settings-menu');
+    }
+
+    closeSettings() {
+        if (this.previousState === 'MENU') {
+            this.gameState = 'MENU';
+            this.setScreen('start-menu');
+        } else {
+            this.gameState = 'PAUSED';
+            this.setScreen('pause-menu');
+        }
+    }
+
+    setScreen(id) {
+        document.querySelectorAll('.menu-screen').forEach(el => el.style.display = 'none');
+        if (id) document.getElementById(id).style.display = 'flex';
     }
 
     resize() {
@@ -135,10 +215,25 @@ class Game {
     // --- LOGIC ---
 
     handleInput(e) {
-        this.audio.resume();
+        if (this.gameState !== 'PLAYING') return;
+
         this.mouse.down = true;
         const mx = e.clientX;
         const my = e.clientY;
+
+        // 0. Captchas (Priority)
+        for (let i = 0; i < this.captchas.length; i++) {
+            const c = this.captchas[i];
+            if (c.checkClick(mx, my)) {
+                this.audio.play('buy'); // Success sound
+                this.addScore(this.state.autoRate * 120 + 1000); // Bonus
+                this.state.corruption = Math.max(0, this.state.corruption - 5); // Cleans corruption
+                this.createParticles(mx, my, '#0f0');
+                this.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
+                this.captchas.splice(i, 1);
+                return;
+            }
+        }
 
         // 1. Popups
         let popupHit = false;
@@ -429,6 +524,28 @@ class Game {
             this.audio.play('error');
         }
 
+        // Captchas Logic
+        this.captchas.forEach((c, i) => {
+            const res = c.update(dt, this.mouse.x, this.mouse.y, this.w, this.h);
+            if (res === 'timeout') {
+                this.captchas.splice(i, 1);
+                this.audio.play('error');
+                this.state.score -= this.state.autoRate * 60; // Penalty
+                if (this.state.score < 0) this.state.score = 0;
+                this.shake = 5;
+                this.chat.addMessage('SYSTEM', 'VERIFICATION FAILED: ACCESS DENIED');
+                this.state.corruption += 5;
+            }
+        });
+
+        // Spawn Captcha (Rare event)
+        if (this.state.corruption > 15 && Math.random() < 0.0005) { // ~once per 30-40 sec
+            if (this.captchas.length < 1) {
+                this.captchas.push(new CursedCaptcha(this.w, this.h));
+                this.audio.play('error');
+            }
+        }
+
         // Обновление Охотника
         if (this.hunter && this.hunter.active) {
             const status = this.hunter.update(this.mouse.x, this.mouse.y, dt);
@@ -486,6 +603,7 @@ class Game {
         this.debris.forEach(d => d.draw(this.ctx));
         this.particles.forEach(p => p.draw(this.ctx));
         this.popups.forEach(p => p.draw(this.ctx));
+        this.captchas.forEach(c => c.draw(this.ctx));
 
         // Post Processing
         if (this.state.glitchIntensity > 0.1) {
@@ -680,7 +798,9 @@ class Game {
         const dt = (t - this.lastTime) / 1000;
         this.lastTime = t;
         if (dt < 0.5) {
-            this.update(dt);
+            if (this.gameState === 'PLAYING') {
+                this.update(dt);
+            }
             this.draw();
         }
         requestAnimationFrame((time) => this.loop(time));

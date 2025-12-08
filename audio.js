@@ -6,8 +6,19 @@ class SoundEngine {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.master = this.ctx.createGain();
-        this.master.gain.value = 0.2;
+        this.master.gain.value = 0.5; // Master volume
         this.master.connect(this.ctx.destination);
+
+        // SFX Channel
+        this.sfxGain = this.ctx.createGain();
+        this.sfxGain.gain.value = 0.5;
+        this.sfxGain.connect(this.master);
+
+        // Music Channel
+        this.musicGain = this.ctx.createGain();
+        this.musicGain.gain.value = 0.5;
+        this.musicGain.connect(this.master);
+
         this.enabled = false;
     }
 
@@ -15,8 +26,15 @@ class SoundEngine {
         if (!this.enabled) {
             this.ctx.resume();
             this.enabled = true;
-            document.getElementById('start-overlay').style.display = 'none';
         }
+    }
+
+    setSFXVolume(val) {
+        this.sfxGain.gain.value = Math.max(0, Math.min(1, val));
+    }
+
+    setMusicVolume(val) {
+        this.musicGain.gain.value = Math.max(0, Math.min(1, val));
     }
 
     play(type) {
@@ -24,8 +42,10 @@ class SoundEngine {
         const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
+
+        // Connect to SFX channel
         osc.connect(g);
-        g.connect(this.master);
+        g.connect(this.sfxGain);
 
         if (type === 'click') {
             // Приятный клик
