@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Rainbow Paradise - Preview</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #fff5f8 0%, #ffe6f0 50%, #ffd9e8 100%);
+            font-family: 'Bubblegum Sans', 'Comic Sans MS', cursive;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff69b4;
+            font-size: 42px;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 0 0 20px rgba(255, 105, 180, 0.8),
+                0 0 40px rgba(135, 206, 235, 0.6);
+            animation: rainbow-pulse 2s infinite;
+            z-index: 100;
+        }
+
+        @keyframes rainbow-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        /* Floating hearts background */
+        .heart {
+            position: absolute;
+            font-size: 30px;
+            animation: float-up 8s infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.6;
+            }
+
+            90% {
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="overlay">✨ CLICK TO START THE FUN! 🌈</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Floating decorations -->
+    <div class="heart" style="left: 10%; animation-delay: 0s;">💖</div>
+    <div class="heart" style="left: 30%; animation-delay: 2s;">🌟</div>
+    <div class="heart" style="left: 50%; animation-delay: 4s;">🦄</div>
+    <div class="heart" style="left: 70%; animation-delay: 1s;">🌈</div>
+    <div class="heart" style="left: 90%; animation-delay: 3s;">✨</div>
+
+    <script src="themes.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const theme = THEMES.rainbow_paradise;
+
+        let w, h;
+        let started = false;
+        let score = 0;
+        let clickPower = 1;
+        let autoRate = 0;
+        let happiness = 0; // 0 to 100
+        let particles = [];
+        let upgrades = theme.upgrades.map(u => ({ ...u, count: 0, cost: u.baseCost }));
+
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Particle class
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 2;
+                this.life = 1.0;
+                this.emoji = theme.particles.emoji[Math.floor(Math.random() * theme.particles.emoji.length)];
+                this.size = 20 + Math.random() * 10;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // gravity
+                this.life -= 0.02;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.font = `${this.size}px Arial`;
+                ctx.fillText(this.emoji, this.x, this.y);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function fmt(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return Math.floor(num);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (!started) {
+                started = true;
+                document.getElementById('overlay').style.display = 'none';
+            }
+
+            const mx = e.clientX;
+            const my = e.clientY;
+            const cx = w / 2;
+            const cy = h / 2 - 100;
+
+            // Check main button
+            const dist = Math.hypot(mx - cx, my - cy);
+            if (dist < 80) {
+                score += clickPower;
+                happiness += 0.5;
+                if (happiness > 100) happiness = 100;
+                createParticles(cx, cy);
+                return;
+            }
+
+            // Check upgrades
+            upgrades.forEach((u, i) => {
+                const col = i % 2;
+                const row = Math.floor(i / 2);
+                const bx = cx - 230 + col * 240;
+                const by = cy + 50 + row * 80;
+                const bw = 220, bh = 70;
+
+                if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+                    if (score >= u.cost) {
+                        score -= u.cost;
+                        u.count++;
+                        u.cost = Math.floor(u.cost * 1.4);
+                        if (u.type === 'auto') autoRate += u.val;
+                        if (u.type === 'click') clickPower += u.val;
+                        happiness += 2;
+                        if (happiness > 100) happiness = 100;
+                        createParticles(mx, my);
+                    }
+                }
+            });
+        });
+
+        let lastTime = 0;
+        function loop(t) {
+            const dt = (t - lastTime) / 1000;
+            lastTime = t;
+
+            if (dt < 0.5 && started) {
+                // Update
+                score += autoRate * dt;
+
+                particles.forEach((p, i) => {
+                    p.update();
+                    if (p.life <= 0) particles.splice(i, 1);
+                });
+
+                // Draw
+                ctx.fillStyle = theme.colors.bg;
+                ctx.fillRect(0, 0, w, h);
+
+                // Gradient overlay
+                const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h));
+                grad.addColorStop(0, 'rgba(255, 182, 193, 0.1)');
+                grad.addColorStop(0.5, 'rgba(135, 206, 235, 0.1)');
+                grad.addColorStop(1, 'rgba(152, 251, 152, 0.1)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+
+                const cx = w / 2;
+                const cy = h / 2;
+
+                // Main button
+                ctx.beginPath();
+                ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
+                const btnGrad = ctx.createRadialGradient(cx, cy - 100, 20, cx, cy - 100, 80);
+                btnGrad.addColorStop(0, '#ffb3d9');
+                btnGrad.addColorStop(0.5, '#ff69b4');
+                btnGrad.addColorStop(1, '#ff1493');
+                ctx.fillStyle = btnGrad;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 5;
+                ctx.shadowColor = 'rgba(255, 105, 180, 0.8)';
+                ctx.shadowBlur = 20;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Button emoji
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🌈', cx, cy - 100);
+
+                // Score
+                ctx.font = theme.fonts.xl;
+                ctx.fillStyle = theme.colors.accent;
+                ctx.shadowColor = theme.colors.accent;
+                ctx.shadowBlur = 15;
+                ctx.fillText(fmt(score) + ' ' + theme.currency.symbol, cx, cy - 200);
+                ctx.shadowBlur = 0;
+
+                ctx.font = theme.fonts.m;
+                ctx.fillStyle = theme.colors.accent2;
+                ctx.fillText(fmt(autoRate) + ' ' + theme.currency.symbol + '/sec', cx, cy - 240);
+
+                // Upgrades
+                upgrades.forEach((u, i) => {
+                    const col = i % 2;
+                    const row = Math.floor(i / 2);
+                    const bx = cx - 230 + col * 240;
+                    const by = cy + 50 + row * 80;
+                    const bw = 220, bh = 70;
+
+                    const canAfford = score >= u.cost;
+
+                    // Button background
+                    ctx.fillStyle = canAfford ? theme.colors.ui : '#fff';
+                    ctx.fillRect(bx, by, bw, bh);
+                    ctx.strokeStyle = canAfford ? theme.colors.accent : theme.colors.uiBorder;
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(bx, by, bw, bh);
+
+                    // Text
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = canAfford ? theme.colors.text : '#ccc';
+                    ctx.font = theme.fonts.m;
+                    ctx.fillText(u.name, bx + 10, by + 25);
+
+                    ctx.font = theme.fonts.s;
+                    ctx.fillStyle = canAfford ? theme.colors.accent3 : '#ddd';
+                    ctx.fillText(`Cost: ${fmt(u.cost)} ${theme.currency.symbol}`, bx + 10, by + 50);
+
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = theme.colors.accent2;
+                    ctx.fillText(`x${u.count}`, bx + bw - 10, by + 25);
+                    ctx.fillStyle = theme.colors.accent;
+                    ctx.fillText(u.desc, bx + bw - 10, by + 50);
+                });
+
+                // Happiness bar
+                ctx.fillStyle = theme.progressBar.bgColor;
+                ctx.fillRect(cx - 200, h - 40, 400, 25);
+
+                const barGrad = ctx.createLinearGradient(cx - 200, 0, cx + 200, 0);
+                barGrad.addColorStop(0, '#ff69b4');
+                barGrad.addColorStop(0.5, '#87ceeb');
+                barGrad.addColorStop(1, '#98fb98');
+                ctx.fillStyle = barGrad;
+                const barWidth = (happiness / 100) * 400;
+                ctx.fillRect(cx - 200, h - 40, barWidth, 25);
+
+                ctx.strokeStyle = theme.colors.accent;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(cx - 200, h - 40, 400, 25);
+
+                ctx.textAlign = 'center';
+                ctx.fillStyle = theme.colors.text;
+                ctx.font = theme.fonts.s;
+                ctx.fillText(`${theme.progressBar.label}: ${happiness.toFixed(1)}%`, cx, h - 22);
+
+                // Particles
+                particles.forEach(p => p.draw());
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+</body>
+
+</html>
