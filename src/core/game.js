@@ -13,6 +13,10 @@ import { ChatSystem } from '../ui/chat.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
+// New imports for Mail
+import { MailSystem } from '../systems/MailSystem.js';
+import { MailWindow } from '../ui/windows.js';
+import { ReviewsTab } from '../ui/reviewsTab.js';
 import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
 import { LoreFile } from '../entities/items.js';
 
@@ -35,6 +39,7 @@ export class Game {
         this.saveSystem = new SaveSystem();
         this.renderer = new Renderer('gameCanvas');
         this.audio = new SoundEngine(); // Keep for resume()
+        this.resize(); // Initialize dimensions early
 
         this.hunter = null;
 
@@ -54,7 +59,9 @@ export class Game {
             startTime: Date.now(),
             glitchIntensity: 0,
             crashed: false,
-            rebooting: false
+            rebooting: false,
+            falseCrash: false,
+            crashTimer: 0
         };
 
         this.loadThemeUpgrades();
@@ -62,6 +69,14 @@ export class Game {
         /** @type {Particle[]} */
         this.particles = [];
         this.chat = new ChatSystem();
+        this.reviewsTab = new ReviewsTab(this);
+
+        // Mail System
+        this.mail = new MailSystem(this);
+        this.mailWindow = new MailWindow(this.w, this.h, this.mail);
+
+        // Load Theme
+        this.setTheme('rainbow_paradise');
         /** @type {Debris[]} */
         this.debris = [];
         /** @type {Popup[]} */
@@ -83,7 +98,8 @@ export class Game {
         this.scareTimer = 0;
         this.scareText = "";
 
-        this.resize();
+        this.scareText = "";
+
         this.lastTime = 0;
 
         // UI State
@@ -115,6 +131,15 @@ export class Game {
 
         const pauseSettingsBtn = document.getElementById('btn-pause-settings');
         if (pauseSettingsBtn) pauseSettingsBtn.onclick = () => this.openSettings('pause-menu');
+
+        // New Feedback Button (We need to add this to HTML or check existing IDs)
+        // For now, I'll assume we might want to attach it to an existing or new element
+        // But since I can't edit HTML right now in this step easily without separate tool...
+        // I will rely on creating it in JS or assuming user adds it
+
+        // Actually, let's create a dynamic button for it in Renderer or index.html
+        // For now, let's just make a floating button in JS if it doesn't exist
+
 
         const backBtn = document.getElementById('btn-back');
         if (backBtn) backBtn.onclick = () => this.closeSettings();
@@ -153,6 +178,15 @@ export class Game {
                 // Keep history small (~2 seconds max is enough even for heavy lag)
                 if (this.mouseHistory.length > 200) {
                     this.mouseHistory.shift();
+                }
+            }
+        });
+
+        // Scroll / Wheel
+        window.addEventListener('wheel', (e) => {
+            if (this.gameState === 'PLAYING') {
+                if (this.reviewsTab.visible) {
+                    this.reviewsTab.handleScroll(e.deltaY);
                 }
             }
         });
@@ -261,6 +295,12 @@ export class Game {
         if (this.fakeUI) this.fakeUI.init(this.w, this.h);
     }
 
+    setTheme(id) {
+        this.currentTheme = THEMES[id];
+        this.loadThemeUpgrades();
+        if (this.fakeUI) this.fakeUI.init(this.w, this.h);
+    }
+
     switchTheme(newThemeId) {
         this.currentTheme = THEMES[newThemeId];
         this.loadThemeUpgrades();
@@ -308,6 +348,33 @@ export class Game {
             const close = this.activeNotepad.checkClick(mx, my);
             if (close) this.activeNotepad = null;
             return; // Block other inputs
+        }
+
+        // 0.05 Reviews Tab
+        if (this.reviewsTab.visible) {
+            this.reviewsTab.checkClick(mx, my);
+            return;
+        }
+
+        // 0.055 Mail Window
+        if (this.mailWindow.active) {
+            const consumed = this.mailWindow.checkClick(mx, my);
+            if (consumed) return;
+        }
+
+        // 0.056 Mail Icon/Button (Top Right, Pos 1)
+        // Center: w-50, 50. Size: ~40x40 hit area
+        if (Math.hypot(mx - (this.w - 50), my - 50) < 25) {
+            this.mailWindow.active = !this.mailWindow.active;
+            this.events.emit('play_sound', 'click');
+            return;
+        }
+
+        // 0.06 Reviews Button (Top Right, Pos 2)
+        // Center: w-50, 110.
+        if (Math.hypot(mx - (this.w - 50), my - 110) < 25) {
+            this.reviewsTab.toggle();
+            return;
         }
 
         // 0.1 Lore Files
@@ -497,6 +564,24 @@ export class Game {
         // Cap dt to avoid huge jumps on lag
         const safeDt = Math.min(dt, 0.1);
 
+        // --- FALSE CRASH LOGIC ---
+        if (this.state.falseCrash) {
+            this.state.crashTimer += dt;
+
+            // 1. Initial Freeze (0-3s) -> Black Screen handled by Renderer
+
+            // 2. Text Appearance (3s)
+
+            // 3. Recovery (6s)
+            if (this.state.crashTimer > 6.0) {
+                this.state.falseCrash = false;
+                document.body.style.cursor = 'default';
+                this.chat.addMessage('SYSTEM', 'ERROR: SYSTEM RECOVERED');
+                this.events.emit('play_sound', 'startup'); // Or some reboot sound
+            }
+            return; // STOP ALL OTHER UPDATES
+        }
+
         this.update(safeDt);
         this.draw();
 
@@ -537,7 +622,14 @@ export class Game {
         }
 
         this.addScore(this.state.autoRate * dt);
-        this.chat.update(dt, this.state.corruption);
+        // 5. Update Timer
+        this.state.timer += dt;
+        this.chat.update(dt, this.state.corruption); // Keep chat update
+        this.reviewsTab.update(dt);
+
+        // Mail Notification Logic (e.g. flashing icon) can go here if needed
+        // For now, mail checks are interval-based in MailSystem constructor
+
 
         // Crash Logic
         if (this.state.crashed) {
@@ -675,6 +767,20 @@ export class Game {
         }
     }
 
+    // --- FALSE CRASH MECHANIC ---
+    triggerFalseCrash() {
+        if (this.state.falseCrash) return;
+
+        this.state.falseCrash = true;
+        this.state.crashTimer = 0;
+
+        // Force cursor change
+        document.body.style.cursor = 'wait'; // System "loading" cursor
+
+        // Stop audio?
+        // this.audio.stopAll(); // Optional: silence is scarier
+    }
+
     draw() {
         this.renderer.draw(this.state, this, {
             fakeUI: this.fakeUI,
@@ -686,7 +792,11 @@ export class Game {
             loreFiles: this.loreFiles,
             hunter: this.hunter,
             chat: this.chat,
-            activeNotepad: this.activeNotepad
+            activeNotepad: this.activeNotepad,
+            reviewsTab: this.reviewsTab,
+            mailWindow: this.mailWindow,
+            mail: this.mail
         });
     }
+
 }

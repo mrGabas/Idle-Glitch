@@ -37,6 +37,21 @@ export class Renderer {
             return;
         }
 
+        // --- FALSE CRASH VISUALS ---
+        if (state.falseCrash) {
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(0, 0, this.w, this.h);
+
+            // Show text after 3 seconds
+            if (state.crashTimer > 3.0) {
+                this.ctx.fillStyle = '#f00';
+                this.ctx.font = "bold 24px Courier New";
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText("I T  I S  N O T  A  G A M E", this.w / 2, this.h / 2);
+            }
+            return;
+        }
+
         if (scareTimer > 0) {
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(0, 0, this.w, this.h);
@@ -95,9 +110,92 @@ export class Renderer {
 
         if (entities.chat) entities.chat.draw(this.ctx, this.h);
         if (entities.activeNotepad) entities.activeNotepad.draw(this.ctx);
+        if (entities.reviewsTab) entities.reviewsTab.draw(this.ctx);
+
+        // Mail Window
+        if (entities.mailWindow) entities.mailWindow.draw(this.ctx);
+
+        // Draw HUD Elements (Mail Icon)
+        this.drawHUD(this.w, this.h, entities);
+
+        // Feedback / Reviews Button (Top Right, Below Mail)
+        this.drawFeedbackIcon(this.w - 50, 110);
 
         this.drawCursor(state, currentTheme, mouse);
         this.ctx.restore();
+    }
+
+    drawFeedbackIcon(x, y) {
+        // Stylish modern icon
+        this.ctx.save();
+        this.ctx.translate(x, y); // x,y passed from draw() calls
+
+        // Bouncing animation
+        const bounce = Math.sin(Date.now() / 300) * 3;
+        this.ctx.translate(0, bounce);
+
+        // Glow
+        this.ctx.shadowColor = '#6d2af7';
+        this.ctx.shadowBlur = 15;
+
+        // Circle
+        this.ctx.fillStyle = '#6d2af7';
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, 25, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Icon (Chat Bubble)
+        this.ctx.shadowBlur = 0;
+        this.ctx.fillStyle = '#fff';
+        this.ctx.beginPath();
+        this.ctx.moveTo(-10, -5);
+        this.ctx.lineTo(10, -5);
+        this.ctx.lineTo(10, 5);
+        this.ctx.lineTo(0, 10);
+        this.ctx.lineTo(-10, 5);
+        this.ctx.fill();
+
+        // Lines inside
+        this.ctx.strokeStyle = '#6d2af7';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(-6, -2);
+        this.ctx.lineTo(6, -2);
+        this.ctx.moveTo(-6, 2);
+        this.ctx.lineTo(2, 2);
+        this.ctx.stroke();
+
+        this.ctx.restore();
+    }
+
+    drawHUD(w, h, entities) {
+        // Mail Icon (Top Right)
+        const mx = w - 50;
+        const my = 50;
+
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(mx - 15, my - 10, 30, 20); // Envelope body
+
+        // Flap
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(mx - 15, my - 10);
+        this.ctx.lineTo(mx, my + 5);
+        this.ctx.lineTo(mx + 15, my - 10);
+        this.ctx.stroke();
+
+        // Notification Badge
+        if (entities.mail && entities.mail.hasUnread) {
+            this.ctx.fillStyle = '#f00';
+            this.ctx.beginPath();
+            this.ctx.arc(mx + 15, my - 10, 8, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText("!", mx + 15, my - 7);
+        }
     }
 
     drawCursor(state, theme, mouse) {
