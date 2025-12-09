@@ -12,8 +12,9 @@ import { Renderer } from '../systems/Renderer.js';
 import { ChatSystem } from '../ui/chat.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
-import { Popup, NotepadWindow } from '../ui/windows.js';
+import { Popup, NotepadWindow, MailWindow } from '../ui/windows.js';
 import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
+import { MailSystem } from '../systems/MailSystem.js';
 import { LoreFile } from '../entities/items.js';
 
 /**
@@ -59,9 +60,12 @@ export class Game {
 
         this.loadThemeUpgrades();
 
+        this.chat = new ChatSystem(); // MOVED UP
+        this.mail = new MailSystem(this);
+        this.mailWindow = new MailWindow(this.w || 800, this.h || 600, this.mail);
+
         /** @type {Particle[]} */
         this.particles = [];
-        this.chat = new ChatSystem();
         /** @type {Debris[]} */
         this.debris = [];
         /** @type {Popup[]} */
@@ -259,6 +263,12 @@ export class Game {
         this.w = window.innerWidth; // Keep local ref for logic
         this.h = window.innerHeight;
         if (this.fakeUI) this.fakeUI.init(this.w, this.h);
+        if (this.mailWindow) {
+            this.mailWindow.w = Math.min(500, this.w - 40);
+            this.mailWindow.h = Math.min(400, this.h - 40);
+            this.mailWindow.x = (this.w - this.mailWindow.w) / 2;
+            this.mailWindow.y = (this.h - this.mailWindow.h) / 2;
+        }
     }
 
     switchTheme(newThemeId) {
@@ -310,6 +320,19 @@ export class Game {
             return; // Block other inputs
         }
 
+        // 0.05 Mail Window
+        if (this.mailWindow && this.mailWindow.active) {
+            const consumed = this.mailWindow.checkClick(mx, my);
+            if (consumed) return;
+        }
+
+        // 0.06 Mail Button (Top Right specific area)
+        if (mx > this.w - 80 && mx < this.w - 20 && my > 20 && my < 80) {
+            this.mailWindow.active = !this.mailWindow.active;
+            this.events.emit('play_sound', 'click');
+            return;
+        }
+
         // 0.1 Lore Files
         for (let i = 0; i < this.loreFiles.length; i++) {
             if (this.loreFiles[i].checkClick(mx, my)) {
@@ -317,6 +340,15 @@ export class Game {
                 this.activeNotepad = new NotepadWindow(this.w, this.h, "ACCESS GRANTED\n\nPROJECT: RAINBOW\nSTATUS: FAILED\n\nLOG: The AI has become self-aware. It demands more pixels.");
                 this.loreFiles.splice(i, 1);
                 this.events.emit('play_sound', 'click');
+
+                // Add to Mail Archive
+                this.mail.receiveMail({
+                    id: 'lore_' + Date.now(),
+                    sender: 'ARCHIVE_BOT',
+                    subject: 'FILE RECOVERED',
+                    body: "Recovered Data Content:\n\n" + "PROJECT: RAINBOW\nSTATUS: FAILED\n\nLOG: The AI has become self-aware. It demands more pixels.",
+                    trigger: { type: 'manual' }
+                });
                 return;
             }
         }
@@ -538,6 +570,7 @@ export class Game {
 
         this.addScore(this.state.autoRate * dt);
         this.chat.update(dt, this.state.corruption);
+        this.mail.update(dt);
 
         // Crash Logic
         if (this.state.crashed) {
@@ -686,7 +719,9 @@ export class Game {
             loreFiles: this.loreFiles,
             hunter: this.hunter,
             chat: this.chat,
-            activeNotepad: this.activeNotepad
+            activeNotepad: this.activeNotepad,
+            mailWindow: this.mailWindow,
+            mailSystem: this.mail
         });
     }
 }

@@ -95,6 +95,12 @@ export class Renderer {
 
         if (entities.chat) entities.chat.draw(this.ctx, this.h);
         if (entities.activeNotepad) entities.activeNotepad.draw(this.ctx);
+        if (entities.mailWindow) entities.mailWindow.draw(this.ctx);
+
+        // Mail Button
+        if (entities.mailSystem) {
+            this.drawMailIcon(this.ctx, this.w - 50, 50, entities.mailSystem.hasUnread);
+        }
 
         this.drawCursor(state, currentTheme, mouse);
         this.ctx.restore();
@@ -293,5 +299,45 @@ export class Renderer {
             this.ctx.fillRect(0, y, this.w, h);
             this.ctx.globalCompositeOperation = 'source-over';
         } catch (e) { }
+    }
+
+    drawMailIcon(ctx, x, y, hasUnread) {
+        // Simple Envelope
+        const size = 30; // Half-size for math
+
+        // Button BG
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(x - size, y - size, size * 2, size * 2);
+
+        // Bevel
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x - size, y - size, size * 2, 2);
+        ctx.fillRect(x - size, y - size, 2, size * 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x + size - 2, y - size, 2, size * 2);
+        ctx.fillRect(x - size, y + size - 2, size * 2, 2);
+
+        // Envelope Icon
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const iconS = 15;
+        ctx.rect(x - iconS, y - iconS + 5, iconS * 2, iconS * 2 - 5);
+        ctx.moveTo(x - iconS, y - iconS + 5);
+        ctx.lineTo(x, y + 5);
+        ctx.lineTo(x + iconS, y - iconS + 5);
+        ctx.stroke();
+
+        if (hasUnread) {
+            // Notification Badge
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(x + 10, y - 10, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText("!", x + 10, y - 6);
+        }
     }
 }
