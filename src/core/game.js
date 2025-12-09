@@ -568,16 +568,39 @@ export class Game {
             return;
         }
 
-        // Theme Transition
-        if (this.currentTheme.id === 'rainbow_paradise') {
+        // Theme Transition & Mechanics
+        const tId = this.currentTheme.id;
+
+        // 1. Rainbow -> Ad Purgatory
+        if (tId === 'rainbow_paradise') {
             this.state.glitchIntensity = Math.max(0, (this.state.corruption - 30) / 70);
+            if (this.state.corruption >= 100) this.switchTheme('ad_purgatory');
+        }
+        // 2. Ad Purgatory -> Digital Decay
+        else if (tId === 'ad_purgatory') {
+            this.state.glitchIntensity = 0.2 + (this.state.corruption / 100) * 0.3;
             if (this.state.corruption >= 100) this.switchTheme('digital_decay');
-        } else {
-            // Phase 2
-            this.state.glitchIntensity = 0.2 + (this.state.corruption / 100) * 0.8;
-            if (this.state.corruption >= 100) {
-                this.triggerCrash();
+
+            // AD MECHANIC: Aggressive Popups
+            if (Math.random() < 0.02 + (this.state.corruption * 0.001)) {
+                if (this.popups.length < 15) this.popups.push(new Popup(this.w, this.h));
             }
+        }
+        // 3. Digital Decay -> Legacy System
+        else if (tId === 'digital_decay') {
+            this.state.glitchIntensity = 0.4 + (this.state.corruption / 100) * 0.4;
+            if (this.state.corruption >= 100) this.switchTheme('legacy_system');
+        }
+        // 4. Legacy System -> Null Void
+        else if (tId === 'legacy_system') {
+            this.state.glitchIntensity = 0.6 + (this.state.corruption / 100) * 0.4;
+            // Scanline effect is visual content
+            if (this.state.corruption >= 100) this.switchTheme('null_void');
+        }
+        // 5. Null Void -> CRASH
+        else if (tId === 'null_void') {
+            this.state.glitchIntensity = 0.8 + (this.state.corruption / 100) * 0.2;
+            if (this.state.corruption >= 100) this.triggerCrash();
         }
 
         // Entities
@@ -717,6 +740,15 @@ export class Game {
         if (this.state.glitchIntensity > 0.1) {
             if (Math.random() < this.state.glitchIntensity * 0.1) this.createGlitchSlice();
         }
+
+        // LEGACY SYSTEM: Scanlines
+        if (this.currentTheme.id === 'legacy_system') {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            for (let y = 0; y < this.h; y += 4) {
+                this.ctx.fillRect(0, y, this.w, 2);
+            }
+        }
+
         if (this.hunter) this.hunter.draw(this.ctx);
 
         this.chat.draw(this.ctx, this.h);
@@ -818,6 +850,20 @@ export class Game {
             const ux = cx - 230 + col * 240;
             const uy = cy + 50 + row * 80;
 
+            // NULL VOID MECHANIC: Invisible UI
+            let alpha = 1;
+            if (this.currentTheme.id === 'null_void') {
+                const mx = this.mouse.x;
+                const my = this.mouse.y;
+                if (mx >= ux && mx <= ux + 220 && my >= uy && my <= uy + 70) {
+                    alpha = 1;
+                } else {
+                    alpha = 0.05; // Almost invisible
+                }
+            }
+
+            this.ctx.globalAlpha = alpha;
+
             // BG
             this.ctx.fillStyle = this.state.score >= u.cost ? colors.ui : '#333';
             this.ctx.fillRect(ux, uy, 220, 70);
@@ -850,6 +896,8 @@ export class Game {
             this.ctx.font = "12px Arial";
             this.ctx.textAlign = 'right';
             this.ctx.fillText(u.desc, ux + 210, uy + 25);
+
+            this.ctx.globalAlpha = 1; // Reset
         });
     }
 
