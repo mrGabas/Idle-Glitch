@@ -3,6 +3,7 @@
  * @module core/audio
  */
 import { UTILS } from './config.js';
+import { events } from './events.js';
 
 export class SoundEngine {
     constructor() {
@@ -22,6 +23,9 @@ export class SoundEngine {
         this.musicGain.connect(this.master);
 
         this.enabled = false;
+
+        // Event Subscription
+        events.on('play_sound', (type) => this.play(type));
     }
 
     resume() {

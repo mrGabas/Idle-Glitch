@@ -6,6 +6,9 @@
 import { CFG, UTILS } from './config.js';
 import { THEMES } from '../data/themes.js';
 import { SoundEngine } from './audio.js';
+import { events } from './events.js';
+import { SaveSystem } from './SaveSystem.js';
+import { Renderer } from '../systems/Renderer.js';
 import { ChatSystem } from '../ui/chat.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
@@ -28,21 +31,18 @@ import { LoreFile } from '../entities/items.js';
 
 export class Game {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        /** @type {CanvasRenderingContext2D} */
-        this.ctx = this.canvas.getContext('2d');
-        this.audio = new SoundEngine();
+        this.events = events;
+        this.saveSystem = new SaveSystem();
+        this.renderer = new Renderer('gameCanvas');
+        this.audio = new SoundEngine(); // Keep for resume()
 
         this.hunter = null;
 
         this.currentTheme = THEMES.rainbow_paradise;
 
         // Save loading
-        let savedMult = localStorage.getItem('glitch_prestige_mult');
-        this.prestigeMult = savedMult ? parseFloat(savedMult) : 1.0;
-
-        let savedReboots = localStorage.getItem('glitch_reboot_count');
-        this.rebootCount = savedReboots ? parseInt(savedReboots) : 0;
+        this.prestigeMult = this.saveSystem.loadNumber('prestige_mult', 1.0);
+        this.rebootCount = this.saveSystem.loadNumber('reboot_count', 0);
 
         /** @type {GameState} */
         this.state = {
@@ -136,7 +136,7 @@ export class Game {
             }
         });
 
-        this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
+        this.renderer.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
         window.addEventListener('mousemove', (e) => {
             if (this.gameState === 'PLAYING') {
                 // Track REAL mouse position separately
@@ -202,7 +202,7 @@ export class Game {
         this.addScore(0); // Updates UI potentially if needed immediately
 
         // Scare
-        this.audio.play('error');
+        this.events.emit('play_sound', 'error');
         this.shake = 10;
         this.state.corruption += 5;
         this.triggerScareOverlay("WHERE WERE YOU?");
@@ -255,8 +255,9 @@ export class Game {
     }
 
     resize() {
-        this.w = this.canvas.width = window.innerWidth;
-        this.h = this.canvas.height = window.innerHeight;
+        if (this.renderer) this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.w = window.innerWidth; // Keep local ref for logic
+        this.h = window.innerHeight;
         if (this.fakeUI) this.fakeUI.init(this.w, this.h);
     }
 
@@ -277,7 +278,7 @@ export class Game {
 
     triggerCrash() {
         this.state.crashed = true;
-        this.audio.play('error');
+        this.events.emit('play_sound', 'error');
         // Reset save? Or just reboot sequence.
     }
 
@@ -286,8 +287,8 @@ export class Game {
         this.rebootCount++;
         this.prestigeMult += 0.5; // +50% bonus per run
 
-        localStorage.setItem('glitch_prestige_mult', this.prestigeMult);
-        localStorage.setItem('glitch_reboot_count', this.rebootCount);
+        this.saveSystem.saveNumber('prestige_mult', this.prestigeMult);
+        this.saveSystem.saveNumber('reboot_count', this.rebootCount);
 
         // Reload page to clear everything dirty
         location.reload();
@@ -315,7 +316,7 @@ export class Game {
                 // Open lore
                 this.activeNotepad = new NotepadWindow(this.w, this.h, "ACCESS GRANTED\n\nPROJECT: RAINBOW\nSTATUS: FAILED\n\nLOG: The AI has become self-aware. It demands more pixels.");
                 this.loreFiles.splice(i, 1);
-                this.audio.play('click');
+                this.events.emit('play_sound', 'click');
                 return;
             }
         }
@@ -324,7 +325,7 @@ export class Game {
         for (let i = 0; i < this.captchas.length; i++) {
             const c = this.captchas[i];
             if (c.checkClick(mx, my)) {
-                this.audio.play('buy'); // Success sound
+                this.events.emit('play_sound', 'buy'); // Success sound
                 this.addScore(this.state.autoRate * 120 + 1000); // Bonus
                 this.state.corruption = Math.max(0, this.state.corruption - 5); // Cleans corruption
                 this.createParticles(mx, my, '#0f0');
@@ -343,9 +344,9 @@ export class Game {
                 if (res === 'bonus') {
                     this.addScore(this.state.autoRate * 20 + 500);
                     this.createParticles(mx, my, this.currentTheme.colors.accent);
-                    this.audio.play('buy');
+                    this.events.emit('play_sound', 'buy');
                 } else {
-                    this.audio.play('click');
+                    this.events.emit('play_sound', 'click');
                 }
             }
         }
@@ -364,7 +365,7 @@ export class Game {
                 if (this.state.score >= u.cost) {
                     this.buyUpgrade(u);
                 } else {
-                    this.audio.play('error');
+                    this.events.emit('play_sound', 'error');
                 }
             }
         });
@@ -411,12 +412,12 @@ export class Game {
             this.shake = 3;
             // Additional lock logic for early game
             if (this.currentTheme.id === 'rainbow_paradise' && this.state.corruption < 30) {
-                this.audio.play('error');
+                this.events.emit('play_sound', 'error');
                 this.createFloatingText(mx, my, "LOCKED", "#888");
                 return; // No corruption if locked?
             }
 
-            this.audio.play('glitch');
+            this.events.emit('play_sound', 'glitch');
             if (this.currentTheme.id === 'rainbow_paradise') {
                 this.state.corruption += 0.2;
             }
@@ -425,7 +426,7 @@ export class Game {
         if (this.hunter && this.hunter.active) {
             const hit = this.hunter.checkClick(mx, my);
             if (hit) {
-                this.audio.play('click');
+                this.events.emit('play_sound', 'click');
                 this.createParticles(mx, my, '#f00');
                 if (hit === true) {
                     this.addScore(1000 * this.state.multiplier);
@@ -455,7 +456,7 @@ export class Game {
 
     clickMain() {
         this.addScore(this.state.clickPower);
-        this.audio.play('click');
+        this.events.emit('play_sound', 'click');
         this.createParticles(this.w / 2, this.h / 2 - 100, this.currentTheme.colors.accent);
         this.shake = 2;
         if (this.currentTheme.id === 'rainbow_paradise') this.state.corruption += 0.05;
@@ -467,7 +468,7 @@ export class Game {
         u.cost = Math.floor(u.cost * 1.4);
         if (u.type === 'auto') this.state.autoRate += u.val;
         if (u.type === 'click') this.state.clickPower += u.val;
-        this.audio.play('buy');
+        this.events.emit('play_sound', 'buy');
         this.state.corruption += 1.5;
     }
 
@@ -481,18 +482,7 @@ export class Game {
         }
     }
 
-    createGlitchSlice() {
-        if (Math.random() > 0.3) return;
-        const h = Math.random() * 30 + 5;
-        const y = Math.random() * this.h;
-        try {
-            this.ctx.globalCompositeOperation = 'difference';
-            this.ctx.fillStyle = UTILS.randArr(['#f0f', '#0ff', '#ff0']);
-            this.ctx.fillRect(0, y, this.w, h);
-            this.ctx.globalCompositeOperation = 'source-over';
-        } catch (e) { }
-    }
-
+    // Main Loop
     loop(t) {
         const dt = (t - this.lastTime) / 1000;
         this.lastTime = t;
@@ -613,7 +603,7 @@ export class Game {
             const res = d.update(dt, this.h, this.mouse.x, this.mouse.y);
             if (res === 'collected') {
                 this.addScore(10 * this.state.multiplier);
-                this.audio.play('click');
+                this.events.emit('play_sound', 'click');
             }
             if (d.life <= 0) this.debris.splice(i, 1);
         });
@@ -638,7 +628,7 @@ export class Game {
         if (!this.hunter && this.state.corruption > 40 && Math.random() < 0.001) {
             this.hunter = new GlitchHunter(this.w, this.h);
             this.chat.addMessage('SYSTEM', 'WARNING: VIRUS DETECTED');
-            this.audio.play('error');
+            this.events.emit('play_sound', 'error');
         }
 
         // Captchas
@@ -646,7 +636,7 @@ export class Game {
             const res = c.update(dt, this.mouse.x, this.mouse.y, this.w, this.h);
             if (res === 'timeout') {
                 this.captchas.splice(i, 1);
-                this.audio.play('error');
+                this.events.emit('play_sound', 'error');
                 this.state.score -= this.state.autoRate * 60; // Penalty
                 if (this.state.score < 0) this.state.score = 0;
                 this.shake = 5;
@@ -658,7 +648,7 @@ export class Game {
         if (this.state.corruption > 15 && Math.random() < 0.0005) {
             if (this.captchas.length < 1) {
                 this.captchas.push(new CursedCaptcha(this.w, this.h));
-                this.audio.play('error');
+                this.events.emit('play_sound', 'error');
             }
         }
 
@@ -679,264 +669,24 @@ export class Game {
                 this.state.score -= this.state.autoRate * dt * 2;
                 if (this.state.score < 0) this.state.score = 0;
                 this.shake = 5;
-                this.ctx.fillStyle = 'rgba(255,0,0,0.1)';
-                this.ctx.fillRect(0, 0, this.w, this.h);
+                // Rendering hit effect should be in draw
+                // WE need a visual flag for "being hit" or handle it in draw via hunter state
             }
         }
     }
 
     draw() {
-        if (this.state.crashed) {
-            this.drawBSOD();
-            return;
-        }
-        if (this.state.rebooting) {
-            this.drawBIOS();
-            return;
-        }
-
-        if (this.scareTimer > 0) {
-            this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(0, 0, this.w, this.h);
-            this.ctx.fillStyle = '#f00';
-            this.ctx.font = "bold 48px Courier New";
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(this.scareText || "I SEE YOU", this.w / 2, this.h / 2);
-            return;
-        }
-
-        this.ctx.save();
-        if (this.shake > 0.5) {
-            this.ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake);
-        }
-
-        // BG
-        this.ctx.fillStyle = this.currentTheme.colors.bg;
-        this.ctx.fillRect(0, 0, this.w, this.h);
-
-        // CrazyFaces Layer
-        this.fakeUI.draw(this.ctx);
-
-        // Game Center Vignette
-        const cx = this.w / 2;
-        const cy = this.h / 2;
-        const grad = this.ctx.createRadialGradient(cx, cy, 100, cx, cy, 500);
-        grad.addColorStop(0, this.currentTheme.colors.bg);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        this.ctx.fillStyle = grad;
-        this.ctx.fillRect(0, 0, this.w, this.h);
-
-        this.drawGameUI();
-
-        // Entites
-        this.debris.forEach(d => d.draw(this.ctx));
-        this.particles.forEach(p => p.draw(this.ctx));
-        this.popups.forEach(p => p.draw(this.ctx));
-        this.captchas.forEach(c => c.draw(this.ctx));
-        this.loreFiles.forEach(f => f.draw(this.ctx));
-
-        // PostFX
-        if (this.state.glitchIntensity > 0.1) {
-            if (Math.random() < this.state.glitchIntensity * 0.1) this.createGlitchSlice();
-        }
-
-        // LEGACY SYSTEM: Scanlines
-        if (this.currentTheme.id === 'legacy_system') {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            for (let y = 0; y < this.h; y += 4) {
-                this.ctx.fillRect(0, y, this.w, 2);
-            }
-        }
-
-        if (this.hunter) this.hunter.draw(this.ctx);
-
-        this.chat.draw(this.ctx, this.h);
-        if (this.activeNotepad) this.activeNotepad.draw(this.ctx);
-
-        this.drawCursor();
-        this.ctx.restore();
-    }
-
-    drawCursor() {
-        // Simple crosshair or custom cursor
-        const mx = this.mouse.x;
-        const my = this.mouse.y;
-
-        this.ctx.strokeStyle = this.currentTheme.colors.accent;
-
-        // Visual Cues for Decay
-        if (this.state.corruption > 60) {
-            this.ctx.strokeStyle = '#f00'; // Red warning
-            if (this.state.corruption > 85) {
-                // Inversion Strobe
-                this.ctx.strokeStyle = UTILS.randArr(['#f00', '#0ff', '#fff']);
-            }
-        }
-
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(mx - 10, my);
-        this.ctx.lineTo(mx + 10, my);
-        this.ctx.moveTo(mx, my - 10);
-        this.ctx.lineTo(mx, my + 10);
-        this.ctx.stroke();
-    }
-
-    drawGameUI() {
-        const cx = this.w / 2;
-        const cy = this.h / 2;
-        const colors = this.currentTheme.colors;
-        const theme = this.currentTheme;
-
-        // Main Button circle
-        this.ctx.beginPath();
-        this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
-
-        // Gradient
-        const grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
-        theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
-
-        this.ctx.fillStyle = grad;
-        this.ctx.fill();
-        this.ctx.lineWidth = 5;
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.stroke();
-
-        // Button text
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = "bold 24px Arial";
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(theme.button.text, cx, cy - 110);
-        this.ctx.font = "40px Arial";
-        this.ctx.fillText(theme.button.emoji, cx, cy - 70);
-
-        // Score
-        this.ctx.fillStyle = colors.text;
-        this.ctx.font = CFG.fonts.xl;
-        this.ctx.fillText(UTILS.fmt(this.state.score) + ' ' + theme.currency.symbol, cx, cy + 20);
-
-        this.ctx.font = CFG.fonts.m;
-        this.ctx.fillText(`${UTILS.fmt(this.state.autoRate)} / sec`, cx, cy + 50);
-
-        // Progress Bar (Corruption/Happiness)
-        const barW = 400;
-        const barH = 20;
-        const bx = cx - barW / 2;
-        const by = this.h - 50; // Fixed: Always at bottom
-
-        this.ctx.fillStyle = theme.progressBar.bgColor;
-        this.ctx.fillRect(bx, by, barW, barH);
-
-        let pct = this.state.corruption;
-        if (theme.progressBar.invert) pct = 100 - pct;
-
-        this.ctx.fillStyle = theme.progressBar.color;
-        this.ctx.fillRect(bx, by, barW * (pct / 100), barH);
-
-        this.ctx.strokeStyle = colors.uiBorder;
-        this.ctx.strokeRect(bx, by, barW, barH);
-
-        this.ctx.fillStyle = colors.text;
-        this.ctx.font = "bold 14px Arial";
-        this.ctx.fillText(theme.progressBar.label, cx, by - 10);
-
-        // Upgrades Shop
-        // Grid 2x4
-        this.upgrades.forEach((u, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-
-            const ux = cx - 230 + col * 240;
-            const uy = cy + 50 + row * 80;
-
-            // NULL VOID MECHANIC: Invisible UI
-            let alpha = 1;
-            if (this.currentTheme.id === 'null_void') {
-                const mx = this.mouse.x;
-                const my = this.mouse.y;
-                if (mx >= ux && mx <= ux + 220 && my >= uy && my <= uy + 70) {
-                    alpha = 1;
-                } else {
-                    alpha = 0.05; // Almost invisible
-                }
-            }
-
-            this.ctx.globalAlpha = alpha;
-
-            // BG
-            this.ctx.fillStyle = this.state.score >= u.cost ? colors.ui : '#333';
-            this.ctx.fillRect(ux, uy, 220, 70);
-
-            // Border
-            this.ctx.strokeStyle = colors.uiBorder;
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeRect(ux, uy, 220, 70);
-
-            // Name
-            this.ctx.fillStyle = colors.text;
-            this.ctx.textAlign = 'left';
-            this.ctx.font = "bold 16px Arial";
-            this.ctx.fillText(u.name, ux + 10, uy + 25);
-
-            // Cost
-            const canBuy = this.state.score >= u.cost;
-            this.ctx.fillStyle = canBuy ? colors.accent : '#888';
-            this.ctx.font = "14px monospace";
-            this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 45);
-
-            // Count
-            this.ctx.fillStyle = '#fff';
-            this.ctx.textAlign = 'right';
-            this.ctx.font = "bold 20px Arial";
-            this.ctx.fillText(u.count, ux + 210, uy + 60);
-
-            // Desc
-            this.ctx.fillStyle = '#aaa';
-            this.ctx.font = "12px Arial";
-            this.ctx.textAlign = 'right';
-            this.ctx.fillText(u.desc, ux + 210, uy + 25);
-
-            this.ctx.globalAlpha = 1; // Reset
-        });
-    }
-
-    drawBSOD() {
-        this.ctx.fillStyle = '#0000aa';
-        this.ctx.fillRect(0, 0, this.w, this.h);
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = "20px 'Courier New', monospace";
-        this.ctx.textAlign = 'left';
-
-        const lines = [
-            "A problem has been detected and Windows has been shut down to prevent damage",
-            "to your computer.", "", "THE_GLITCH_HAS_CONSUMED_ALL.", "",
-            "Technical Information:", "",
-            "*** STOP: 0x00000666 (0xDEADDEAD, 0xC0000221, 0x00000000, 0x00000000)",
-            "*** GLITCH.SYS - Address FFFFFFFF base at FFFFFFFF, DateStamp 666666"
-        ];
-
-        let y = 100;
-        lines.forEach(l => { this.ctx.fillText(l, 50, y); y += 28; });
-    }
-
-    drawBIOS() {
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(0, 0, this.w, this.h);
-        this.ctx.fillStyle = '#ccc';
-        this.ctx.font = "20px 'Courier New', monospace";
-        this.ctx.textAlign = 'left';
-
-        const lines = [
-            "PhoenixBIOS 4.0 Release 6.0", "Copyright (C) 1985-2025 Phoenix Technologies Ltd.",
-            "", "CPU = GlitchPRO 9000 Pro @ 99.9 GHz", "Rebooting system..."
-        ];
-
-        let y = 50;
-        lines.forEach((l, i) => {
-            if (this.rebootTimer < 5.0 - i * 0.5) { // Simple stagger
-                this.ctx.fillText(l, 50, y); y += 24;
-            }
+        this.renderer.draw(this.state, this, {
+            fakeUI: this.fakeUI,
+            upgrades: this.upgrades,
+            debris: this.debris,
+            particles: this.particles,
+            popups: this.popups,
+            captchas: this.captchas,
+            loreFiles: this.loreFiles,
+            hunter: this.hunter,
+            chat: this.chat,
+            activeNotepad: this.activeNotepad
         });
     }
 }
