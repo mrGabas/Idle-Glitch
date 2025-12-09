@@ -9,6 +9,8 @@ import { SoundEngine } from './audio.js';
 import { events } from './events.js';
 import { SaveSystem } from './SaveSystem.js';
 import { Renderer } from '../systems/Renderer.js';
+import { InputHandler } from '../systems/InputHandler.js';
+import { ProgressionSystem } from '../systems/Progression.js';
 import { ChatSystem } from '../ui/chat.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
@@ -37,8 +39,6 @@ export class Game {
         this.renderer = new Renderer('gameCanvas');
         this.audio = new SoundEngine(); // Keep for resume()
 
-        this.hunter = null;
-
         this.currentTheme = THEMES.rainbow_paradise;
 
         // Save loading
@@ -60,10 +60,15 @@ export class Game {
 
         this.loadThemeUpgrades();
 
-        this.chat = new ChatSystem(); // MOVED UP
+        // UI & Systems
+        this.chat = new ChatSystem();
         this.mail = new MailSystem(this);
-        this.mailWindow = new MailWindow(this.w || 800, this.h || 600, this.mail);
+        this.input = new InputHandler(this); // Initializes listeners
+        this.progression = new ProgressionSystem(this);
 
+        this.hunter = null;
+
+        // Entities
         /** @type {Particle[]} */
         this.particles = [];
         /** @type {Debris[]} */
@@ -74,14 +79,13 @@ export class Game {
         this.captchas = [];
         /** @type {LoreFile[]} */
         this.loreFiles = [];
+
         this.activeNotepad = null;
-
         this.fakeUI = new CrazyFaces(this);
+        this.mailWindow = new MailWindow(this.w || 800, this.h || 600, this.mail);
 
-        this.mouse = { x: 0, y: 0, down: false };
-        this.realMouse = { x: 0, y: 0 }; // Track physical mouse
-        this.mouseHistory = []; // For lag effect
-
+        // Visual State
+        this.mouse = this.input.mouse; // Alias for renderer access
         this.shake = 0;
         this.rebootTimer = 0;
         this.scareTimer = 0;
@@ -90,12 +94,12 @@ export class Game {
         this.resize();
         this.lastTime = 0;
 
-        // UI State
+        // Game State
         this.gameState = 'MENU'; // MENU, PLAYING, PAUSED, SETTINGS
         this.previousState = 'MENU';
         this.returnScreenId = null;
 
-        // Bind UI Elements
+        // Bind DOM UI
         this.bindUI();
 
         // Start Loop
@@ -130,91 +134,8 @@ export class Game {
         if (sfx) sfx.oninput = (e) => this.audio.setSFXVolume(e.target.value);
         if (music) music.oninput = (e) => this.audio.setMusicVolume(e.target.value);
 
-        // Input Listeners
-        window.addEventListener('resize', () => this.resize());
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (this.gameState === 'PLAYING') this.togglePause();
-                else if (this.gameState === 'PAUSED') this.togglePause();
-                else if (this.gameState === 'SETTINGS') this.closeSettings();
-            }
-        });
-
-        this.renderer.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
-        window.addEventListener('mousemove', (e) => {
-            if (this.gameState === 'PLAYING') {
-                // Track REAL mouse position separately
-                this.realMouse.x = e.clientX;
-                this.realMouse.y = e.clientY;
-
-                // Add to history for lag effect
-                this.mouseHistory.push({
-                    x: e.clientX,
-                    y: e.clientY,
-                    time: Date.now()
-                });
-
-                // Keep history small (~2 seconds max is enough even for heavy lag)
-                if (this.mouseHistory.length > 200) {
-                    this.mouseHistory.shift();
-                }
-            }
-        });
-
-        this.initTabStalker();
-    }
-
-    initTabStalker() {
-        let titleInterval = null;
-        let awayStartTime = 0;
-        const subTitles = [
-            "Hey?", "Come back...", "I see you...",
-            "Don't leave me", "WHERE ARE YOU?", "I'M LONELY",
-            "LOOK BEHIND YOU", "SYSTEM FAILURE"
-        ];
-        const originalTitle = document.title;
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                // Player left
-                awayStartTime = Date.now();
-                let i = 0;
-                titleInterval = setInterval(() => {
-                    document.title = subTitles[i % subTitles.length];
-                    i++;
-                }, 2000);
-            } else {
-                // Player returned
-                document.title = originalTitle;
-                if (titleInterval) clearInterval(titleInterval);
-
-                const timeAway = (Date.now() - awayStartTime) / 1000;
-                if (timeAway > 5) { // Only punish if away for > 5s
-                    this.handleTabReturn(timeAway);
-                }
-            }
-        });
-    }
-
-    handleTabReturn(seconds) {
-        if (this.gameState !== 'PLAYING') return;
-
-        // Penalty: Lose resources instead of gaining
-        // 1.5x penalty simply for being rude
-        const penalty = this.state.autoRate * seconds * 1.5;
-        this.state.score = Math.max(0, this.state.score - penalty);
-        this.addScore(0); // Updates UI potentially if needed immediately
-
-        // Scare
-        this.events.emit('play_sound', 'error');
-        this.shake = 10;
-        this.state.corruption += 5;
-        this.triggerScareOverlay("WHERE WERE YOU?");
-    }
-
-    triggerScareOverlay(text) {
-        this.scareText = text;
-        this.scareTimer = 1.5; // Displays for 1.5s
+        // Note: Global input listeners (resize, keydown, mouse, visibility) 
+        // are now handled by this.input (InputHandler)
     }
 
     startGame() {
@@ -289,7 +210,6 @@ export class Game {
     triggerCrash() {
         this.state.crashed = true;
         this.events.emit('play_sound', 'error');
-        // Reset save? Or just reboot sequence.
     }
 
     hardReset() {
@@ -304,171 +224,12 @@ export class Game {
         location.reload();
     }
 
-    // --- LOGIC ---
-
-    handleInput(e) {
-        if (this.gameState !== 'PLAYING') return;
-
-        this.mouse.down = true;
-        const mx = this.mouse.x;
-        const my = this.mouse.y;
-
-        // 0. Notepad (Top Priority)
-        if (this.activeNotepad) {
-            const close = this.activeNotepad.checkClick(mx, my);
-            if (close) this.activeNotepad = null;
-            return; // Block other inputs
-        }
-
-        // 0.05 Mail Window
-        if (this.mailWindow && this.mailWindow.active) {
-            const consumed = this.mailWindow.checkClick(mx, my);
-            if (consumed) return;
-        }
-
-        // 0.06 Mail Button (Top Right specific area)
-        if (mx > this.w - 80 && mx < this.w - 20 && my > 20 && my < 80) {
-            this.mailWindow.active = !this.mailWindow.active;
-            this.events.emit('play_sound', 'click');
-            return;
-        }
-
-        // 0.1 Lore Files
-        for (let i = 0; i < this.loreFiles.length; i++) {
-            if (this.loreFiles[i].checkClick(mx, my)) {
-                // Open lore
-                this.activeNotepad = new NotepadWindow(this.w, this.h, "ACCESS GRANTED\n\nPROJECT: RAINBOW\nSTATUS: FAILED\n\nLOG: The AI has become self-aware. It demands more pixels.");
-                this.loreFiles.splice(i, 1);
-                this.events.emit('play_sound', 'click');
-
-                // Add to Mail Archive
-                this.mail.receiveMail({
-                    id: 'lore_' + Date.now(),
-                    sender: 'ARCHIVE_BOT',
-                    subject: 'FILE RECOVERED',
-                    body: "Recovered Data Content:\n\n" + "PROJECT: RAINBOW\nSTATUS: FAILED\n\nLOG: The AI has become self-aware. It demands more pixels.",
-                    trigger: { type: 'manual' }
-                });
-                return;
-            }
-        }
-
-        // 0.2 Captchas (Priority)
-        for (let i = 0; i < this.captchas.length; i++) {
-            const c = this.captchas[i];
-            if (c.checkClick(mx, my)) {
-                this.events.emit('play_sound', 'buy'); // Success sound
-                this.addScore(this.state.autoRate * 120 + 1000); // Bonus
-                this.state.corruption = Math.max(0, this.state.corruption - 5); // Cleans corruption
-                this.createParticles(mx, my, '#0f0');
-                this.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
-                this.captchas.splice(i, 1);
-                return;
-            }
-        }
-
-        // 1. Popups
-        let popupHit = false;
-        for (let p of this.popups) {
-            const res = p.checkClick(mx, my);
-            if (res) {
-                popupHit = true;
-                if (res === 'bonus') {
-                    this.addScore(this.state.autoRate * 20 + 500);
-                    this.createParticles(mx, my, this.currentTheme.colors.accent);
-                    this.events.emit('play_sound', 'buy');
-                } else {
-                    this.events.emit('play_sound', 'click');
-                }
-            }
-        }
-        if (popupHit) return;
-
-        // 2. Shop Upgrades
-        let shopHit = false;
-        this.upgrades.forEach((u, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-            const bx = this.w / 2 - 230 + col * 240;
-            const by = this.h / 2 + 50 + row * 80;
-
-            if (mx >= bx && mx <= bx + 220 && my >= by && my <= by + 70) {
-                shopHit = true;
-                if (this.state.score >= u.cost) {
-                    this.buyUpgrade(u);
-                } else {
-                    this.events.emit('play_sound', 'error');
-                }
-            }
-        });
-        if (shopHit) return;
-
-        // 3. Main Button
-        const cx = this.w / 2;
-        const cy = this.h / 2 - 100;
-        if (Math.hypot(mx - cx, my - cy) < 80) {
-            this.clickMain();
-            return;
-        }
-
-        // 4. DESTRUCTION OF FAKE UI
-        let hitUI = false;
-        this.fakeUI.elements.forEach(el => {
-            if (el.active && mx > el.x && mx < el.x + el.w && my > el.y && my < el.y + el.h) {
-                hitUI = true;
-                // Damage UI logic moved to CrazyFaces class partly, but effect logic here
-                const destroyed = this.fakeUI.damage(el);
-
-                // Spawn debris
-                for (let i = 0; i < 3; i++) {
-                    this.debris.push(new Debris(mx, my, el.color));
-                }
-
-                if (destroyed) {
-                    // Big debris explosion
-                    for (let i = 0; i < 15; i++) {
-                        this.debris.push(new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
-                    }
-                    this.addScore(100 * this.state.multiplier);
-
-                    if (this.currentTheme.id === 'rainbow_paradise') {
-                        this.state.corruption += 1.5;
-                    } else {
-                        this.state.corruption += 0.5;
-                    }
-                }
-            }
-        });
-
-        if (hitUI) {
-            this.shake = 3;
-            // Additional lock logic for early game
-            if (this.currentTheme.id === 'rainbow_paradise' && this.state.corruption < 30) {
-                this.events.emit('play_sound', 'error');
-                this.createFloatingText(mx, my, "LOCKED", "#888");
-                return; // No corruption if locked?
-            }
-
-            this.events.emit('play_sound', 'glitch');
-            if (this.currentTheme.id === 'rainbow_paradise') {
-                this.state.corruption += 0.2;
-            }
-        }
-
-        if (this.hunter && this.hunter.active) {
-            const hit = this.hunter.checkClick(mx, my);
-            if (hit) {
-                this.events.emit('play_sound', 'click');
-                this.createParticles(mx, my, '#f00');
-                if (hit === true) {
-                    this.addScore(1000 * this.state.multiplier);
-                    this.hunter = null;
-                    this.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
-                }
-                return;
-            }
-        }
+    triggerScareOverlay(text) {
+        this.scareText = text;
+        this.scareTimer = 1.5; // Displays for 1.5s
     }
+
+    // --- GAME ACTIONS (Called by InputHandler) ---
 
     createFloatingText(x, y, text, color) {
         const p = new Particle(x, y, color);
@@ -526,9 +287,7 @@ export class Game {
             return;
         }
 
-        // Cap dt to avoid huge jumps on lag
         const safeDt = Math.min(dt, 0.1);
-
         this.update(safeDt);
         this.draw();
 
@@ -536,96 +295,25 @@ export class Game {
     }
 
     update(dt) {
-        // --- INPUT DECAY LOGIC ---
-        // Calculate Lag
-        let lagAmount = 0;
-        if (this.state.corruption > 60) {
-            // max 500ms lag at 100 corruption
-            lagAmount = (this.state.corruption - 60) * 12;
-        }
-
-        if (lagAmount > 0 && this.mouseHistory.length > 0) {
-            const targetTime = Date.now() - lagAmount;
-            // Find closest historical position
-            let best = this.mouseHistory[this.mouseHistory.length - 1];
-            for (let i = this.mouseHistory.length - 1; i >= 0; i--) {
-                if (this.mouseHistory[i].time <= targetTime) {
-                    best = this.mouseHistory[i];
-                    break;
-                }
-            }
-            this.mouse.x = best.x;
-            this.mouse.y = best.y;
-        } else {
-            // No lag
-            this.mouse.x = this.realMouse.x;
-            this.mouse.y = this.realMouse.y;
-        }
-
-        // Calculate Inversion
-        if (this.state.corruption > 85) {
-            // Simple X-axis inversion
-            this.mouse.x = this.w - this.mouse.x;
-        }
-
-        this.addScore(this.state.autoRate * dt);
+        // System Updates
+        this.input.updateMouse(dt, this.state.corruption);
+        this.progression.update(dt);
         this.chat.update(dt, this.state.corruption);
         this.mail.update(dt);
 
-        // Crash Logic
-        if (this.state.crashed) {
-            this.rebootTimer -= dt;
-            if (this.rebootTimer <= 0) {
-                this.state.crashed = false;
-                this.state.rebooting = true;
-                this.rebootTimer = 5.0; // 5s BIOS
-            }
-            return;
-        }
+        this.addScore(this.state.autoRate * dt);
 
-        if (this.state.rebooting) {
-            this.rebootTimer -= dt;
-            if (this.rebootTimer <= 0) {
-                this.hardReset();
-            }
-            return;
-        }
+        // Entity Updates
+        this.updateEntities(dt);
 
-        // Theme Transition & Mechanics
-        const tId = this.currentTheme.id;
+        if (this.shake > 0) this.shake *= 0.9;
+        if (this.scareTimer > 0) this.scareTimer -= dt;
 
-        // 1. Rainbow -> Ad Purgatory
-        if (tId === 'rainbow_paradise') {
-            this.state.glitchIntensity = Math.max(0, (this.state.corruption - 30) / 70);
-            if (this.state.corruption >= 100) this.switchTheme('ad_purgatory');
-        }
-        // 2. Ad Purgatory -> Digital Decay
-        else if (tId === 'ad_purgatory') {
-            this.state.glitchIntensity = 0.2 + (this.state.corruption / 100) * 0.3;
-            if (this.state.corruption >= 100) this.switchTheme('digital_decay');
+        // Spawners (Hunter, Lore etc - Could be moved to EntitySpawner system)
+        this.handleSpawns();
+    }
 
-            // AD MECHANIC: Aggressive Popups
-            if (Math.random() < 0.02 + (this.state.corruption * 0.001)) {
-                if (this.popups.length < 15) this.popups.push(new Popup(this.w, this.h));
-            }
-        }
-        // 3. Digital Decay -> Legacy System
-        else if (tId === 'digital_decay') {
-            this.state.glitchIntensity = 0.4 + (this.state.corruption / 100) * 0.4;
-            if (this.state.corruption >= 100) this.switchTheme('legacy_system');
-        }
-        // 4. Legacy System -> Null Void
-        else if (tId === 'legacy_system') {
-            this.state.glitchIntensity = 0.6 + (this.state.corruption / 100) * 0.4;
-            // Scanline effect is visual content
-            if (this.state.corruption >= 100) this.switchTheme('null_void');
-        }
-        // 5. Null Void -> CRASH
-        else if (tId === 'null_void') {
-            this.state.glitchIntensity = 0.8 + (this.state.corruption / 100) * 0.2;
-            if (this.state.corruption >= 100) this.triggerCrash();
-        }
-
+    updateEntities(dt) {
         // Entities
         this.particles.forEach((p, i) => {
             p.update();
@@ -633,7 +321,7 @@ export class Game {
         });
 
         this.debris.forEach((d, i) => {
-            const res = d.update(dt, this.h, this.mouse.x, this.mouse.y);
+            const res = d.update(dt, this.h, this.input.mouse.x, this.input.mouse.y);
             if (res === 'collected') {
                 this.addScore(10 * this.state.multiplier);
                 this.events.emit('play_sound', 'click');
@@ -646,27 +334,9 @@ export class Game {
             if (p.life <= 0) this.popups.splice(i, 1);
         });
 
-        if (Math.random() < 0.001 + (this.state.glitchIntensity * 0.02)) {
-            if (this.popups.length < 5) this.popups.push(new Popup(this.w, this.h));
-        }
-
-        if (this.shake > 0) this.shake *= 0.9;
-
-        // Scare Timer
-        if (this.scareTimer > 0) {
-            this.scareTimer -= dt;
-        }
-
-        // Hunter Spawn
-        if (!this.hunter && this.state.corruption > 40 && Math.random() < 0.001) {
-            this.hunter = new GlitchHunter(this.w, this.h);
-            this.chat.addMessage('SYSTEM', 'WARNING: VIRUS DETECTED');
-            this.events.emit('play_sound', 'error');
-        }
-
         // Captchas
         this.captchas.forEach((c, i) => {
-            const res = c.update(dt, this.mouse.x, this.mouse.y, this.w, this.h);
+            const res = c.update(dt, this.input.mouse.x, this.input.mouse.y, this.w, this.h);
             if (res === 'timeout') {
                 this.captchas.splice(i, 1);
                 this.events.emit('play_sound', 'error');
@@ -678,6 +348,32 @@ export class Game {
             }
         });
 
+        this.loreFiles.forEach((f, i) => {
+            f.life -= dt;
+            if (f.life <= 0) this.loreFiles.splice(i, 1);
+        });
+
+        if (this.hunter && this.hunter.active) {
+            const status = this.hunter.update(this.input.mouse.x, this.input.mouse.y, dt);
+            if (status === 'damage') {
+                this.state.score -= this.state.autoRate * dt * 2;
+                if (this.state.score < 0) this.state.score = 0;
+                this.shake = 5;
+            }
+        }
+    }
+
+    handleSpawns() {
+        if (this.hunter && this.hunter.active) return; // Don't spawn if hunter active?
+
+        // Hunter Spawn
+        if (!this.hunter && this.state.corruption > 40 && Math.random() < 0.001) {
+            this.hunter = new GlitchHunter(this.w, this.h);
+            this.chat.addMessage('SYSTEM', 'WARNING: VIRUS DETECTED');
+            this.events.emit('play_sound', 'error');
+        }
+
+        // Cursed Captcha
         if (this.state.corruption > 15 && Math.random() < 0.0005) {
             if (this.captchas.length < 1) {
                 this.captchas.push(new CursedCaptcha(this.w, this.h));
@@ -685,26 +381,9 @@ export class Game {
             }
         }
 
-        // Lore Files
-        this.loreFiles.forEach((f, i) => {
-            f.life -= dt;
-            if (f.life <= 0) this.loreFiles.splice(i, 1);
-        });
-
+        // Lore Files (Rare)
         if (this.state.corruption > 10 && Math.random() < 0.0003 && !this.activeNotepad) {
             if (this.loreFiles.length < 2) this.loreFiles.push(new LoreFile(this.w, this.h));
-        }
-
-        // Hunter Update
-        if (this.hunter && this.hunter.active) {
-            const status = this.hunter.update(this.mouse.x, this.mouse.y, dt);
-            if (status === 'damage') {
-                this.state.score -= this.state.autoRate * dt * 2;
-                if (this.state.score < 0) this.state.score = 0;
-                this.shake = 5;
-                // Rendering hit effect should be in draw
-                // WE need a visual flag for "being hit" or handle it in draw via hunter state
-            }
         }
     }
 

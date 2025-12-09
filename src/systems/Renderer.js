@@ -106,6 +106,153 @@ export class Renderer {
         this.ctx.restore();
     }
 
+    drawGameUI(state, theme, upgrades, mouse) {
+        const cx = this.w / 2;
+        const cy = this.h / 2;
+
+        this.drawMainButton(cx, cy, theme);
+        this.drawHUD(cx, cy, state, theme);
+        this.drawProgressBar(cx, cy, state, theme);
+        this.drawShop(cx, cy, state, theme, upgrades, mouse);
+    }
+
+    drawMainButton(cx, cy, theme) {
+        // Main Button circle
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
+
+        // Gradient
+        const grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
+        theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
+
+        this.ctx.fillStyle = grad;
+        this.ctx.fill();
+        this.ctx.lineWidth = 5;
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.stroke();
+
+        // Button text
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = "bold 24px Arial";
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(theme.button.text, cx, cy - 110);
+        this.ctx.font = "40px Arial";
+        this.ctx.fillText(theme.button.emoji, cx, cy - 70);
+    }
+
+    drawHUD(cx, cy, state, theme) {
+        // Score
+        this.ctx.fillStyle = theme.colors.text;
+        this.ctx.font = CFG.fonts.xl;
+        this.ctx.fillText(UTILS.fmt(state.score) + ' ' + theme.currency.symbol, cx, cy + 20);
+
+        this.ctx.font = CFG.fonts.m;
+        this.ctx.fillText(`${UTILS.fmt(state.autoRate)} / sec`, cx, cy + 50);
+    }
+
+    drawProgressBar(cx, cy, state, theme) {
+        const barW = 400;
+        const barH = 20;
+        const bx = cx - barW / 2;
+        const by = this.h - 50;
+
+        this.ctx.fillStyle = theme.progressBar.bgColor;
+        this.ctx.fillRect(bx, by, barW, barH);
+
+        let pct = state.corruption;
+        if (theme.progressBar.invert) pct = 100 - pct;
+
+        this.ctx.fillStyle = theme.progressBar.color;
+        this.ctx.fillRect(bx, by, barW * (pct / 100), barH);
+
+        this.ctx.strokeStyle = theme.colors.uiBorder;
+        this.ctx.strokeRect(bx, by, barW, barH);
+
+        this.ctx.fillStyle = theme.colors.text;
+        this.ctx.font = "bold 14px Arial";
+        this.ctx.fillText(theme.progressBar.label, cx, by - 10);
+    }
+
+    drawShop(cx, cy, state, theme, upgrades, mouse) {
+        if (!upgrades) return;
+
+        upgrades.forEach((u, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+
+            const ux = cx - 230 + col * 240;
+            const uy = cy + 50 + row * 80;
+
+            // NULL VOID MECHANIC: Invisible UI
+            let alpha = 1;
+            if (theme.id === 'null_void') {
+                const mx = mouse.x;
+                const my = mouse.y;
+                if (mx >= ux && mx <= ux + 220 && my >= uy && my <= uy + 70) {
+                    alpha = 1;
+                } else {
+                    alpha = 0.05; // Almost invisible
+                }
+            }
+
+            this.ctx.globalAlpha = alpha;
+
+            // BG
+            this.ctx.fillStyle = state.score >= u.cost ? theme.colors.ui : '#333';
+            this.ctx.fillRect(ux, uy, 220, 70);
+
+            // Border
+            this.ctx.strokeStyle = theme.colors.uiBorder;
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(ux, uy, 220, 70);
+
+            // Name
+            this.ctx.fillStyle = theme.colors.text;
+            this.ctx.textAlign = 'left';
+            this.ctx.font = "bold 16px Arial";
+            this.ctx.fillText(u.name, ux + 10, uy + 25);
+
+            // Cost
+            const canBuy = state.score >= u.cost;
+            this.ctx.fillStyle = canBuy ? theme.colors.accent : '#888';
+            this.ctx.font = "14px monospace";
+            this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 45);
+
+            // Count
+            this.ctx.fillStyle = '#fff';
+            this.ctx.textAlign = 'right';
+            this.ctx.font = "bold 20px Arial";
+            this.ctx.fillText(u.count, ux + 210, uy + 60);
+
+            // Desc
+            this.ctx.fillStyle = '#aaa';
+            this.ctx.font = "12px Arial";
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(u.desc, ux + 210, uy + 25);
+
+            this.ctx.globalAlpha = 1; // Reset
+        });
+    }
+
+    drawBSOD() {
+        this.ctx.fillStyle = '#0000aa';
+        this.ctx.fillRect(0, 0, this.w, this.h);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = "20px 'Courier New', monospace";
+        this.ctx.textAlign = 'left';
+
+        const lines = [
+            "A problem has been detected and Windows has been shut down to prevent damage",
+            "to your computer.", "", "THE_GLITCH_HAS_CONSUMED_ALL.", "",
+            "Technical Information:", "",
+            "*** STOP: 0x00000666 (0xDEADDEAD, 0xC0000221, 0x00000000, 0x00000000)",
+            "*** GLITCH.SYS - Address FFFFFFFF base at FFFFFFFF, DateStamp 666666"
+        ];
+
+        let y = 100;
+        lines.forEach(l => { this.ctx.fillText(l, 50, y); y += 28; });
+    }
+
     drawCursor(state, theme, mouse) {
         // Simple crosshair or custom cursor
         const mx = mouse.x;
@@ -129,144 +276,12 @@ export class Renderer {
         this.ctx.moveTo(mx, my - 10);
         this.ctx.lineTo(mx, my + 10);
         this.ctx.stroke();
-    }
 
-    drawGameUI(state, theme, upgrades, mouse) {
-        const cx = this.w / 2;
-        const cy = this.h / 2;
-        const colors = theme.colors;
-
-        // Main Button circle
-        this.ctx.beginPath();
-        this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
-
-        // Gradient
-        const grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
-        theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
-
-        this.ctx.fillStyle = grad;
-        this.ctx.fill();
-        this.ctx.lineWidth = 5;
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.stroke();
-
-        // Button text
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = "bold 24px Arial";
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(theme.button.text, cx, cy - 110);
-        this.ctx.font = "40px Arial";
-        this.ctx.fillText(theme.button.emoji, cx, cy - 70);
-
-        // Score
-        this.ctx.fillStyle = colors.text;
-        this.ctx.font = CFG.fonts.xl;
-        this.ctx.fillText(UTILS.fmt(state.score) + ' ' + theme.currency.symbol, cx, cy + 20);
-
-        this.ctx.font = CFG.fonts.m;
-        this.ctx.fillText(`${UTILS.fmt(state.autoRate)} / sec`, cx, cy + 50);
-
-        // Progress Bar (Corruption/Happiness)
-        const barW = 400;
-        const barH = 20;
-        const bx = cx - barW / 2;
-        const by = this.h - 50;
-
-        this.ctx.fillStyle = theme.progressBar.bgColor;
-        this.ctx.fillRect(bx, by, barW, barH);
-
-        let pct = state.corruption;
-        if (theme.progressBar.invert) pct = 100 - pct;
-
-        this.ctx.fillStyle = theme.progressBar.color;
-        this.ctx.fillRect(bx, by, barW * (pct / 100), barH);
-
-        this.ctx.strokeStyle = colors.uiBorder;
-        this.ctx.strokeRect(bx, by, barW, barH);
-
-        this.ctx.fillStyle = colors.text;
-        this.ctx.font = "bold 14px Arial";
-        this.ctx.fillText(theme.progressBar.label, cx, by - 10);
-
-        // Upgrades Shop
-        // Grid 2x4
-        if (upgrades) {
-            upgrades.forEach((u, i) => {
-                const col = i % 2;
-                const row = Math.floor(i / 2);
-
-                const ux = cx - 230 + col * 240;
-                const uy = cy + 50 + row * 80;
-
-                // NULL VOID MECHANIC: Invisible UI
-                let alpha = 1;
-                if (theme.id === 'null_void') {
-                    const mx = mouse.x;
-                    const my = mouse.y;
-                    if (mx >= ux && mx <= ux + 220 && my >= uy && my <= uy + 70) {
-                        alpha = 1;
-                    } else {
-                        alpha = 0.05; // Almost invisible
-                    }
-                }
-
-                this.ctx.globalAlpha = alpha;
-
-                // BG
-                this.ctx.fillStyle = state.score >= u.cost ? colors.ui : '#333';
-                this.ctx.fillRect(ux, uy, 220, 70);
-
-                // Border
-                this.ctx.strokeStyle = colors.uiBorder;
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeRect(ux, uy, 220, 70);
-
-                // Name
-                this.ctx.fillStyle = colors.text;
-                this.ctx.textAlign = 'left';
-                this.ctx.font = "bold 16px Arial";
-                this.ctx.fillText(u.name, ux + 10, uy + 25);
-
-                // Cost
-                const canBuy = state.score >= u.cost;
-                this.ctx.fillStyle = canBuy ? colors.accent : '#888';
-                this.ctx.font = "14px monospace";
-                this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 45);
-
-                // Count
-                this.ctx.fillStyle = '#fff';
-                this.ctx.textAlign = 'right';
-                this.ctx.font = "bold 20px Arial";
-                this.ctx.fillText(u.count, ux + 210, uy + 60);
-
-                // Desc
-                this.ctx.fillStyle = '#aaa';
-                this.ctx.font = "12px Arial";
-                this.ctx.textAlign = 'right';
-                this.ctx.fillText(u.desc, ux + 210, uy + 25);
-
-                this.ctx.globalAlpha = 1; // Reset
-            });
+        if (state.corruption > 85) {
+            this.ctx.font = "10px monospace";
+            this.ctx.fillStyle = "#f00";
+            this.ctx.fillText("ERR", mx + 10, my + 10);
         }
-    }
-
-    drawBSOD() {
-        this.ctx.fillStyle = '#0000aa';
-        this.ctx.fillRect(0, 0, this.w, this.h);
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = "20px 'Courier New', monospace";
-        this.ctx.textAlign = 'left';
-
-        const lines = [
-            "A problem has been detected and Windows has been shut down to prevent damage",
-            "to your computer.", "", "THE_GLITCH_HAS_CONSUMED_ALL.", "",
-            "Technical Information:", "",
-            "*** STOP: 0x00000666 (0xDEADDEAD, 0xC0000221, 0x00000000, 0x00000000)",
-            "*** GLITCH.SYS - Address FFFFFFFF base at FFFFFFFF, DateStamp 666666"
-        ];
-
-        let y = 100;
-        lines.forEach(l => { this.ctx.fillText(l, 50, y); y += 28; });
     }
 
     drawBIOS(rebootTimer) {
