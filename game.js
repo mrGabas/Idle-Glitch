@@ -10,8 +10,14 @@ class Game {
         this.hunter = null;
 
         this.currentTheme = THEMES.rainbow_paradise;
+        this.currentTheme = THEMES.rainbow_paradise;
+
+        // Save loading
         let savedMult = localStorage.getItem('glitch_prestige_mult');
         this.prestigeMult = savedMult ? parseFloat(savedMult) : 1.0;
+
+        let savedReboots = localStorage.getItem('glitch_reboot_count');
+        this.rebootCount = savedReboots ? parseInt(savedReboots) : 0;
 
         this.state = {
             score: 0,
@@ -21,7 +27,8 @@ class Game {
             multiplier: 1 * this.prestigeMult, // ПРИМЕНЯЕМ БОНУС
             startTime: Date.now(),
             glitchIntensity: 0,
-            crashed: false // Флаг краша
+            crashed: false,
+            rebooting: false
         };
 
         this.loadThemeUpgrades();
@@ -358,6 +365,55 @@ class Game {
             this.ctx.fillRect(x, y + 20, 15, 20);
         }
     }
+
+    drawBIOS() {
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.w, this.h);
+
+        this.ctx.fillStyle = '#ccc';
+        this.ctx.font = "20px 'Courier New', monospace";
+        this.ctx.textAlign = 'left';
+
+        const lines = [
+            "PhoenixBIOS 4.0 Release 6.0",
+            "Copyright (C) 1985-2025 Phoenix Technologies Ltd.",
+            "All Rights Reserved",
+            "",
+            "CPU = GlitchPRO 9000 Pro @ 99.9 GHz",
+            "640K System RAM Passed",
+            "15360M Extended RAM Passed",
+            "512K Cache SRAM Passed",
+            "",
+            "System BIOS shadowed",
+            "Video BIOS shadowed",
+            "",
+            "Fixed Disk 0: GLITCH_DRIVE_C",
+            "ATAPI CD-ROM: NONE",
+            "Mouse initialized",
+            "",
+            "Rebooting system..."
+        ];
+
+        let y = 50;
+        lines.forEach((line, i) => {
+            // Показываем строки постепенно
+            if (this.rebootTimer < 5.0 - i * 0.2) {
+                this.ctx.fillText(line, 50, y);
+                y += 24;
+            }
+        });
+
+        // Energy Star Logo placeholder
+        if (this.rebootTimer < 4.8) {
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(this.w - 150, 50, 100, 100);
+            this.ctx.fillText("ENERGY", this.w - 140, 90);
+            this.ctx.fillText("STAR", this.w - 130, 110);
+        }
+    }
+
+    // ... Old damageUI stays ...
     damageUI(el, x, y) {
         // 1. БЛОКИРОВКА: Нельзя ломать интерфейс, пока система стабильна
         if (this.currentTheme.id === 'rainbow_paradise' && this.state.corruption < 30) {
@@ -467,7 +523,18 @@ class Game {
         // --- ЛОГИКА СМЕНЫ ТЕМ И КОНЦОВКИ ---
 
         // Если мы уже в состоянии "КРАШ", ничего не обновляем, ждем рестарта
+        // Если мы уже в состоянии "КРАШ", ничего не обновляем, ждем рестарта
         if (this.state.crashed) {
+            this.rebootTimer -= dt;
+            if (this.rebootTimer <= 0) {
+                this.state.crashed = false;
+                this.state.rebooting = true;
+                this.rebootTimer = 5.0; // 5 секунд BIOS
+            }
+            return;
+        }
+
+        if (this.state.rebooting) {
             this.rebootTimer -= dt;
             if (this.rebootTimer <= 0) {
                 this.hardReset();
@@ -566,9 +633,13 @@ class Game {
     // --- DRAW LOOP ---
 
     draw() {
-        // 0. Если краш - рисуем только BSOD и выходим
+        // 0. Если краш - рисуем только BSOD или BIOS и выходим
         if (this.state.crashed) {
             this.drawBSOD();
+            return;
+        }
+        if (this.state.rebooting) {
+            this.drawBIOS();
             return;
         }
 
@@ -814,11 +885,13 @@ class Game {
 
     hardReset() {
         // Сохраняем "Престиж"
-        // Допустим, каждый рестарт дает +50% к множителю навсегда
-        let savedMult = localStorage.getItem('glitch_prestige_mult');
-        savedMult = savedMult ? parseFloat(savedMult) : 1.0;
-        savedMult += 0.5;
+        // +50% к множителю
+        // +1 к счетчику ребутов
+        let savedMult = this.prestigeMult + 0.5;
+        let savedReboots = this.rebootCount + 1;
+
         localStorage.setItem('glitch_prestige_mult', savedMult);
+        localStorage.setItem('glitch_reboot_count', savedReboots);
 
         // Перезагружаем страницу по-настоящему для эффекта
         location.reload();
