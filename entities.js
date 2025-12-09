@@ -362,3 +362,171 @@ class CursedCaptcha {
         return false;
     }
 }
+
+// --- LORE ENTITIES ---
+
+class LoreFile {
+    constructor(w, h) {
+        this.w = 50;
+        this.h = 60;
+        // Spawn randomly but avoid center (gameplay area)
+        let safe = false;
+        while (!safe) {
+            this.x = UTILS.rand(50, w - 100);
+            this.y = UTILS.rand(50, h - 100);
+            const cx = w / 2;
+            const cy = h / 2;
+            if (Math.hypot(this.x - cx, this.y - cy) > 300) safe = true;
+        }
+
+        this.label = UTILS.randArr(['PRIVATE', 'DONT_OPEN', 'secrets.txt', 'diary.log', 'passwords.txt']);
+        this.active = true;
+        this.life = 30.0; // Exist for 30 seconds
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Icon (Folder)
+        ctx.fillStyle = '#ebb434'; // Folder yellow
+        ctx.beginPath();
+        ctx.moveTo(0, 5);
+        ctx.lineTo(20, 5);
+        ctx.lineTo(25, 0);
+        ctx.lineTo(50, 0);
+        ctx.lineTo(50, 40);
+        ctx.lineTo(0, 40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#c59218';
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(this.label, 25, 55);
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+    }
+
+    checkClick(mx, my) {
+        if (!this.active) return false;
+        if (mx >= this.x && mx <= this.x + 50 && my >= this.y && my <= this.y + 60) {
+            this.active = false; // Disappear after opening
+            return true;
+        }
+        return false;
+    }
+}
+
+class NotepadWindow {
+    constructor(w, h, content) {
+        this.w = 400;
+        this.h = 300;
+        this.x = (w - this.w) / 2;
+        this.y = (h - this.h) / 2;
+        this.content = content || "Error: Corrupted File";
+        this.active = true;
+        this.title = "Notepad.exe";
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(this.x + 5, this.y + 5, this.w, this.h);
+
+        // Main Window
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x, this.y, this.w, this.h);
+
+        // Title Bar
+        ctx.fillStyle = '#000080'; // Navy blue
+        ctx.fillRect(this.x + 2, this.y + 2, this.w - 4, 18);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(this.title, this.x + 6, this.y + 16);
+
+        // Close Button [X]
+        const bx = this.x + this.w - 18;
+        const by = this.y + 4;
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(bx, by, 14, 14);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(bx, by + 14); ctx.lineTo(bx, by); ctx.lineTo(bx + 14, by); ctx.stroke();
+        ctx.strokeStyle = '#000';
+        ctx.beginPath(); ctx.moveTo(bx + 14, by); ctx.lineTo(bx + 14, by + 14); ctx.lineTo(bx, by + 14); ctx.stroke();
+
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 10px Arial';
+        ctx.fillText('X', bx + 3, by + 11);
+
+        // Menu Bar
+        ctx.fillStyle = '#000';
+        ctx.font = '12px Arial';
+        ctx.fillText("File   Edit   Format   View   Help", this.x + 6, this.y + 35);
+        ctx.strokeStyle = '#ccc';
+        ctx.beginPath(); ctx.moveTo(this.x, this.y + 40); ctx.lineTo(this.x + this.w, this.y + 40); ctx.stroke();
+
+        // Content Area
+        ctx.fillStyle = '#000';
+        ctx.font = "16px 'Courier New', monospace";
+        const lines = this.getLines(ctx, this.content, this.w - 20);
+        let ly = this.y + 60;
+        lines.forEach(line => {
+            ctx.fillText(line, this.x + 10, ly);
+            ly += 20;
+        });
+    }
+
+    getLines(ctx, text, maxWidth) {
+        var words = text.split(" ");
+        var lines = [];
+        var currentLine = words[0];
+
+        for (var i = 1; i < words.length; i++) {
+            var word = words[i];
+            var width = ctx.measureText(currentLine + " " + word).width;
+            if (width < maxWidth) {
+                currentLine += " " + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    }
+
+    checkClick(mx, my) {
+        if (!this.active) return false;
+
+        // Check Close Button
+        const bx = this.x + this.w - 18;
+        const by = this.y + 4;
+        if (mx >= bx && mx <= bx + 14 && my >= by && my <= by + 14) {
+            this.active = false;
+            return true;
+        }
+
+        // Consume click inside window (prevent clicking game behind it)
+        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + this.h) {
+            return true;
+        }
+
+        return false;
+    }
+}

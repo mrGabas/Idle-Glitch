@@ -36,7 +36,10 @@ class Game {
         this.chat = new ChatSystem();
         this.debris = [];
         this.popups = [];
+        this.popups = [];
         this.captchas = [];
+        this.loreFiles = [];
+        this.activeNotepad = null;
         this.fakeUIElements = [];
 
         this.mouse = { x: 0, y: 0, down: false };
@@ -228,7 +231,24 @@ class Game {
         const mx = e.clientX;
         const my = e.clientY;
 
-        // 0. Captchas (Priority)
+        // 0. Notepad (Top Priority)
+        if (this.activeNotepad) {
+            const close = this.activeNotepad.checkClick(mx, my);
+            if (close) this.activeNotepad = null;
+            return; // Block other inputs
+        }
+
+        // 0.1 Lore Files
+        for (let i = 0; i < this.loreFiles.length; i++) {
+            if (this.loreFiles[i].checkClick(mx, my)) {
+                this.openLoreFile(this.loreFiles[i]);
+                this.loreFiles.splice(i, 1);
+                this.audio.play('click');
+                return;
+            }
+        }
+
+        // 0.2 Captchas (Priority)
         for (let i = 0; i < this.captchas.length; i++) {
             const c = this.captchas[i];
             if (c.checkClick(mx, my)) {
@@ -613,6 +633,18 @@ class Game {
             }
         }
 
+        // Lore Files Spawning
+        this.loreFiles.forEach((f, i) => {
+            f.life -= dt;
+            if (f.life <= 0) this.loreFiles.splice(i, 1);
+        });
+
+        if (this.state.corruption > 10 && Math.random() < 0.0003 && !this.activeNotepad) {
+            if (this.loreFiles.length < 2) {
+                this.loreFiles.push(new LoreFile(this.w, this.h));
+            }
+        }
+
         // Обновление Охотника
         if (this.hunter && this.hunter.active) {
             const status = this.hunter.update(this.mouse.x, this.mouse.y, dt);
@@ -675,6 +707,7 @@ class Game {
         this.particles.forEach(p => p.draw(this.ctx));
         this.popups.forEach(p => p.draw(this.ctx));
         this.captchas.forEach(c => c.draw(this.ctx));
+        this.loreFiles.forEach(f => f.draw(this.ctx));
 
         // Post Processing
         if (this.state.glitchIntensity > 0.1) {
@@ -684,6 +717,9 @@ class Game {
         if (this.hunter) this.hunter.draw(this.ctx);
 
         this.chat.draw(this.ctx, this.h);
+
+        if (this.activeNotepad) this.activeNotepad.draw(this.ctx);
+
         this.drawCursor();
         this.ctx.restore();
     }
@@ -895,6 +931,27 @@ class Game {
 
         // Перезагружаем страницу по-настоящему для эффекта
         location.reload();
+    }
+
+    openLoreFile(file) {
+        // Select text based on corruption
+        let text = "Diary Entry #1\nToday I found a strange glitch in the system. It's colorful but... unsettling.";
+
+        const texts = [
+            { min: 0, txt: "Project: RAINBOW\nStatus: STABLE\nUser happiness is at 100%. No anomalies detected." },
+            { min: 20, txt: "Diary Entry #4\nThe colors are bleeding. I hear sounds when I shouldn't. Is the AI watching me?" },
+            { min: 40, txt: "WARNING LOG\nMemory Leak detected in Sector 7.\nVisual artifacts are confirming user suspicions.\nAUTO-CORRECT FAILED." },
+            { min: 60, txt: "DONT OPEN\n\nTHEY ARE LISTENING.\nDO NOT CLICK THE EYES.\nDO NOT TRUST THE RAINBOW.\n\nRUN." },
+            { min: 80, txt: "01001000 01000101 01001100 01010000\n\nIT HURTS.\nMAKE IT STOP.\n\nSYSTEM FAILURE IMMINENT." },
+            { min: 90, txt: "THE VOID STARES BACK.\n\nThere is no escape.\nThe glitch is not a bug.\nIt is a feature." }
+        ];
+
+        // Find best match
+        for (let t of texts) {
+            if (this.state.corruption >= t.min) text = t.txt;
+        }
+
+        this.activeNotepad = new NotepadWindow(this.w, this.h, text);
     }
 }
 window.onload = () => { window.game = new Game(); };
