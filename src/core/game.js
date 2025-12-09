@@ -75,8 +75,13 @@ export class Game {
         this.fakeUI = new CrazyFaces(this);
 
         this.mouse = { x: 0, y: 0, down: false };
+        this.realMouse = { x: 0, y: 0 }; // Track physical mouse
+        this.mouseHistory = []; // For lag effect
+
         this.shake = 0;
         this.rebootTimer = 0;
+        this.scareTimer = 0;
+        this.scareText = "";
 
         this.resize();
         this.lastTime = 0;
@@ -134,10 +139,78 @@ export class Game {
         this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
         window.addEventListener('mousemove', (e) => {
             if (this.gameState === 'PLAYING') {
-                this.mouse.x = e.clientX;
-                this.mouse.y = e.clientY;
+                // Track REAL mouse position separately
+                this.realMouse.x = e.clientX;
+                this.realMouse.y = e.clientY;
+
+                // Add to history for lag effect
+                this.mouseHistory.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    time: Date.now()
+                });
+
+                // Keep history small (~2 seconds max is enough even for heavy lag)
+                if (this.mouseHistory.length > 200) {
+                    this.mouseHistory.shift();
+                }
             }
         });
+
+        this.initTabStalker();
+    }
+
+    initTabStalker() {
+        let titleInterval = null;
+        let awayStartTime = 0;
+        const subTitles = [
+            "Hey?", "Come back...", "I see you...",
+            "Don't leave me", "WHERE ARE YOU?", "I'M LONELY",
+            "LOOK BEHIND YOU", "SYSTEM FAILURE"
+        ];
+        const originalTitle = document.title;
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Player left
+                awayStartTime = Date.now();
+                let i = 0;
+                titleInterval = setInterval(() => {
+                    document.title = subTitles[i % subTitles.length];
+                    i++;
+                }, 2000);
+            } else {
+                // Player returned
+                document.title = originalTitle;
+                if (titleInterval) clearInterval(titleInterval);
+
+                const timeAway = (Date.now() - awayStartTime) / 1000;
+                if (timeAway > 5) { // Only punish if away for > 5s
+                    this.handleTabReturn(timeAway);
+                }
+            }
+        });
+    }
+
+    handleTabReturn(seconds) {
+        if (this.gameState !== 'PLAYING') return;
+
+        // Penalty: Lose resources instead of gaining
+        // 1.5x penalty simply for being rude
+        const penalty = this.state.autoRate * seconds * 1.5;
+        this.state.score = Math.max(0, this.state.score - penalty);
+        this.addScore(0); // Updates UI potentially if needed immediately
+
+        // Scare
+        this.audio.play('error');
+        this.shake = 10;
+        this.state.corruption += 5;
+        this.triggerScareOverlay("WHERE WERE YOU?");
+    }
+
+    triggerScareOverlay(text) {
+        this.scareText = text;
+        this.scareTimer = 1.5; // Displays for 1.5s
     }
 
     startGame() {
@@ -226,8 +299,8 @@ export class Game {
         if (this.gameState !== 'PLAYING') return;
 
         this.mouse.down = true;
-        const mx = e.clientX;
-        const my = e.clientY;
+        const mx = this.mouse.x;
+        const my = this.mouse.y;
 
         // 0. Notepad (Top Priority)
         if (this.activeNotepad) {
@@ -441,6 +514,38 @@ export class Game {
     }
 
     update(dt) {
+        // --- INPUT DECAY LOGIC ---
+        // Calculate Lag
+        let lagAmount = 0;
+        if (this.state.corruption > 60) {
+            // max 500ms lag at 100 corruption
+            lagAmount = (this.state.corruption - 60) * 12;
+        }
+
+        if (lagAmount > 0 && this.mouseHistory.length > 0) {
+            const targetTime = Date.now() - lagAmount;
+            // Find closest historical position
+            let best = this.mouseHistory[this.mouseHistory.length - 1];
+            for (let i = this.mouseHistory.length - 1; i >= 0; i--) {
+                if (this.mouseHistory[i].time <= targetTime) {
+                    best = this.mouseHistory[i];
+                    break;
+                }
+            }
+            this.mouse.x = best.x;
+            this.mouse.y = best.y;
+        } else {
+            // No lag
+            this.mouse.x = this.realMouse.x;
+            this.mouse.y = this.realMouse.y;
+        }
+
+        // Calculate Inversion
+        if (this.state.corruption > 85) {
+            // Simple X-axis inversion
+            this.mouse.x = this.w - this.mouse.x;
+        }
+
         this.addScore(this.state.autoRate * dt);
         this.chat.update(dt, this.state.corruption);
 
@@ -500,6 +605,11 @@ export class Game {
         }
 
         if (this.shake > 0) this.shake *= 0.9;
+
+        // Scare Timer
+        if (this.scareTimer > 0) {
+            this.scareTimer -= dt;
+        }
 
         // Hunter Spawn
         if (!this.hunter && this.state.corruption > 40 && Math.random() < 0.001) {
@@ -562,6 +672,17 @@ export class Game {
             return;
         }
 
+        if (this.scareTimer > 0) {
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(0, 0, this.w, this.h);
+            this.ctx.fillStyle = '#f00';
+            this.ctx.font = "bold 48px Courier New";
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(this.scareText || "I SEE YOU", this.w / 2, this.h / 2);
+            return;
+        }
+
         this.ctx.save();
         if (this.shake > 0.5) {
             this.ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake);
@@ -607,10 +728,20 @@ export class Game {
 
     drawCursor() {
         // Simple crosshair or custom cursor
-        // Browser handles it mostly, but for style:
         const mx = this.mouse.x;
         const my = this.mouse.y;
+
         this.ctx.strokeStyle = this.currentTheme.colors.accent;
+
+        // Visual Cues for Decay
+        if (this.state.corruption > 60) {
+            this.ctx.strokeStyle = '#f00'; // Red warning
+            if (this.state.corruption > 85) {
+                // Inversion Strobe
+                this.ctx.strokeStyle = UTILS.randArr(['#f00', '#0ff', '#fff']);
+            }
+        }
+
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
         this.ctx.moveTo(mx - 10, my);
