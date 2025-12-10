@@ -15,6 +15,7 @@ import { Particle, Debris } from '../entities/particles.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
 // New imports for Mail
 import { MailSystem } from '../systems/MailSystem.js';
+import { FakeCursor } from '../entities/FakeCursor.js';
 import { MailWindow } from '../ui/windows.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
@@ -43,6 +44,7 @@ export class Game {
         this.resize(); // Initialize dimensions early
 
         this.hunter = null;
+        this.fakeCursor = new FakeCursor(0, 0, this);
 
         this.currentTheme = THEMES.rainbow_paradise;
 
@@ -201,6 +203,13 @@ export class Game {
 
         const backBtn = document.getElementById('btn-back');
         if (backBtn) backBtn.onclick = () => this.closeSettings();
+
+        // Fake Browser Error Buttons
+        const waitBtn = document.getElementById('btn-error-wait');
+        if (waitBtn) waitBtn.onclick = () => this.handleBrowserWait();
+
+        const killBtn = document.getElementById('btn-error-kill');
+        if (killBtn) killBtn.onclick = () => this.handleBrowserKill();
 
         // Volume Sliders
         const sfx = document.getElementById('vol-sfx');
@@ -404,6 +413,8 @@ export class Game {
         this.w = window.innerWidth; // Keep local ref for logic
         this.h = window.innerHeight;
         if (this.fakeUI) this.fakeUI.init(this.w, this.h);
+        if (this.fakeCursor) this.fakeCursor.resize(this.w, this.h);
+        if (this.mailWindow) this.mailWindow.resize(this.w, this.h); // Mail window might need it too? (Wait, MailWindow logic is position based, might need update)
     }
 
     setTheme(id) {
@@ -1023,6 +1034,22 @@ export class Game {
             this.events.emit('play_sound', 'error');
         }
 
+        // Fake Cursor Update (Fourth Wall)
+        if (this.state.corruption > 20) {
+            if (!this.fakeCursor.active && Math.random() < 0.0005 * this.state.corruption) {
+                this.fakeCursor.reset(this.w, this.h);
+            }
+            this.fakeCursor.update(dt);
+        }
+
+        // Fake Browser Error Trigger (Corruption > 60)
+        if (this.state.corruption > 60 && !this.state.crashed && !this.state.rebooting && !this.state.falseCrash) {
+            // Rare event
+            if (Math.random() < 0.0001) {
+                this.triggerBrowserError();
+            }
+        }
+
         // Captchas
         this.captchas.forEach((c, i) => {
             const res = c.update(dt, this.mouse.x, this.mouse.y, this.w, this.h);
@@ -1081,6 +1108,30 @@ export class Game {
         // this.audio.stopAll(); // Optional: silence is scarier
     }
 
+    triggerBrowserError() {
+        const el = document.getElementById('browser-error-overlay');
+        if (el) el.style.display = 'flex';
+        this.gameState = 'PAUSED'; // Pause game logic effectively
+        this.events.emit('play_sound', 'error');
+    }
+
+    handleBrowserWait() {
+        const el = document.getElementById('browser-error-overlay');
+        if (el) el.style.display = 'none';
+        this.gameState = 'PLAYING';
+
+        // Reward
+        const reward = this.state.autoRate * 60; // 1 min of production
+        this.addScore(reward);
+        this.chat.addMessage('SYSTEM', `Recalibrating... compensation awarded: ${UTILS.fmt(reward)}`);
+        this.events.emit('play_sound', 'startup');
+    }
+
+    handleBrowserKill() {
+        // Fake reload/crash
+        location.reload();
+    }
+
     draw() {
         this.renderer.draw(this.state, this, {
             fakeUI: this.fakeUI,
@@ -1095,7 +1146,8 @@ export class Game {
             activeNotepad: this.activeNotepad,
             reviewsTab: this.reviewsTab,
             mailWindow: this.mailWindow,
-            mail: this.mail
+            mail: this.mail,
+            fakeCursor: this.fakeCursor
         });
     }
 

@@ -275,6 +275,11 @@ export class MailWindow {
         this.scroll = 0;
     }
 
+    resize(w, h) {
+        this.x = (w - this.w) / 2;
+        this.y = (h - this.h) / 2;
+    }
+
     draw(ctx) {
         if (!this.active) return;
 

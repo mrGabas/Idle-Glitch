@@ -45,6 +45,25 @@
             </div>
             <button id="btn-back" class="menu-btn">BACK</button>
         </div>
+
+        <!-- Fake Browser Error -->
+        <div id="browser-error-overlay" class="menu-screen"
+            style="display: none; background: #fff; color: #333; font-family: 'Arial', sans-serif; align-items: flex-start; padding-left: 10%; box-sizing: border-box;">
+            <div style="max-width: 600px;">
+                <h1 style="color: #555; font-size: 24px; text-shadow: none; margin-bottom: 20px;">Page Unresponsive</h1>
+                <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                    The page "Idle Glitch" is not responding.<br>
+                    You can wait for it to become responsive or exit the page.
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-error-wait"
+                        style="padding: 8px 16px; background: #1a73e8; color: #fff; border: 1px solid #1a73e8; border-radius: 4px; cursor: pointer; font-size: 13px;">Wait</button>
+                    <button id="btn-error-kill"
+                        style="padding: 8px 16px; background: #fff; color: #1a73e8; border: 1px solid #dadce0; border-radius: 4px; cursor: pointer; font-size: 13px;">Exit
+                        Page</button>
+                </div>
+            </div>
+        </div>
     </div>
     <canvas id="gameCanvas"></canvas>
 

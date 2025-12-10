@@ -179,6 +179,8 @@ export class Renderer {
         // Feedback / Reviews Button (Top Right, Below Mail)
         this.drawFeedbackIcon(this.w - 50, 110);
 
+        if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
+
         this.drawCursor(state, currentTheme, mouse);
         this.ctx.restore();
     }
