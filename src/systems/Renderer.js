@@ -4,6 +4,7 @@
  * @module systems/Renderer
  */
 import { CFG, UTILS } from '../core/config.js';
+import { META_UPGRADES } from '../data/metaUpgrades.js';
 
 export class Renderer {
     constructor(canvasId) {
@@ -39,7 +40,18 @@ export class Renderer {
             return;
         }
         if (state.rebooting) {
-            this.drawBIOS(world.rebootTimer);
+            // "rebooting" state is now the "Reboot sequence" or BIOS? 
+            // We changed logic: hardReset -> state.gameState = 'BIOS'. 
+            // State.rebooting was the timed sequence.
+            // Let's support both.
+            // If gameState is BIOS, we draw interactive.
+            // If state.rebooting is true, we draw the old text sequence.
+            this.drawOldBIOS(world.rebootTimer);
+            return;
+        }
+
+        if (world.gameState === 'BIOS') {
+            this.drawBIOS(state, world, world.metaUpgrades, META_UPGRADES);
             return;
         }
 
@@ -435,7 +447,102 @@ export class Renderer {
         lines.forEach(l => { this.ctx.fillText(l, 50, y); y += 28; });
     }
 
-    drawBIOS(rebootTimer) {
+    drawBIOS(state, world, metaUpgrades, metaList) {
+        this.ctx.fillStyle = '#0000aa'; // Blue BIOS bg
+        this.ctx.fillRect(0, 0, this.w, this.h);
+
+        // Header
+        this.ctx.fillStyle = '#c0c0c0';
+        this.ctx.fillRect(0, 0, this.w, 30);
+        this.ctx.fillStyle = '#000';
+        this.ctx.textAlign = 'center';
+        this.ctx.font = "bold 16px 'Courier New', monospace";
+        this.ctx.fillText("PHOENIX BIOS SETUP UTILITY", this.w / 2, 20);
+
+        // Footer
+        this.ctx.fillStyle = '#c0c0c0';
+        this.ctx.fillRect(0, this.h - 30, this.w, 30);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillText("CLICK: Select Item   ENTER: Buy/Toggle   F10: Save & Exit", this.w / 2, this.h - 10);
+
+        // Content Box (Double Border)
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(20, 50, this.w - 40, this.h - 100);
+        this.ctx.strokeRect(22, 52, this.w - 44, this.h - 104);
+
+        // Left Column (Menu)
+        this.ctx.fillStyle = '#fff';
+        this.ctx.textAlign = 'left';
+        this.ctx.font = "16px 'Courier New', monospace";
+
+        // GLITCH DATA DISPLAY
+        this.ctx.fillStyle = '#ffff55';
+        this.ctx.fillText(`GLITCH DATA: ${world.glitchData || 0} MB`, 40, 80);
+        this.ctx.fillStyle = '#fff';
+
+        // Upgrades List
+        const startY = 120;
+        metaList.forEach((u, i) => {
+            const y = startY + i * 30;
+            const owned = metaUpgrades[u.id] || 0;
+            let label = u.name;
+
+            // Handle max level display
+            // Handle max level display
+            if (u.type === 'feature') {
+                label += owned ? " [ENABLED]" : " [DISABLED]";
+            } else {
+                label += ` [Lv.${owned}]`;
+            }
+
+            // Selection highlight
+            if (world.mouse.y >= y - 20 && world.mouse.y < y + 10) {
+                this.ctx.fillStyle = '#0000aa';
+                this.ctx.fillRect(38, y - 20, this.w - 78, 30);
+                this.ctx.fillStyle = '#fff';
+            } else {
+                this.ctx.fillStyle = '#fff';
+            }
+
+            this.ctx.fillText(label, 40, y);
+            this.ctx.fillText(u.baseCost + " MB", 400, y);
+        });
+
+        // "BOOT SYSTEM" Option
+        const bootY = startY + metaList.length * 30 + 30;
+        const bootIndex = metaList.length;
+
+        if (world.selectedBIOSIndex === bootIndex || (world.mouse.y >= bootY - 20 && world.mouse.y < bootY + 10)) {
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(38, bootY - 20, this.w - 78, 30);
+            this.ctx.fillStyle = '#0000aa';
+        } else {
+            this.ctx.fillStyle = '#0f0';
+        }
+        this.ctx.fillText("> BOOT SYSTEM (START NEW RUN)", 40, bootY);
+
+        // Theme Selector (if unlocked)
+        // Theme Selector (if unlocked)
+        if (metaUpgrades['start_theme']) {
+            const themeY = bootY + 30;
+            const themeIndex = metaList.length + 1;
+
+            if (world.selectedBIOSIndex === themeIndex || (world.mouse.y >= themeY - 20 && world.mouse.y < themeY + 10)) {
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(38, themeY - 20, this.w - 78, 30);
+                this.ctx.fillStyle = '#0000aa';
+            } else {
+                this.ctx.fillStyle = '#0ff';
+            }
+            this.ctx.fillText(`STARTING THEME: [${world.currentTheme.id.toUpperCase()}]`, 40, themeY);
+        }
+
+        // Explicitly draw cursor on top for BIOS
+        this.drawCursor(state, world.currentTheme, world.mouse);
+    }
+
+    drawOldBIOS(rebootTimer) {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.w, this.h);
         this.ctx.fillStyle = '#ccc';

@@ -19,6 +19,7 @@ import { MailWindow } from '../ui/windows.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
 import { LoreFile } from '../entities/items.js';
+import { META_UPGRADES } from '../data/metaUpgrades.js';
 
 /**
  * @typedef {Object} GameState
@@ -49,13 +50,21 @@ export class Game {
         this.prestigeMult = this.saveSystem.loadNumber('prestige_mult', 1.0);
         this.rebootCount = this.saveSystem.loadNumber('reboot_count', 0);
 
+        // META DATA
+        this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
+        this.lifetimeGlitchData = this.saveSystem.loadNumber('lifetime_glitch_data', 0);
+        this.metaUpgrades = this.saveSystem.load('meta_upgrades', {});
+
+        // Recalculate multiplier based on generic prestige + meta upgrades (if we implement that)
+        // For now, prestigeMult is legacy. Let's keep it but maybe add to it.
+
         /** @type {GameState} */
         this.state = {
             score: 0,
             clickPower: 1,
             autoRate: 0,
             corruption: 0,
-            multiplier: 1 * this.prestigeMult,
+            multiplier: 1 * this.prestigeMult, // Base mult
             startTime: Date.now(),
             glitchIntensity: 0,
             crashed: false,
@@ -64,6 +73,7 @@ export class Game {
             crashTimer: 0
         };
 
+        this.applyMetaUpgrades();
         this.loadThemeUpgrades();
 
         /** @type {Particle[]} */
@@ -76,7 +86,8 @@ export class Game {
         this.mailWindow = new MailWindow(this.w, this.h, this.mail);
 
         // Load Theme
-        this.setTheme('rainbow_paradise');
+        const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
+        this.setTheme(savedTheme);
         /** @type {Debris[]} */
         this.debris = [];
         /** @type {Popup[]} */
@@ -97,13 +108,20 @@ export class Game {
         this.rebootTimer = 0;
         this.scareTimer = 0;
         this.scareText = "";
+        this.selectedBIOSIndex = 0;
 
         this.scareText = "";
 
         this.lastTime = 0;
+        // Last Save Time for Offline Progress
+        this.lastSaveTime = this.saveSystem.loadNumber('last_save', Date.now());
+        this.checkOfflineProgress();
+
+        // Auto-save loop
+        setInterval(() => this.saveGame(), 30000);
 
         // UI State
-        this.gameState = 'MENU'; // MENU, PLAYING, PAUSED, SETTINGS
+        this.gameState = 'MENU'; // MENU, PLAYING, PAUSED, SETTINGS, BIOS
         this.previousState = 'MENU';
         this.returnScreenId = null;
 
@@ -112,6 +130,46 @@ export class Game {
 
         // Start Loop
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+    saveGame() {
+        this.saveSystem.saveNumber('prestige_mult', this.prestigeMult);
+        this.saveSystem.saveNumber('reboot_count', this.rebootCount);
+        this.saveSystem.saveNumber('glitch_data', this.glitchData);
+        this.saveSystem.saveNumber('lifetime_glitch_data', this.lifetimeGlitchData);
+        this.saveSystem.save('meta_upgrades', this.metaUpgrades);
+        this.saveSystem.saveNumber('last_save', Date.now());
+        // Save rate for offline calc
+        this.saveSystem.saveNumber('last_auto_rate', this.state.autoRate);
+        this.saveSystem.save('selected_theme', this.currentTheme.id);
+    }
+
+    applyMetaUpgrades() {
+        // ... (lines 142-152)
+        // 4. Passive Multiplier Boost
+        const boostLevel = this.metaUpgrades['prestige_boost'] || 0;
+        if (boostLevel > 0) {
+            this.state.multiplier += (boostLevel * 0.5);
+        }
+    }
+
+    checkOfflineProgress() {
+        if (this.metaUpgrades['offline_progress']) {
+            const now = Date.now();
+            const diff = (now - this.lastSaveTime) / 1000; // seconds
+
+            if (diff > 60) {
+                const lastRate = this.saveSystem.loadNumber('last_auto_rate', 0);
+                if (lastRate > 0) {
+                    // 25% efficiency
+                    const gained = lastRate * diff * 0.25;
+                    if (gained > 0) {
+                        this.state.score += gained;
+                        this.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
+                    }
+                }
+            }
+        }
     }
 
     loadThemeUpgrades() {
@@ -154,6 +212,29 @@ export class Game {
         // Input Listeners
         window.addEventListener('resize', () => this.resize());
         window.addEventListener('keydown', (e) => {
+            // Priority 0: BIOS Navigation
+            if (this.gameState === 'BIOS') {
+                if (e.key === 'ArrowUp') {
+                    this.selectedBIOSIndex = Math.max(0, this.selectedBIOSIndex - 1);
+                    this.events.emit('play_sound', 'click');
+                }
+                if (e.key === 'ArrowDown') {
+                    // Calculate max index based on upgrades + Boot + Theme (if unlocked)
+                    let max = META_UPGRADES.length; // 0 to length-1 are upgrades. length is Boot. length+1 is Theme
+                    if (this.metaUpgrades['start_theme']) max++;
+
+                    this.selectedBIOSIndex = Math.min(max, this.selectedBIOSIndex + 1);
+                    this.events.emit('play_sound', 'click');
+                }
+                if (e.key === 'Enter') {
+                    this.handleBIOSAction(this.selectedBIOSIndex);
+                }
+                if (e.key === 'F10') {
+                    this.bootSystem();
+                }
+                return;
+            }
+
             // Priority 1: Password/Notepad Input
             if (this.activeNotepad && this.activeNotepad.locked) {
                 this.activeNotepad.handleKeyDown(e);
@@ -185,10 +266,18 @@ export class Game {
 
         this.renderer.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
         window.addEventListener('mousemove', (e) => {
-            if (this.gameState === 'PLAYING') {
+            if (this.gameState === 'PLAYING' || this.gameState === 'BIOS') { // Allow mouse in BIOS
                 // Track REAL mouse position separately
                 this.realMouse.x = e.clientX;
                 this.realMouse.y = e.clientY;
+
+                // Update game mouse for BIOS or if no lag
+                if (this.gameState === 'BIOS' || this.state.corruption <= 60) {
+                    const rect = this.renderer.canvas.getBoundingClientRect();
+                    this.mouse.x = e.clientX - rect.left;
+                    this.mouse.y = e.clientY - rect.top;
+                    this.mouse.down = false; // Hovering
+                }
 
                 // Add to history for lag effect
                 this.mouseHistory.push({
@@ -340,6 +429,7 @@ export class Game {
 
     triggerCrash() {
         this.state.crashed = true;
+        this.gameState = 'CRASH'; // Change state to distinguish from PLAYING
         this.events.emit('play_sound', 'error');
         // Reset save? Or just reboot sequence.
     }
@@ -347,23 +437,158 @@ export class Game {
     hardReset() {
         // Prestige Reset logic
         this.rebootCount++;
-        this.prestigeMult += 0.5; // +50% bonus per run
 
-        this.saveSystem.saveNumber('prestige_mult', this.prestigeMult);
-        this.saveSystem.saveNumber('reboot_count', this.rebootCount);
+        // Calculate Glitch Data Award
+        // Base 10 + 1 per 1000 score + 1 per 5 corruption (if > 50)
+        let earned = 10;
+        earned += Math.floor(this.state.score / 1000);
+        if (this.state.corruption > 50) {
+            earned += Math.floor((this.state.corruption - 50) / 5);
+        }
 
-        // Reload page to clear everything dirty
-        location.reload();
+        this.glitchData += earned;
+        this.lifetimeGlitchData += earned;
+
+        // Save persistent part
+        this.saveGame();
+
+        // Don't reload. Go to BIOS.
+        this.state.crashed = false;
+        this.state.rebooting = false;
+        this.gameState = 'BIOS';
+
+        // We need to RESET game state but KEEP meta data
+        // Ideally we re-instantiate Game but that's messy.
+        // Let's soft-reset state.
+        this.state.score = 0;
+        this.state.clickPower = 1;
+        this.state.autoRate = 0;
+        this.state.corruption = 0;
+        this.state.multiplier = 1 * this.prestigeMult; // Base
+        this.state.startTime = Date.now();
+        this.state.glitchIntensity = 0;
+
+        // Reset to default theme for new run
+        this.setTheme('rainbow_paradise');
+
+        // Clear entities
+        this.particles = [];
+        this.activeNotepad = null;
+        this.hunter = null;
+        this.debris = [];
+        this.popups = [];
+        this.captchas = [];
+        this.loreFiles = [];
+        this.chat.messages = [];
+        this.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
+
+        // Apply passive metas
+        this.applyMetaUpgrades();
     }
 
     // --- LOGIC ---
 
-    handleInput(e) {
-        if (this.gameState !== 'PLAYING') return;
+    handleBIOSAction(index) {
+        // Upgrades
+        if (index < META_UPGRADES.length) {
+            this.buyMetaUpgrade(META_UPGRADES[index]);
+            return;
+        }
 
+        // Boot System
+        if (index === META_UPGRADES.length) {
+            this.bootSystem();
+            return;
+        }
+
+        // Theme Selector
+        if (index === META_UPGRADES.length + 1 && this.metaUpgrades['start_theme']) {
+            const themeIds = Object.keys(THEMES);
+            let idx = themeIds.indexOf(this.currentTheme.id);
+            idx = (idx + 1) % themeIds.length;
+            this.setTheme(themeIds[idx]);
+            this.events.emit('play_sound', 'click');
+        }
+    }
+
+    handleBIOSClick(mx, my) {
+        const startY = 120;
+
+        // Check Upgrades
+        META_UPGRADES.forEach((u, i) => {
+            const y = startY + i * 30;
+            // Hitbox approximation
+            if (my >= y - 20 && my < y + 10) {
+                // Clicked Item
+                this.buyMetaUpgrade(u);
+            }
+        });
+
+        // Check Boot
+        const bootY = startY + META_UPGRADES.length * 30 + 30;
+        if (my >= bootY - 20 && my < bootY + 10) {
+            this.bootSystem();
+        }
+
+        // Check Theme Select (if unlocked)
+        if (this.metaUpgrades['start_theme']) {
+            const themeY = bootY + 30;
+            if (my >= themeY - 20 && my < themeY + 10) {
+                // Cycle Theme
+                const themeIds = Object.keys(THEMES);
+                let idx = themeIds.indexOf(this.currentTheme.id);
+                idx = (idx + 1) % themeIds.length;
+                this.setTheme(themeIds[idx]);
+                this.events.emit('play_sound', 'click');
+            }
+        }
+    }
+
+    buyMetaUpgrade(u) {
+        const currentLevel = this.metaUpgrades[u.id] || 0;
+        if (u.maxLevel && currentLevel >= u.maxLevel) return;
+
+        if (this.glitchData >= u.baseCost) {
+            this.glitchData -= u.baseCost;
+            this.metaUpgrades[u.id] = currentLevel + 1;
+            this.events.emit('play_sound', 'buy');
+            this.saveGame();
+            this.applyMetaUpgrades();
+        } else {
+            this.events.emit('play_sound', 'error');
+        }
+    }
+
+    bootSystem() {
+        this.gameState = 'PLAYING';
+        this.state.rebooting = true;
+        this.state.rebootTimer = 0;
+        // Reset dynamic values for new run
+        this.state.startTime = Date.now();
+    }
+
+    handleInput(e) {
+        const rect = this.renderer.canvas.getBoundingClientRect();
+        this.mouse.x = e.clientX - rect.left;
+        this.mouse.y = e.clientY - rect.top;
         this.mouse.down = true;
+
         const mx = this.mouse.x;
         const my = this.mouse.y;
+
+        // Add chat console focus check (Only if not in BIOS)
+        if (this.gameState !== 'BIOS' && this.chat.checkClick(mx, my, this.h)) {
+            return;
+        }
+
+        if (this.gameState === 'BIOS') {
+            this.handleBIOSClick(mx, my);
+            return;
+        }
+
+        if (this.gameState !== 'PLAYING') return;
+
+        // Mouse updated above
 
         // 0. Notepad (Top Priority)
         if (this.activeNotepad) {
@@ -553,10 +778,28 @@ export class Game {
     }
 
     clickMain() {
-        this.addScore(this.state.clickPower);
-        this.events.emit('play_sound', 'click');
+        let gain = this.state.clickPower;
+        let isCrit = false;
+
+        // Critical Click Check
+        const critLevel = this.metaUpgrades['critical_click'] || 0;
+        if (critLevel > 0 && Math.random() < critLevel * 0.1) {
+            gain *= 5;
+            isCrit = true;
+        }
+
+        this.addScore(gain);
+
+        if (isCrit) {
+            this.events.emit('play_sound', 'buy'); // Better sound needed?
+            this.createFloatingText(this.w / 2, this.h / 2 - 150, "CRITICAL!", "#ff0");
+            this.shake = 5;
+        } else {
+            this.events.emit('play_sound', 'click');
+            this.shake = 2;
+        }
+
         this.createParticles(this.w / 2, this.h / 2 - 100, this.currentTheme.colors.accent);
-        this.shake = 2;
         if (this.currentTheme.id === 'rainbow_paradise') this.state.corruption += 0.05;
     }
 
@@ -676,7 +919,28 @@ export class Game {
         if (this.state.rebooting) {
             this.rebootTimer -= dt;
             if (this.rebootTimer <= 0) {
-                this.hardReset();
+                // Was calling hardReset(), creating a loop if coming from BIOS start.
+                // Reset logic is:
+                // 1. Crash -> Wait -> crashed=false, rebooting=true.
+                // 2. Rebooting -> Wait -> rebooting=false, hardReset() -> BIOS.
+                // But now we have BIOS -> rebooting=true -> Game. 
+                // So we need to know WHERE we are rebooting to.
+
+                // If we are coming from BIOS (bootSystem), we want to PLAY.
+                // If we are coming from Crash, we simply go to BIOS (via hardReset).
+
+                // Current hardReset sets gameState='BIOS'.
+                // bootSystem sets gameState='PLAYING'.
+
+                // If gameState is PLAYING, we just end the reboot sequence.
+                if (this.gameState === 'PLAYING') {
+                    this.state.rebooting = false;
+                    this.chat.addMessage('SYSTEM', 'SYSTEM REBOOT SUCCESSFUL.');
+                    this.events.emit('play_sound', 'startup');
+                } else {
+                    // If we were crashing/rebooting into BIOS
+                    this.hardReset();
+                }
             }
             return;
         }
