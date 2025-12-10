@@ -2,7 +2,7 @@
  * AUDIO ENGINE
  * @module core/audio
  */
-import { UTILS } from './config.js';
+import { UTILS } from '../data/config.js';
 import { events } from './events.js';
 
 export class SoundEngine {

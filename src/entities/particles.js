@@ -2,7 +2,7 @@
  * PARTICLE SYSTEMS
  * @module entities/particles
  */
-import { UTILS } from '../core/config.js';
+import { UTILS } from '../data/config.js';
 
 export class Particle {
     constructor(x, y, color, size = 2) {

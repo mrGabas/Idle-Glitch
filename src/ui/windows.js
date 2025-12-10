@@ -2,7 +2,7 @@
  * UI WINDOWS
  * @module ui/windows
  */
-import { UTILS } from '../core/config.js';
+import { UTILS } from '../data/config.js';
 
 export class Popup {
     constructor(w, h, theme) {

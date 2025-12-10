@@ -35,11 +35,13 @@ export class DebugTools {
         btn.addEventListener('click', () => {
             if (this.game) {
                 // Add 10%
-                this.game.state.corruption += 10;
+                this.game.state.addCorruption(10);
 
                 // Feedback
                 btn.style.background = '#0f0';
-                btn.innerText = `CORRUPTION: ${this.game.state.corruption.toFixed(1)}%`;
+                // Access data directly for read or use getter if available. Data is in state.data
+                const val = this.game.state.data.corruption;
+                btn.innerText = `CORRUPTION: ${val.toFixed(1)}%`;
                 setTimeout(() => {
                     btn.style.background = 'red';
                     btn.innerText = "DEV: +10% CORRUPTION";
@@ -53,7 +55,7 @@ export class DebugTools {
         btn.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             if (this.game) {
-                this.game.addScore(1000000);
+                this.game.state.addScore(1000000);
                 btn.innerText = "+1M CASH!";
                 setTimeout(() => btn.innerText = "DEV: +10% CORRUPTION", 500);
             }

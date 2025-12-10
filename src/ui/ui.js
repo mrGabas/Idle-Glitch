@@ -2,7 +2,7 @@
  * FAKE SITE UI (CRAZYFACES)
  * @module ui/ui
  */
-import { UTILS } from '../core/config.js';
+import { UTILS } from '../data/config.js';
 
 export class CrazyFaces {
     constructor(game) {

@@ -3,7 +3,7 @@
  * Handles all canvas 2D drawing operations
  * @module systems/Renderer
  */
-import { CFG, UTILS } from '../core/config.js';
+import { CFG, UTILS } from '../data/config.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 
 export class Renderer {
