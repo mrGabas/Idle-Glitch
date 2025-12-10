@@ -658,22 +658,27 @@ export class Game {
             this.state.glitchIntensity = Math.max(0, (this.state.corruption - 30) / 70);
             if (this.state.corruption >= 100) this.switchTheme('ad_purgatory');
         }
-        // 2. Ad Purgatory -> Digital Decay
+        // 2. Ad Purgatory -> Dev Desktop
         else if (tId === 'ad_purgatory') {
-            this.state.glitchIntensity = 0.2 + (this.state.corruption / 100) * 0.3;
-            if (this.state.corruption >= 100) this.switchTheme('digital_decay');
+            this.state.glitchIntensity = 0.2 + (this.state.corruption / 100) * 0.2;
+            if (this.state.corruption >= 100) this.switchTheme('dev_desktop');
 
             // AD MECHANIC: Aggressive Popups
             if (Math.random() < 0.02 + (this.state.corruption * 0.001)) {
-                if (this.popups.length < 15) this.popups.push(new Popup(this.w, this.h));
+                if (this.popups.length < 15) this.popups.push(new Popup(this.w, this.h, this.currentTheme));
             }
         }
-        // 3. Digital Decay -> Legacy System
+        // 3. Dev Desktop -> Digital Decay
+        else if (tId === 'dev_desktop') {
+            this.state.glitchIntensity = 0.3 + (this.state.corruption / 100) * 0.2;
+            if (this.state.corruption >= 100) this.switchTheme('digital_decay');
+        }
+        // 4. Digital Decay -> Legacy System
         else if (tId === 'digital_decay') {
             this.state.glitchIntensity = 0.4 + (this.state.corruption / 100) * 0.4;
             if (this.state.corruption >= 100) this.switchTheme('legacy_system');
         }
-        // 4. Legacy System -> Null Void
+        // 5. Legacy System -> Null Void
         else if (tId === 'legacy_system') {
             this.state.glitchIntensity = 0.6 + (this.state.corruption / 100) * 0.4;
             // Scanline effect is visual content
@@ -706,7 +711,7 @@ export class Game {
         });
 
         if (Math.random() < 0.001 + (this.state.glitchIntensity * 0.02)) {
-            if (this.popups.length < 5) this.popups.push(new Popup(this.w, this.h));
+            if (this.popups.length < 5) this.popups.push(new Popup(this.w, this.h, this.currentTheme));
         }
 
         if (this.shake > 0) this.shake *= 0.9;

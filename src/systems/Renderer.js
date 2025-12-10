@@ -106,6 +106,37 @@ export class Renderer {
             }
         }
 
+        // DEV DESKTOP: Taskbar & Clippy
+        if (currentTheme.id === 'dev_desktop') {
+            // Taskbar
+            this.ctx.fillStyle = '#245edb';
+            this.ctx.fillRect(0, this.h - 40, this.w, 40);
+
+            // Start Button
+            this.ctx.fillStyle = '#31ab1f';
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, this.h - 40);
+            this.ctx.lineTo(100, this.h - 40);
+            this.ctx.quadraticCurveTo(110, this.h - 20, 100, this.h);
+            this.ctx.lineTo(0, this.h);
+            this.ctx.fill();
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 16px sans-serif';
+            this.ctx.fillText("Start", 30, this.h - 15);
+
+            // Clock/Tray
+            this.ctx.fillStyle = '#0b288b';
+            this.ctx.fillRect(this.w - 100, this.h - 40, 100, 40);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '14px sans-serif';
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            this.ctx.fillText(time, this.w - 80, this.h - 15);
+
+            // Clippy Logic (Visual only)
+            if (entities.clippy) entities.clippy.draw(this.ctx);
+            else if (Math.random() < 0.05) this.drawClippy(this.w - 80, this.h - 100);
+        }
+
         if (entities.hunter) entities.hunter.draw(this.ctx);
 
         if (entities.chat) entities.chat.draw(this.ctx, this.h);
@@ -228,6 +259,15 @@ export class Renderer {
         const cy = this.h / 2;
         const colors = theme.colors;
 
+        // NULL VOID MECHANIC: Main Button Invisibility
+        let btnAlpha = 1;
+        if (theme.id === 'null_void') {
+            const dist = Math.hypot(mouse.x - cx, mouse.y - (cy - 100));
+            if (dist < 80) btnAlpha = 1; else btnAlpha = 0;
+        }
+
+        this.ctx.globalAlpha = btnAlpha;
+
         // Main Button circle
         this.ctx.beginPath();
         this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
@@ -239,16 +279,18 @@ export class Renderer {
         this.ctx.fillStyle = grad;
         this.ctx.fill();
         this.ctx.lineWidth = 5;
-        this.ctx.strokeStyle = '#fff';
+        this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
         this.ctx.stroke();
 
         // Button text
-        this.ctx.fillStyle = '#fff';
+        this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
         this.ctx.font = "bold 24px Arial";
         this.ctx.textAlign = 'center';
         this.ctx.fillText(theme.button.text, cx, cy - 110);
         this.ctx.font = "40px Arial";
         this.ctx.fillText(theme.button.emoji, cx, cy - 70);
+
+        this.ctx.globalAlpha = 1; // Reset
 
         // Score
         this.ctx.fillStyle = colors.text;
@@ -263,6 +305,14 @@ export class Renderer {
         const barH = 20;
         const bx = cx - barW / 2;
         const by = this.h - 50;
+
+        // Null Void: Invisible Progress Bar too
+        let barAlpha = 1;
+        if (theme.id === 'null_void') {
+            const mx = mouse.x; const my = mouse.y;
+            if (mx >= bx && mx <= bx + barW && my >= by && my <= by + barH) barAlpha = 1; else barAlpha = 0;
+        }
+        this.ctx.globalAlpha = barAlpha;
 
         this.ctx.fillStyle = theme.progressBar.bgColor;
         this.ctx.fillRect(bx, by, barW, barH);
@@ -279,6 +329,8 @@ export class Renderer {
         this.ctx.fillStyle = colors.text;
         this.ctx.font = "bold 14px Arial";
         this.ctx.fillText(theme.progressBar.label, cx, by - 10);
+
+        this.ctx.globalAlpha = 1;
 
         // Upgrades Shop
         // Grid 2x4
@@ -298,14 +350,14 @@ export class Renderer {
                     if (mx >= ux && mx <= ux + 220 && my >= uy && my <= uy + 70) {
                         alpha = 1;
                     } else {
-                        alpha = 0.05; // Almost invisible
+                        alpha = 0; // Completely invisible
                     }
                 }
 
                 this.ctx.globalAlpha = alpha;
 
                 // BG
-                this.ctx.fillStyle = state.score >= u.cost ? colors.ui : '#333';
+                this.ctx.fillStyle = state.score >= u.cost ? colors.ui : (theme.id === 'null_void' ? '#fff' : '#333');
                 this.ctx.fillRect(ux, uy, 220, 70);
 
                 // Border
@@ -319,6 +371,13 @@ export class Renderer {
                 this.ctx.font = "bold 16px Arial";
                 this.ctx.fillText(u.name, ux + 10, uy + 25);
 
+                // Digital Decay Redaction
+                if (theme.id === 'digital_decay' && (u.name.includes('[REDACTED]') || Math.random() < 0.01)) {
+                    const w = this.ctx.measureText(u.name).width;
+                    this.ctx.fillStyle = '#000';
+                    this.ctx.fillRect(ux + 10, uy + 10, w, 18);
+                }
+
                 // Cost
                 const canBuy = state.score >= u.cost;
                 this.ctx.fillStyle = canBuy ? colors.accent : '#888';
@@ -326,13 +385,13 @@ export class Renderer {
                 this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 45);
 
                 // Count
-                this.ctx.fillStyle = '#fff';
+                this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
                 this.ctx.textAlign = 'right';
                 this.ctx.font = "bold 20px Arial";
                 this.ctx.fillText(u.count, ux + 210, uy + 60);
 
                 // Desc
-                this.ctx.fillStyle = '#aaa';
+                this.ctx.fillStyle = theme.id === 'null_void' ? '#888' : '#aaa';
                 this.ctx.font = "12px Arial";
                 this.ctx.textAlign = 'right';
                 this.ctx.fillText(u.desc, ux + 210, uy + 25);
@@ -391,5 +450,49 @@ export class Renderer {
             this.ctx.fillRect(0, y, this.w, h);
             this.ctx.globalCompositeOperation = 'source-over';
         } catch (e) { }
+    }
+
+    drawClippy(x, y) {
+        // Simple shape drawing for Clippy
+        this.ctx.save();
+        this.ctx.translate(x, y);
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#c0c0c0';
+
+        // Body
+        this.ctx.beginPath();
+        this.ctx.moveTo(10, 40);
+        this.ctx.quadraticCurveTo(0, 40, 0, 30);
+        this.ctx.lineTo(0, 10);
+        this.ctx.quadraticCurveTo(0, 0, 10, 0);
+        this.ctx.lineTo(30, 0);
+        this.ctx.quadraticCurveTo(40, 0, 40, 10);
+        this.ctx.lineTo(40, 20); // Loop
+        this.ctx.stroke();
+
+        // Eyes (Red for evil)
+        this.ctx.fillStyle = '#f00';
+        this.ctx.beginPath(); this.ctx.arc(12, 12, 4, 0, Math.PI * 2); this.ctx.fill();
+        this.ctx.beginPath(); this.ctx.arc(28, 12, 4, 0, Math.PI * 2); this.ctx.fill();
+
+        // Eyebrows
+        this.ctx.strokeStyle = '#000';
+        this.ctx.beginPath(); this.ctx.moveTo(5, 5); this.ctx.lineTo(15, 10); this.ctx.stroke();
+        this.ctx.beginPath(); this.ctx.moveTo(35, 5); this.ctx.lineTo(25, 10); this.ctx.stroke();
+
+        // Text bubble
+        this.ctx.fillStyle = '#ffffe1';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 1;
+        this.ctx.fillRect(-120, -60, 110, 50);
+        this.ctx.strokeRect(-120, -60, 110, 50);
+
+        this.ctx.fillStyle = '#000';
+        this.ctx.font = '11px Tahoma';
+        this.ctx.fillText("It looks like you", -115, -45);
+        this.ctx.fillText("want to delete", -115, -30);
+        this.ctx.fillText("System32?", -115, -15);
+
+        this.ctx.restore();
     }
 }

@@ -5,14 +5,35 @@
 import { UTILS } from '../core/config.js';
 
 export class Popup {
-    constructor(w, h) {
+    constructor(w, h, theme) {
         this.w = 240; this.h = 140;
         this.x = UTILS.rand(50, w - 290);
         this.y = UTILS.rand(50, h - 190);
         this.type = Math.random() > 0.3 ? 'error' : 'bonus';
+
+        // Dynamic Text from Theme
         this.title = this.type === 'error' ? 'SYSTEM ALERT' : 'WINNER!';
         this.msg = this.type === 'error' ? 'Unauthorized access.' : 'Free BITCOIN found!';
         this.btnText = this.type === 'error' ? 'CLOSE' : 'GET';
+        this.isHorror = false;
+
+        if (theme && theme.fakeUI && theme.fakeUI.length > 0) {
+            // Pick random fakeUI element
+            const el = UTILS.randArr(theme.fakeUI);
+            this.msg = el.text;
+            if (el.horror) {
+                this.isHorror = true;
+                this.title = "WARNING";
+                this.btnText = "NO ESCAPE";
+                this.type = 'error'; // Horror is always bad
+            }
+            if (el.color) {
+                // We could use el.color, but Popup has specific styling. 
+                // Maybe used for header?
+                this.customColor = el.color;
+            }
+        }
+
         this.life = 5.0;
         this.active = true;
     }
@@ -36,10 +57,12 @@ export class Popup {
         ctx.fillRect(this.x, this.y + this.h - 2, this.w, 2);
 
         // Header
-        const headerColor = this.type === 'error' ? '#800000' : '#000080';
+        let headerColor = this.type === 'error' ? '#800000' : '#000080';
+        if (this.isHorror) headerColor = '#000'; // Black header for horror
+
         ctx.fillStyle = headerColor;
         ctx.fillRect(this.x + 4, this.y + 4, this.w - 8, 20);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = this.isHorror ? '#f00' : '#fff'; // Red text for horror
         ctx.font = 'bold 12px Arial';
         ctx.fillText(this.title, this.x + 8, this.y + 18);
 

@@ -89,7 +89,7 @@ export const THEMES = {
 
 
 
-    // Theme 1.5: Ad Purgatory - Annoying, flashy, spammy
+    // Theme 1.5: Ad Purgatory - Ad Purgatory / Acid / Horror
     ad_purgatory: {
         id: 'ad_purgatory',
         name: 'Ad Purgatory',
@@ -97,21 +97,21 @@ export const THEMES = {
         colors: {
             bg: '#ffff00',              // Painful yellow
             ui: '#00ff00',              // Acid green
-            uiBorder: '#ff0000',        // Red
-            text: '#0000ff',            // Blue
-            accent: '#ff00ff',          // Magenta
-            accent2: '#ffaa00',
-            accent3: '#00aaaa',
+            uiBorder: '#ff00ff',        // Magenta border
+            text: '#0000ff',            // Blue text
+            accent: '#ff0000',          // Red accent
+            accent2: '#00ffff',         // Cyan
+            accent3: '#ffaa00',
             warn: '#ff0000',
             err: '#000000',
             particle: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
         },
 
         fonts: {
-            s: "14px 'Arial Black', sans-serif",
-            m: "20px 'Arial Black', sans-serif",
-            l: "30px 'Arial Black', sans-serif",
-            xl: "40px 'Arial Black', sans-serif"
+            s: "14px 'Arial Black', 'Impact', sans-serif",
+            m: "20px 'Arial Black', 'Impact', sans-serif",
+            l: "30px 'Arial Black', 'Impact', sans-serif",
+            xl: "40px 'Arial Black', 'Impact', sans-serif"
         },
 
         currency: {
@@ -144,7 +144,11 @@ export const THEMES = {
             { text: 'YOU ARE THE 1000th VISITOR', color: '#0000ff' },
             { text: 'DOCTORS HATE HIM', color: '#ffff00' },
             { text: 'MAKE $$$ FAST', color: '#00ffff' },
-            { text: 'CLICK TO CLAIM', color: '#ffaa00' }
+            { text: 'CLICK TO CLAIM', color: '#ffaa00' },
+            { text: 'I SEE YOU', color: '#000', horror: true },
+            { text: 'DO NOT CLOSE ME', color: '#000', horror: true },
+            { text: 'WE KNOW WHERE YOU LIVE', color: '#000', horror: true },
+            { text: 'LOOK BEHIND YOU', color: '#000', horror: true }
         ],
 
         progressBar: {
@@ -161,22 +165,95 @@ export const THEMES = {
         }
     },
 
-    // Theme 2: Digital Decay (Existing - Keeping ID for compatibility but logic changes later)
-    digital_decay: {
-        id: 'digital_decay',
-        name: 'Digital Decay',
+    // Theme 1.8: Dev Desktop - Windows XP / Clippy / Nostalgia
+    dev_desktop: {
+        id: 'dev_desktop',
+        name: 'Dev Desktop',
 
         colors: {
-            bg: '#0a0a0a',
-            ui: '#1a1a1a',
-            uiBorder: '#333',
-            text: '#eee',
-            accent: '#0f0',
-            accent2: '#0ff',
-            accent3: '#f0f',
+            bg: '#0099cc',              // Bliss Blue
+            ui: '#ece9d8',              // WinXP Silver/Beige
+            uiBorder: '#0055ea',        // XP Blue Border
+            text: '#000000',            // Black text
+            accent: '#f26522',          // Orange indicator
+            accent2: '#0055ea',         // Header Blue
+            accent3: '#31ab1f',         // Start Green
+            warn: '#ff0000',
+            err: '#000000',
+            particle: ['#0055ea', '#ece9d8', '#31ab1f']
+        },
+
+        fonts: {
+            s: "14px 'Tahoma', sans-serif",
+            m: "18px 'Tahoma', sans-serif",
+            l: "24px 'Tahoma', sans-serif",
+            xl: "30px 'Tahoma', sans-serif"
+        },
+
+        currency: {
+            name: 'Files',
+            symbol: '📂',
+            clickName: 'Delete'
+        },
+
+        button: {
+            text: 'DELETE',
+            emoji: '🗑️',
+            gradient: ['#ece9d8', '#ffffff'] // Recycle bin white
+        },
+
+        upgrades: [
+            { id: 'd1', name: 'Recycle Bin', baseCost: 15, type: 'auto', val: 1, desc: '+1 📂/sec' },
+            { id: 'd2', name: 'My Computer', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
+            { id: 'd3', name: 'Task Manager', baseCost: 250, type: 'auto', val: 10, desc: '+10 📂/sec' },
+            { id: 'd4', name: 'Cmd.exe', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
+            { id: 'd5', name: 'System32', baseCost: 5000, type: 'auto', val: 80, desc: '+80 📂/sec' },
+            { id: 'd6', name: 'Registry', baseCost: 20000, type: 'auto', val: 300, desc: '+300 📂/sec' },
+            { id: 'd7', name: 'Group Policy', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5K 📂/sec' },
+            { id: 'd8', name: 'Blue Screen', baseCost: 1000000, type: 'auto', val: 10000, desc: 'CRASH IT' },
+        ],
+
+        fakeUI: [
+            { text: 'My Documents', color: '#0055ea' },
+            { text: 'Internet Explorer', color: '#0055ea' },
+            { text: 'Network', color: '#0055ea' },
+            { text: 'Paint', color: '#0055ea' },
+            { text: 'Solitaire', color: '#0055ea' },
+            { text: 'Minesweeper', color: '#0055ea' },
+            { text: 'Pinball', color: '#0055ea' },
+            { text: 'Error Report', color: '#ff0000' }
+        ],
+
+        progressBar: {
+            label: 'DISK FRAGMENTATION',
+            color: '#0055ea',
+            bgColor: '#ece9d8'
+        },
+
+        startText: 'LOGGING OFF...',
+
+        particles: {
+            emoji: ['📁', '💻', '🖱️', '💿'],
+            useEmoji: true
+        }
+    },
+
+    // Theme 2: Digital Decay - Darknet / Hacker / Glitch
+    digital_decay: {
+        id: 'digital_decay',
+        name: 'Darknet Layer',
+
+        colors: {
+            bg: '#050505',              // Almost Black
+            ui: '#111111',              // Dark Grey
+            uiBorder: '#333333',        // Grey border
+            text: '#cccccc',            // Light Grey
+            accent: '#00ff00',          // Hacker Green
+            accent2: '#ff0000',         // Error Red
+            accent3: '#0000ff',         // Deep Blue
             warn: '#ffaa00',
-            err: '#ff0033',
-            particle: ['#0f0', '#0ff', '#f0f', '#ff0', '#fff']
+            err: '#ff0000',
+            particle: ['#00ff00', '#000000', '#111111']
         },
 
         fonts: {
@@ -187,47 +264,44 @@ export const THEMES = {
         },
 
         currency: {
-            name: 'Bytes',
-            symbol: 'B',
-            clickName: 'Data'
+            name: 'Encrypted Data',
+            symbol: 'φ',
+            clickName: 'Hash'
         },
 
         button: {
-            text: 'HACK',
-            emoji: '💀',
-            gradient: ['#2f2', '#050']
+            text: 'DECRYPT',
+            emoji: '🗝️',
+            gradient: ['#003300', '#001100']
         },
 
         upgrades: [
-            { id: 'u1', name: 'Script_Kiddie.js', baseCost: 15, type: 'auto', val: 1, desc: '+1 B/sec' },
-            { id: 'u2', name: 'Keyboard_Macro', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
-            { id: 'u3', name: 'SQL_Injection', baseCost: 250, type: 'auto', val: 10, desc: '+10 B/sec' },
-            { id: 'u4', name: 'Trojan_Horse.rar', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
-            { id: 'u5', name: 'Botnet_Node', baseCost: 5000, type: 'auto', val: 80, desc: '+80 B/sec' },
-            { id: 'u6', name: 'Ransomware.exe', baseCost: 20000, type: 'auto', val: 300, desc: '+300 B/sec' },
-            { id: 'u7', name: 'AI_Core_Alpha', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5KB/sec' },
-            { id: 'u8', name: 'The_Deep_Web', baseCost: 1000000, type: 'auto', val: 10000, desc: 'UNLOCK DARK DATA' },
+            { id: 'u1', name: 'Tor_Node', baseCost: 15, type: 'auto', val: 1, desc: '+1 φ/sec' },
+            { id: 'u2', name: 'Keylogger', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
+            { id: 'u3', name: 'Botnet', baseCost: 250, type: 'auto', val: 10, desc: '+10 φ/sec' },
+            { id: 'u4', name: 'Zero_Day', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
+            { id: 'u5', name: 'Silk_Road', baseCost: 5000, type: 'auto', val: 80, desc: '+80 φ/sec' },
+            { id: 'u6', name: 'Identity_Theft', baseCost: 20000, type: 'auto', val: 300, desc: '+300 φ/sec' },
+            { id: 'u7', name: 'Red_Room', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5K φ/sec' },
+            { id: 'u8', name: '[REDACTED]', baseCost: 1000000, type: 'auto', val: 10000, desc: 'UNKNOWN' },
         ],
 
         fakeUI: [
-            { text: 'Minecraft 2', color: '#222' },
-            { text: 'Hot Dog.io', color: '#222' },
-            { text: 'Clicker Pro', color: '#222' },
-            { text: 'Zombie Def', color: '#222' },
-            { text: 'Car Sim 3D', color: '#222' },
-            { text: 'Battle Royale', color: '#222' },
-            { text: 'Idle Tycoon', color: '#222' },
-            { text: 'Puzzle Quest', color: '#222' }
+            { text: '0x4F2A...', color: '#222' },
+            { text: '[ENCRYPTED]', color: '#222' },
+            { text: 'Connection Secured', color: '#222' },
+            { text: 'Handshake...', color: '#222' },
+            { text: 'Uploading...', color: '#222' }
         ],
 
         progressBar: {
-            label: 'SYSTEM INTEGRITY',
-            color: '#f00',
-            bgColor: '#333',
+            label: 'ANONYMITY',
+            color: '#333',
+            bgColor: '#111',
             invert: true
         },
 
-        startText: 'CLICK TO INJECT VIRUS',
+        startText: 'INITIATE PROTOCOL',
 
         particles: {
             emoji: [],
@@ -235,22 +309,22 @@ export const THEMES = {
         }
     },
 
-    // Theme 3: Legacy System - Retro, DOS, BIOS
+    // Theme 3: Legacy System - Retro / BIOS / DOS
     legacy_system: {
         id: 'legacy_system',
         name: 'Legacy System',
 
         colors: {
             bg: '#000084',              // BIOS Blue
-            ui: '#aaaaaa',              // Win95 Grey
+            ui: '#0000aa',              // Lighter Blue
             uiBorder: '#ffffff',        // White
             text: '#ffffff',            // White
-            accent: '#00ff00',          // Terminal Green
-            accent2: '#ffff00',
+            accent: '#ffffff',          // White
+            accent2: '#aaaaaa',
             accent3: '#000000',
-            warn: '#ff0000',
-            err: '#000084',
-            particle: ['#ffffff', '#aaaaaa', '#000000', '#00ff00']
+            warn: '#ffff00',
+            err: '#ff0000',
+            particle: ['#ffffff', '#aaaaaa']
         },
 
         fonts: {
@@ -261,15 +335,15 @@ export const THEMES = {
         },
 
         currency: {
-            name: 'KB',
+            name: 'Kilobytes',
             symbol: 'KB',
-            clickName: 'Data'
+            clickName: 'Byte'
         },
 
         button: {
             text: 'EXECUTE',
             emoji: '💾',
-            gradient: ['#aaaaaa', '#555555'] // Grey button
+            gradient: ['#aaaaaa', '#777777']
         },
 
         upgrades: [
@@ -289,32 +363,33 @@ export const THEMES = {
             { text: 'AUTOEXEC.BAT', color: '#fff' },
             { text: 'CONFIG.SYS', color: '#fff' },
             { text: 'HIMEM.SYS', color: '#fff' },
-            { text: 'QBASIC.EXE', color: '#fff' }
+            { text: 'QBASIC.EXE', color: '#fff' },
+            { text: 'Bad Command', color: '#fff' }
         ],
 
         progressBar: {
             label: 'MEMORY CHECK',
             color: '#fff',
-            bgColor: '#000084'
+            bgColor: '#0000aa'
         },
 
         startText: 'PRESS ANY KEY',
 
         particles: {
-            emoji: ['█', '▓', '▒', '░'], // ASCII art
+            emoji: ['█', '▓', '▒', '░'],
             useEmoji: true
         }
     },
 
-    // Theme 4: The Null Void - White, Empty, Wireframe
+    // Theme 4: The Null Void - White, Empty, Invisible
     null_void: {
         id: 'null_void',
         name: 'The Null Void',
 
         colors: {
             bg: '#ffffff',
-            ui: '#ffffff',
-            uiBorder: '#000000',        // Black outlines
+            ui: '#ffffff',              // White UI (Invisible against BG)
+            uiBorder: '#000000',        // Black outlines (Wireframe)
             text: '#000000',
             accent: '#000000',
             accent2: '#cccccc',
@@ -332,7 +407,7 @@ export const THEMES = {
         },
 
         currency: {
-            name: 'Null',
+            name: 'Nothing',
             symbol: '∅',
             clickName: 'Void'
         },
@@ -340,21 +415,21 @@ export const THEMES = {
         button: {
             text: 'EXIST',
             emoji: '👁️',
-            gradient: ['#ffffff', '#dddddd'] // Subtle off-white
+            gradient: ['#ffffff', '#ffffff'] // Pure white
         },
 
         upgrades: [
-            { id: 'n1', name: '[REDACTED]', baseCost: 15, type: 'auto', val: 1, desc: '...' },
-            { id: 'n2', name: 'Null Pointer', baseCost: 50, type: 'click', val: 2, desc: 'Dereference' },
-            { id: 'n3', name: 'Void Stare', baseCost: 250, type: 'auto', val: 10, desc: 'It stares back' },
-            { id: 'n4', name: 'Undefined', baseCost: 1000, type: 'click', val: 15, desc: 'NaN' },
+            { id: 'n1', name: ' ', baseCost: 15, type: 'auto', val: 1, desc: '...' },
+            { id: 'n2', name: ' ', baseCost: 50, type: 'click', val: 2, desc: ' ' },
+            { id: 'n3', name: ' ', baseCost: 250, type: 'auto', val: 10, desc: ' ' },
+            { id: 'n4', name: ' ', baseCost: 1000, type: 'click', val: 15, desc: ' ' },
             { id: 'n5', name: 'Entropy', baseCost: 5000, type: 'auto', val: 80, desc: 'Chaos' },
             { id: 'n6', name: 'Event Horizon', baseCost: 20000, type: 'auto', val: 300, desc: 'No Return' },
             { id: 'n7', name: 'Singularity', baseCost: 100000, type: 'auto', val: 1500, desc: 'Infinite' },
             { id: 'n8', name: 'The End', baseCost: 1000000, type: 'auto', val: 10000, desc: 'Goodbye' },
         ],
 
-        fakeUI: [], // No fake UI in the void
+        fakeUI: [], // No fake UI
 
         progressBar: {
             label: 'REALITY FAILURE',
