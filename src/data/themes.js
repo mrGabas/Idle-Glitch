@@ -80,6 +80,15 @@ export const THEMES = {
         // Overlay text
         startText: 'CLICK TO START THE FUN! 🌈',
 
+        // Parallax Settings
+        parallax: {
+            layers: [
+                { src: 'assets/Rainbow Paradise/paralax/layer 1.png', speed: 0 },
+                { src: 'assets/Rainbow Paradise/paralax/layer 2.png', speed: 30 },
+                { src: 'assets/Rainbow Paradise/paralax/layer 3.png', speed: 60 }
+            ]
+        },
+
         // Particle settings
         particles: {
             emoji: ['✨', '⭐', '💫', '🌟', '💖', '🦄', '🌈'],
@@ -159,6 +168,14 @@ export const THEMES = {
 
         startText: 'WATCH AD TO START',
 
+        // Parallax Settings
+        parallax: {
+            layers: [
+                { src: 'assets/Ad Purgatory/paralax/layer 1.png', speed: 0 },
+                { src: 'assets/Ad Purgatory/paralax/layer 2.png', speed: 20 }
+            ]
+        },
+
         particles: {
             emoji: ['💲', '💸', '🤑', '💾', '💿'],
             useEmoji: true
@@ -232,6 +249,14 @@ export const THEMES = {
 
         startText: 'LOGGING OFF...',
 
+        // Parallax Settings
+        parallax: {
+            layers: [
+                { src: 'assets/Dev Desktop/paralax/layer 1.png', speed: 0 },
+                { src: 'assets/Dev Desktop/paralax/layer 2.png', speed: 20 }
+            ]
+        },
+
         particles: {
             emoji: ['📁', '💻', '🖱️', '💿'],
             useEmoji: true
@@ -302,6 +327,14 @@ export const THEMES = {
         },
 
         startText: 'INITIATE PROTOCOL',
+
+        // Parallax Settings
+        parallax: {
+            layers: [
+                { src: 'assets/Digital Decay/paralax/layer 1.png', speed: 0 },
+                { src: 'assets/Digital Decay/paralax/layer 2.png', speed: 20 }
+            ]
+        },
 
         particles: {
             emoji: [],

@@ -12,6 +12,7 @@ export class Renderer {
         this.ctx = this.canvas.getContext('2d');
         this.w = 0;
         this.h = 0;
+        this.imageCache = {};
     }
 
     setSize(w, h) {
@@ -71,6 +72,11 @@ export class Renderer {
         // BG
         this.ctx.fillStyle = currentTheme.colors.bg;
         this.ctx.fillRect(0, 0, this.w, this.h);
+
+        // PARALLAX
+        if (currentTheme.parallax) {
+            this.drawParallax(currentTheme);
+        }
 
         // CrazyFaces Layer
         if (entities.fakeUI) entities.fakeUI.draw(this.ctx);
@@ -494,5 +500,30 @@ export class Renderer {
         this.ctx.fillText("System32?", -115, -15);
 
         this.ctx.restore();
+    }
+
+    drawParallax(theme) {
+        if (!theme.parallax || !theme.parallax.layers) return;
+
+        const time = Date.now() / 1000;
+
+        theme.parallax.layers.forEach(layer => {
+            // Load if missing
+            if (!this.imageCache[layer.src]) {
+                const img = new Image();
+                img.src = layer.src;
+                this.imageCache[layer.src] = img;
+            }
+
+            const img = this.imageCache[layer.src];
+            if (img && img.complete) {
+                // Scroll logic
+                const x = -(time * layer.speed) % this.w;
+
+                // Draw twice for seamless loop
+                this.ctx.drawImage(img, x, 0, this.w, this.h);
+                this.ctx.drawImage(img, x + this.w, 0, this.w, this.h);
+            }
+        });
     }
 }
