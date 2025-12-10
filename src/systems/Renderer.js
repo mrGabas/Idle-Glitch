@@ -463,7 +463,7 @@ export class Renderer {
         this.ctx.fillStyle = '#c0c0c0';
         this.ctx.fillRect(0, this.h - 30, this.w, 30);
         this.ctx.fillStyle = '#000';
-        this.ctx.fillText("CLICK: Select Item   ENTER: Buy/Toggle   F10: Save & Exit", this.w / 2, this.h - 10);
+        this.ctx.fillText("ARROWS: Move   CLICK: Select   ENTER: Buy/Toggle   F10: Save & Exit", this.w / 2, this.h - 10);
 
         // Content Box (Double Border)
         this.ctx.strokeStyle = '#fff';
@@ -497,10 +497,10 @@ export class Renderer {
             }
 
             // Selection highlight
-            if (world.mouse.y >= y - 20 && world.mouse.y < y + 10) {
-                this.ctx.fillStyle = '#0000aa';
-                this.ctx.fillRect(38, y - 20, this.w - 78, 30);
+            if (i === world.selectedBIOSIndex || (world.mouse.y >= y - 20 && world.mouse.y < y + 10)) {
                 this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(38, y - 20, this.w - 78, 30);
+                this.ctx.fillStyle = '#0000aa';
             } else {
                 this.ctx.fillStyle = '#fff';
             }
