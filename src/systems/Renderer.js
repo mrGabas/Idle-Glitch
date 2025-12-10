@@ -13,6 +13,11 @@ export class Renderer {
         this.w = 0;
         this.h = 0;
         this.imageCache = {};
+
+        // Matrix Rain Settings
+        this.matrixFontSize = 16;
+        this.matrixColumns = 0;
+        this.matrixDrops = [];
     }
 
     setSize(w, h) {
@@ -70,8 +75,12 @@ export class Renderer {
         }
 
         // BG
-        this.ctx.fillStyle = currentTheme.colors.bg;
-        this.ctx.fillRect(0, 0, this.w, this.h);
+        if (currentTheme.id === 'digital_decay') {
+            this.drawMatrixRain();
+        } else {
+            this.ctx.fillStyle = currentTheme.colors.bg;
+            this.ctx.fillRect(0, 0, this.w, this.h);
+        }
 
         // PARALLAX
         if (currentTheme.parallax) {
@@ -525,5 +534,44 @@ export class Renderer {
                 this.ctx.drawImage(img, x + this.w, 0, this.w, this.h);
             }
         });
+    }
+
+    drawMatrixRain() {
+        // 1. Init
+        const cols = Math.floor(this.w / this.matrixFontSize);
+        if (this.matrixDrops.length !== cols) {
+            this.matrixDrops = Array(cols).fill(1).map(() => Math.random() * -100); // Randomize start
+        }
+
+        // 2. Fade effect (Trails)
+        this.ctx.fillStyle = 'rgba(0, 5, 0, 0.1)'; // Very dark green fade
+        this.ctx.fillRect(0, 0, this.w, this.h);
+
+        // 3. Text settings
+        this.ctx.fillStyle = '#0F0';
+        this.ctx.font = this.matrixFontSize + 'px monospace';
+
+        // 4. Draw drops
+        for (let i = 0; i < this.matrixDrops.length; i++) {
+            // Random Katakana / Matrix char
+            const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+
+            const x = i * this.matrixFontSize;
+            const y = this.matrixDrops[i] * this.matrixFontSize;
+
+            // Randomly brighter character
+            if (Math.random() > 0.95) this.ctx.fillStyle = '#CFFFCD';
+            else this.ctx.fillStyle = '#0F0';
+
+            this.ctx.fillText(text, x, y);
+
+            // 5. Reset drop
+            if (y > this.h && Math.random() > 0.975) {
+                this.matrixDrops[i] = 0;
+            }
+
+            // Move down
+            this.matrixDrops[i]++;
+        }
     }
 }

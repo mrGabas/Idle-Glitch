@@ -253,7 +253,8 @@ export const THEMES = {
         parallax: {
             layers: [
                 { src: 'assets/Dev Desktop/paralax/layer 1.png', speed: 0 },
-                { src: 'assets/Dev Desktop/paralax/layer 2.png', speed: 20 }
+                { src: 'assets/Dev Desktop/paralax/layer 2.png', speed: 20 },
+                { src: 'assets/Dev Desktop/paralax/layer 3.png', speed: 40 }
             ]
         },
 
@@ -328,14 +329,6 @@ export const THEMES = {
 
         startText: 'INITIATE PROTOCOL',
 
-        // Parallax Settings
-        parallax: {
-            layers: [
-                { src: 'assets/Digital Decay/paralax/layer 1.png', speed: 0 },
-                { src: 'assets/Digital Decay/paralax/layer 2.png', speed: 20 }
-            ]
-        },
-
         particles: {
             emoji: [],
             useEmoji: false
@@ -408,6 +401,14 @@ export const THEMES = {
 
         startText: 'PRESS ANY KEY',
 
+        // Parallax Settings
+        parallax: {
+            layers: [
+                { src: 'assets/Legacy System/paralax/layer 1.png', speed: 0 },
+                { src: 'assets/Legacy System/paralax/layer 2.png', speed: 20 }
+            ]
+        },
+
         particles: {
             emoji: ['█', '▓', '▒', '░'],
             useEmoji: true
@@ -472,6 +473,15 @@ export const THEMES = {
         },
 
         startText: '...',
+
+        // Parallax Settings
+        parallax: {
+            layers: [
+                { src: 'assets/Null Void/paralax/layer 1.png', speed: 0 },
+                { src: 'assets/Null Void/paralax/layer 2.png', speed: 20 },
+                { src: 'assets/Null Void/paralax/layer 3.png', speed: 40 }
+            ]
+        },
 
         particles: {
             emoji: [],
