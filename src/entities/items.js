@@ -18,7 +18,21 @@ export class LoreFile {
             if (Math.hypot(this.x - cx, this.y - cy) > 300) safe = true;
         }
 
-        this.label = UTILS.randArr(['PRIVATE', 'DONT_OPEN', 'secrets.txt', 'diary.log', 'passwords.txt']);
+        const type = Math.random();
+        if (type < 0.3) {
+            this.label = 'passwords.txt';
+            this.content = "SYSTEM PASSWORDS:\n\nUser: admin\nPass: *********\n\nUser: guest\nPass: guest123\n\nSECRET_ARCHIVE: 7719";
+            this.password = "guest123";
+        } else if (type < 0.6) {
+            this.label = 'diary.log';
+            this.content = "Day 45:\nThe glitches are getting worse. I saw a face in the monitor reflection today. It wasn't mine.";
+            this.password = null;
+        } else {
+            this.label = UTILS.randArr(['PRIVATE', 'secrets.txt', 'notes.txt']);
+            this.content = "REMINDER: Buy more RAM.\nREMINDER: Feed the cat.\nREMINDER: DON'T LOOK BEHIND YOU.";
+            this.password = null;
+        }
+
         this.active = true;
         this.life = 30.0; // Exist for 30 seconds
     }

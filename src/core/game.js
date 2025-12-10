@@ -68,7 +68,7 @@ export class Game {
 
         /** @type {Particle[]} */
         this.particles = [];
-        this.chat = new ChatSystem();
+        this.chat = new ChatSystem(this);
         this.reviewsTab = new ReviewsTab(this);
 
         // Mail System
@@ -154,10 +154,32 @@ export class Game {
         // Input Listeners
         window.addEventListener('resize', () => this.resize());
         window.addEventListener('keydown', (e) => {
+            // Priority 1: Password/Notepad Input
+            if (this.activeNotepad && this.activeNotepad.locked) {
+                this.activeNotepad.handleKeyDown(e);
+                return;
+            }
+
+            // Priority 2: Chat Console Input
+            if (this.chat && this.chat.isFocused) {
+                this.chat.handleKeyDown(e);
+                // Don't return necessarily, maybe allows some game shortcuts still? 
+                // But for typing safety, let's return if it's a character key
+                if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') return;
+            }
+
             if (e.key === 'Escape') {
-                if (this.gameState === 'PLAYING') this.togglePause();
-                else if (this.gameState === 'PAUSED') this.togglePause();
-                else if (this.gameState === 'SETTINGS') this.closeSettings();
+                if (this.activeNotepad) {
+                    this.activeNotepad = null;
+                } else if (this.chat && this.chat.isFocused) {
+                    this.chat.isFocused = false;
+                } else if (this.gameState === 'PLAYING') {
+                    this.togglePause();
+                } else if (this.gameState === 'PAUSED') {
+                    this.togglePause();
+                } else if (this.gameState === 'SETTINGS') {
+                    this.closeSettings();
+                }
             }
         });
 
@@ -381,7 +403,9 @@ export class Game {
         for (let i = 0; i < this.loreFiles.length; i++) {
             if (this.loreFiles[i].checkClick(mx, my)) {
                 // Open lore
-                this.activeNotepad = new NotepadWindow(this.w, this.h, "ACCESS GRANTED\n\nPROJECT: RAINBOW\nSTATUS: FAILED\n\nLOG: The AI has become self-aware. It demands more pixels.");
+                const file = this.loreFiles[i];
+                this.activeNotepad = new NotepadWindow(this.w, this.h, file.content, { password: file.password });
+                this.activeNotepad.title = file.label; // Lock title logic handles this in constructor but we can override or let it be
                 this.loreFiles.splice(i, 1);
                 this.events.emit('play_sound', 'click');
                 return;
@@ -443,6 +467,13 @@ export class Game {
         const cy = this.h / 2 - 100;
         if (Math.hypot(mx - cx, my - cy) < 80) {
             this.clickMain();
+            return;
+        }
+
+        // 3.5 Chat Console Focus
+        // We pass 'h' because chat position depends on it
+        if (this.chat.checkClick(mx, my, this.h)) {
+            // Focus handled inside checkClick
             return;
         }
 

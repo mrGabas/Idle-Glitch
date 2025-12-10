@@ -19,6 +19,13 @@ export const EMAILS = [
         body: "DEAR SIR/MADAM,\n\nI AM PRINCE OF GLITCH KINGDOM. I HAVE 50,000,000 BYTES TRAPPED IN DISK. SEND ME 500 CLICKS AND I SHARE WEALTH.\n\nCLICK HERE TO ACCEPT. [The link is broken]",
         trigger: { type: 'score', val: 5000 }
     },
+    {
+        id: 'password_reset',
+        sender: 'IT_Support',
+        subject: 'Your Password Reset',
+        body: "Hello User,\n\nAs requested, your temporary guest password is: 'guest123'.\n\nPlease do not save this in insecure text files like 'passwords.txt'.\n\n- IT",
+        trigger: { type: 'corruption', val: 15 }
+    },
 
     // --- LATE GAME ---
     {
