@@ -22,6 +22,8 @@ import { GlitchSystem } from '../systems/GlitchSystem.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 import { ThemeManager } from '../managers/ThemeManager.js';
 import { UIManager } from '../managers/UIManager.js';
+import { AchievementSystem } from '../systems/AchievementSystem.js';
+import { AchievementPopup } from '../ui/notifications.js';
 
 /**
  * @typedef {Object} GameState
@@ -54,8 +56,14 @@ export class Game {
 
         this.themeManager = new ThemeManager(this);
 
+
         this.economySystem = new EconomySystem(this);
         this.glitchSystem = new GlitchSystem(this);
+        this.achievementSystem = new AchievementSystem(this);
+
+        this.events.on('achievement_unlocked', (ach) => {
+            this.entities.add('ui', new AchievementPopup(this, ach));
+        });
 
         // META DATA
         this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
@@ -267,6 +275,8 @@ export class Game {
             if (this.gameState === 'PLAYING') {
                 if (this.uiManager.reviewsTab.visible) {
                     this.uiManager.reviewsTab.handleScroll(e.deltaY);
+                } else if (this.uiManager.achievementsWindow && this.uiManager.achievementsWindow.visible) {
+                    this.uiManager.achievementsWindow.handleScroll(e.deltaY);
                 }
             }
         });
@@ -738,6 +748,7 @@ export class Game {
         if (this.state.falseCrash || this.state.crashed || this.state.rebooting) return;
 
         this.economySystem.update(dt);
+        this.achievementSystem.update(dt);
         // 5. Update Timer
         this.state.timer += dt;
 

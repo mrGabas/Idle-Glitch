@@ -5,6 +5,7 @@
 import { ChatSystem } from '../ui/chat.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { MailWindow, NotepadWindow } from '../ui/windows.js';
+import { AchievementsWindow } from '../ui/achievementsWindow.js';
 
 import { MailSystem } from '../systems/MailSystem.js';
 
@@ -20,12 +21,15 @@ export class UIManager {
         this.mail = new MailSystem(game, this.chat);
         this.mailWindow = new MailWindow(game.w, game.h, this.mail);
 
+        this.achievementsWindow = new AchievementsWindow(game);
+
         this.activeNotepad = null;
     }
 
     resize(w, h) {
         if (this.mailWindow) this.mailWindow.resize(w, h);
-        if (this.reviewsTab) this.reviewsTab.resize(); // ReviewsTab gets dims from game ref, but calling resize updates its relative position
+        if (this.reviewsTab) this.reviewsTab.resize();
+        if (this.achievementsWindow) this.achievementsWindow.resize();
     }
 
     update(dt) {
@@ -67,6 +71,13 @@ export class UIManager {
             }
         }
 
+        // Priority 2.5: Achievements Window
+        if (this.achievementsWindow && this.achievementsWindow.visible) {
+            if (this.achievementsWindow.checkClick(mx, my)) {
+                return true;
+            }
+        }
+
         // Priority 3: Mail Window
         if (this.mailWindow.active) {
             if (this.mailWindow.checkClick(mx, my)) {
@@ -86,6 +97,13 @@ export class UIManager {
         // Center: w-50, 110.
         if (Math.hypot(mx - (this.game.w - 50), my - 110) < 25) {
             this.reviewsTab.toggle();
+            return true;
+        }
+
+        // Priority 6: HUD Icons (Achievements)
+        // Center: w-50, 170
+        if (this.achievementsWindow && Math.hypot(mx - (this.game.w - 50), my - 170) < 25) {
+            this.achievementsWindow.toggle();
             return true;
         }
 

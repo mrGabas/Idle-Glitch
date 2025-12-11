@@ -165,6 +165,7 @@ export class Renderer {
         if (uiManager.chat) uiManager.chat.draw(this.ctx, this.h);
         if (uiManager.activeNotepad) uiManager.activeNotepad.draw(this.ctx);
         if (uiManager.reviewsTab) uiManager.reviewsTab.draw(this.ctx);
+        if (uiManager.achievementsWindow) uiManager.achievementsWindow.draw(this.ctx);
 
         // Mail Window
         if (uiManager.mailWindow) uiManager.mailWindow.draw(this.ctx);
@@ -173,7 +174,9 @@ export class Renderer {
         this.drawHUD(this.w, this.h, uiManager); // Pass uiManager instead of entities
 
         // Feedback / Reviews Button (Top Right, Below Mail)
-        this.drawFeedbackIcon(this.w - 50, 110);
+        this.drawFeedbackIcon(this.w - 50, 110, '#6d2af7', '💬'); // Chat bubble emoji or draw custom
+        // Achievements Button
+        this.drawFeedbackIcon(this.w - 50, 170, '#FFD700', '🏆');
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
@@ -181,7 +184,7 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawFeedbackIcon(x, y) {
+    drawFeedbackIcon(x, y, color, emoji) {
         // Stylish modern icon
         this.ctx.save();
         this.ctx.translate(x, y); // x,y passed from draw() calls
@@ -191,35 +194,22 @@ export class Renderer {
         this.ctx.translate(0, bounce);
 
         // Glow
-        this.ctx.shadowColor = '#6d2af7';
+        this.ctx.shadowColor = color;
         this.ctx.shadowBlur = 15;
 
         // Circle
-        this.ctx.fillStyle = '#6d2af7';
+        this.ctx.fillStyle = color;
         this.ctx.beginPath();
         this.ctx.arc(0, 0, 25, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Icon (Chat Bubble)
+        // Icon (Emoji or Shape)
         this.ctx.shadowBlur = 0;
         this.ctx.fillStyle = '#fff';
-        this.ctx.beginPath();
-        this.ctx.moveTo(-10, -5);
-        this.ctx.lineTo(10, -5);
-        this.ctx.lineTo(10, 5);
-        this.ctx.lineTo(0, 10);
-        this.ctx.lineTo(-10, 5);
-        this.ctx.fill();
-
-        // Lines inside
-        this.ctx.strokeStyle = '#6d2af7';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(-6, -2);
-        this.ctx.lineTo(6, -2);
-        this.ctx.moveTo(-6, 2);
-        this.ctx.lineTo(2, 2);
-        this.ctx.stroke();
+        this.ctx.font = "24px Arial";
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillText(emoji || '?', 0, 2);
 
         this.ctx.restore();
     }
