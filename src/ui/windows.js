@@ -96,11 +96,22 @@ export class Popup {
 
     checkClick(mx, my) {
         if (!this.active) return false;
+
+        // Header Drag
+        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + 24) {
+            return 'drag';
+        }
+
         const bx = this.x + this.w / 2 - 40;
         const by = this.y + 90;
         if (mx >= bx && mx <= bx + 80 && my >= by && my <= by + 24) {
             this.active = false;
             return this.type;
+        }
+
+        // Consume click in body
+        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + this.h) {
+            return 'consumed';
         }
         return null;
     }
@@ -234,7 +245,12 @@ export class NotepadWindow {
         const by = this.y + 4;
         if (mx >= bx && mx <= bx + 14 && my >= by && my <= by + 14) {
             this.active = false;
-            return true;
+            return 'close';
+        }
+
+        // Header Drag
+        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + 24) {
+            return 'drag';
         }
 
         // Consume click inside window (prevent clicking game behind it)
@@ -425,7 +441,12 @@ export class MailWindow {
         const by = this.y + 5;
         if (mx >= bx && mx <= bx + 16 && my >= by && my <= by + 16) {
             this.active = false;
-            return true;
+            return 'close';
+        }
+
+        // Header Drag
+        if (my < this.y + 24) {
+            return 'drag';
         }
 
         // List Click

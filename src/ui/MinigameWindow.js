@@ -64,6 +64,11 @@ export class MinigameWindow {
     checkClick(mx, my) {
         if (!this.active) return false;
 
+        // Header Drag
+        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + 24) {
+            return 'drag';
+        }
+
         // Consume all clicks inside window to prevent clicking through
         if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + this.h) {
             return true;

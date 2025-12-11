@@ -254,7 +254,18 @@ export class Game {
         });
 
         this.input.on('mousedown', (e) => this.handleInput(e));
+        this.input.on('mouseup', (e) => {
+            if (this.uiManager.handleMouseUp()) return;
+            this.mouse.down = false;
+        });
+
         this.input.on('mousemove', (e) => {
+            const rect = this.renderer.canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            if (this.uiManager.handleMouseMove(mx, my)) return;
+
             if (this.gameState === 'PLAYING' || this.gameState === 'BIOS') { // Allow mouse in BIOS
                 // Track REAL mouse position separately
                 this.realMouse.x = e.clientX;
@@ -591,6 +602,8 @@ export class Game {
                     this.addScore(this.state.autoRate * 20 + 500);
                     this.createParticles(mx, my, this.themeManager.currentTheme.colors.accent);
                     this.events.emit('play_sound', 'buy');
+                } else if (res === 'drag') {
+                    this.uiManager.startDrag(p, mx, my);
                 } else {
                     this.events.emit('play_sound', 'click');
                 }

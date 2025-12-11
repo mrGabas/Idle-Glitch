@@ -24,6 +24,11 @@ export class UIManager {
         this.achievementsWindow = new AchievementsWindow(game);
 
         this.activeNotepad = null;
+
+        // Dragging State
+        this.draggedWindow = null;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
     }
 
     resize(w, h) {
@@ -53,13 +58,32 @@ export class UIManager {
 
     handleInput(mx, my) {
         // Priority 1: Notepad (Modal-like top layer)
+        // Priority 1: Notepad (Modal-like top layer)
         if (this.activeNotepad) {
-            // Check if click closes it
-            const close = this.activeNotepad.checkClick(mx, my);
-            if (close) {
-                this.activeNotepad = null;
+            // Check Title Bar for Drag
+            if (my >= this.activeNotepad.y && my <= this.activeNotepad.y + 24 && mx >= this.activeNotepad.x && mx <= this.activeNotepad.x + this.activeNotepad.w) {
+                // But wait, check close button first? Close button is inside the window area usually right aligned.
+                // Let's defer to window.checkClick, but we need to know if it was a capture or a close.
             }
-            return true; // Block other inputs while notepad is open
+
+            // Check if click closes it
+            const res = this.activeNotepad.checkClick(mx, my);
+            if (res === 'close') {
+                this.activeNotepad = null;
+                return true;
+            } else if (res === 'drag') {
+                this.startDrag(this.activeNotepad, mx, my);
+                return true;
+            } else if (res) {
+                return true;
+            }
+
+            // If click was outside, do we close? No, modal stays open usually? 
+            // Or maybe click blocking?
+            // "Modal-like top layer" -> Blocks everything.
+            // But if we clicked outside, we still return true?
+            // Original code: `return true;`. So yes, modal blocks everything.
+            return true;
         }
 
         // Priority 2: Reviews Tab
@@ -79,8 +103,16 @@ export class UIManager {
         }
 
         // Priority 3: Mail Window
+        // Priority 3: Mail Window
         if (this.mailWindow.active) {
-            if (this.mailWindow.checkClick(mx, my)) {
+            const res = this.mailWindow.checkClick(mx, my);
+            if (res === 'close') {
+                this.mailWindow.active = false;
+                return true;
+            } else if (res === 'drag') {
+                this.startDrag(this.mailWindow, mx, my);
+                return true;
+            } else if (res) {
                 return true;
             }
         }
@@ -114,5 +146,37 @@ export class UIManager {
         }
 
         return false; // Not consumed by UI
+    }
+
+    startDrag(windowObj, mx, my) {
+        this.draggedWindow = windowObj;
+        this.dragOffsetX = mx - windowObj.x;
+        this.dragOffsetY = my - windowObj.y;
+    }
+
+    handleMouseMove(mx, my) {
+        if (this.draggedWindow) {
+            this.draggedWindow.x = mx - this.dragOffsetX;
+            this.draggedWindow.y = my - this.dragOffsetY;
+
+            // Clamp to screen
+            // Basic clamping
+            /*
+            if (this.draggedWindow.x < 0) this.draggedWindow.x = 0;
+            if (this.draggedWindow.y < 0) this.draggedWindow.y = 0;
+            if (this.draggedWindow.x + this.draggedWindow.w > this.game.w) this.draggedWindow.x = this.game.w - this.draggedWindow.w;
+            if (this.draggedWindow.y + this.draggedWindow.h > this.game.h) this.draggedWindow.y = this.game.h - this.draggedWindow.h;
+            */
+            return true;
+        }
+        return false;
+    }
+
+    handleMouseUp() {
+        if (this.draggedWindow) {
+            this.draggedWindow = null;
+            return true;
+        }
+        return false;
     }
 }
