@@ -20,6 +20,28 @@ export const CFG = {
         m: "22px 'VT323', monospace",
         l: "32px 'VT323', monospace",
         xl: "48px 'VT323', monospace"
+    },
+    // New constants moved from Game.js
+    game: {
+        mainButtonRadius: 80,
+        shop: {
+            startX: 230, // Offset from center
+            colWidth: 240,
+            rowHeight: 80,
+            width: 220,
+            height: 70
+        },
+        bios: {
+            startY: 120,
+            lineHeight: 30
+        },
+        tabStalker: {
+            subTitles: [
+                "Hey?", "Come back...", "I see you...",
+                "Don't leave me", "WHERE ARE YOU?", "I'M LONELY",
+                "LOOK BEHIND YOU", "SYSTEM FAILURE"
+            ]
+        }
     }
 };
 

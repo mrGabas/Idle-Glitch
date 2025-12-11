@@ -13,6 +13,7 @@ import { ChatSystem } from '../ui/chat.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
+import { InputHandler } from './Input.js';
 // New imports for Mail
 import { MailSystem } from '../systems/MailSystem.js';
 import { FakeCursor } from '../entities/FakeCursor.js';
@@ -40,6 +41,7 @@ export class Game {
         this.events = events;
         this.saveSystem = new SaveSystem();
         this.renderer = new Renderer('gameCanvas');
+        this.input = new InputHandler();
         this.audio = new SoundEngine(); // Keep for resume()
         this.resize(); // Initialize dimensions early
 
@@ -219,8 +221,8 @@ export class Game {
         if (music) music.oninput = (e) => this.audio.setMusicVolume(e.target.value);
 
         // Input Listeners
-        window.addEventListener('resize', () => this.resize());
-        window.addEventListener('keydown', (e) => {
+        this.input.on('resize', () => this.resize());
+        this.input.on('keydown', (e) => {
             // Priority 0: BIOS Navigation
             if (this.gameState === 'BIOS') {
                 if (e.key === 'ArrowUp') {
@@ -273,8 +275,8 @@ export class Game {
             }
         });
 
-        this.renderer.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
-        window.addEventListener('mousemove', (e) => {
+        this.input.on('mousedown', (e) => this.handleInput(e));
+        this.input.on('mousemove', (e) => {
             if (this.gameState === 'PLAYING' || this.gameState === 'BIOS') { // Allow mouse in BIOS
                 // Track REAL mouse position separately
                 this.realMouse.x = e.clientX;
@@ -303,7 +305,7 @@ export class Game {
         });
 
         // Scroll / Wheel
-        window.addEventListener('wheel', (e) => {
+        this.input.on('wheel', (e) => {
             if (this.gameState === 'PLAYING') {
                 if (this.reviewsTab.visible) {
                     this.reviewsTab.handleScroll(e.deltaY);
@@ -317,14 +319,10 @@ export class Game {
     initTabStalker() {
         let titleInterval = null;
         let awayStartTime = 0;
-        const subTitles = [
-            "Hey?", "Come back...", "I see you...",
-            "Don't leave me", "WHERE ARE YOU?", "I'M LONELY",
-            "LOOK BEHIND YOU", "SYSTEM FAILURE"
-        ];
+        const subTitles = CFG.game.tabStalker.subTitles;
         const originalTitle = document.title;
 
-        document.addEventListener('visibilitychange', () => {
+        this.input.on('visibilitychange', () => {
             if (document.hidden) {
                 // Player left
                 awayStartTime = Date.now();
@@ -523,11 +521,11 @@ export class Game {
     }
 
     handleBIOSClick(mx, my) {
-        const startY = 120;
+        const startY = CFG.game.bios.startY;
 
         // Check Upgrades
         META_UPGRADES.forEach((u, i) => {
-            const y = startY + i * 30;
+            const y = startY + i * CFG.game.bios.lineHeight;
             // Hitbox approximation
             if (my >= y - 20 && my < y + 10) {
                 // Clicked Item
@@ -536,7 +534,7 @@ export class Game {
         });
 
         // Check Boot
-        const bootY = startY + META_UPGRADES.length * 30 + 30;
+        const bootY = startY + META_UPGRADES.length * CFG.game.bios.lineHeight + 30;
         if (my >= bootY - 20 && my < bootY + 10) {
             this.bootSystem();
         }
@@ -684,10 +682,10 @@ export class Game {
         this.upgrades.forEach((u, i) => {
             const col = i % 2;
             const row = Math.floor(i / 2);
-            const bx = this.w / 2 - 230 + col * 240;
-            const by = this.h / 2 + 50 + row * 80;
+            const bx = (this.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
+            const by = this.h / 2 + 50 + row * CFG.game.shop.rowHeight;
 
-            if (mx >= bx && mx <= bx + 220 && my >= by && my <= by + 70) {
+            if (mx >= bx && mx <= bx + CFG.game.shop.width && my >= by && my <= by + CFG.game.shop.height) {
                 shopHit = true;
                 if (this.state.score >= u.cost) {
                     this.buyUpgrade(u);
@@ -701,7 +699,7 @@ export class Game {
         // 3. Main Button
         const cx = this.w / 2;
         const cy = this.h / 2 - 100;
-        if (Math.hypot(mx - cx, my - cy) < 80) {
+        if (Math.hypot(mx - cx, my - cy) < CFG.game.mainButtonRadius) {
             this.clickMain();
             return;
         }
