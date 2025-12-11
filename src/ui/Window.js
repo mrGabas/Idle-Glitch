@@ -46,6 +46,13 @@ export class Window {
     }
 
     /**
+     * Cleanup resources.
+     */
+    destroy() {
+        // Unsubscribe events if any
+    }
+
+    /**
      * Updates window logic.
      * @param {number} dt 
      */

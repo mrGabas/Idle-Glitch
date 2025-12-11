@@ -107,6 +107,11 @@ export class GlitchHunter {
         }
         return false;
     }
+
+    destroy() {
+        // Cleanup resources if any (listeners, etc)
+        // Currently none, but good for future proofing
+    }
 }
 
 export class CursedCaptcha {
@@ -248,5 +253,9 @@ export class CursedCaptcha {
             return true; // Success
         }
         return false;
+    }
+
+    destroy() {
+        // Cleanup
     }
 }

@@ -22,7 +22,7 @@ class EventEmitter {
 
     emit(event, ...args) {
         if (!this.events[event]) return;
-        this.events[event].forEach(listener => listener(...args));
+        [...this.events[event]].forEach(listener => listener(...args));
     }
 }
 

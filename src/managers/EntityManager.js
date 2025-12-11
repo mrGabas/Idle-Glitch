@@ -73,6 +73,9 @@ export class EntityManager {
 
                 // Check for life
                 if ((entity.life !== undefined && entity.life <= 0) || (entity.active === false)) {
+                    if (typeof entity.destroy === 'function') {
+                        entity.destroy();
+                    }
                     layer.splice(i, 1);
                     continue;
                 }
