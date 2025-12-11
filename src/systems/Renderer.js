@@ -29,11 +29,11 @@ export class Renderer {
     /**
      * Main Draw Call
      * @param {Object} state - Game state (score, corruption, etc)
-     * @param {Object} world - Theme, Mouse, etc
      * @param {Object} entities - Arrays of game objects
+     * @param {Object} input - Input processing data (mouse, theme, flags)
      */
-    draw(state, world, entities) {
-        const { currentTheme, mouse, shake, scareTimer, scareText } = world;
+    draw(state, entities, input) {
+        const { currentTheme, mouse, shake, scareTimer, scareText } = input;
 
         if (state.crashed) {
             this.drawBSOD();
@@ -46,12 +46,12 @@ export class Renderer {
             // Let's support both.
             // If gameState is BIOS, we draw interactive.
             // If state.rebooting is true, we draw the old text sequence.
-            this.drawOldBIOS(world.rebootTimer);
+            this.drawOldBIOS(input.rebootTimer);
             return;
         }
 
-        if (world.gameState === 'BIOS') {
-            this.drawBIOS(state, world, world.metaUpgrades, META_UPGRADES);
+        if (input.gameState === 'BIOS') {
+            this.drawBIOS(state, input, input.metaUpgrades, META_UPGRADES);
             return;
         }
 
@@ -449,7 +449,7 @@ export class Renderer {
         lines.forEach(l => { this.ctx.fillText(l, 50, y); y += 28; });
     }
 
-    drawBIOS(state, world, metaUpgrades, metaList) {
+    drawBIOS(state, input, metaUpgrades, metaList) {
         this.ctx.fillStyle = '#0000aa'; // Blue BIOS bg
         this.ctx.fillRect(0, 0, this.w, this.h);
 
@@ -480,7 +480,7 @@ export class Renderer {
 
         // GLITCH DATA DISPLAY
         this.ctx.fillStyle = '#ffff55';
-        this.ctx.fillText(`GLITCH DATA: ${world.glitchData || 0} MB`, 40, 80);
+        this.ctx.fillText(`GLITCH DATA: ${input.glitchData || 0} MB`, 40, 80);
         this.ctx.fillStyle = '#fff';
 
         // Upgrades List
@@ -499,7 +499,7 @@ export class Renderer {
             }
 
             // Selection highlight
-            if (i === world.selectedBIOSIndex || (world.mouse.y >= y - 20 && world.mouse.y < y + 10)) {
+            if (i === input.selectedBIOSIndex || (input.mouse.y >= y - 20 && input.mouse.y < y + 10)) {
                 this.ctx.fillStyle = '#fff';
                 this.ctx.fillRect(38, y - 20, this.w - 78, 30);
                 this.ctx.fillStyle = '#0000aa';
@@ -515,7 +515,7 @@ export class Renderer {
         const bootY = startY + metaList.length * 30 + 30;
         const bootIndex = metaList.length;
 
-        if (world.selectedBIOSIndex === bootIndex || (world.mouse.y >= bootY - 20 && world.mouse.y < bootY + 10)) {
+        if (input.selectedBIOSIndex === bootIndex || (input.mouse.y >= bootY - 20 && input.mouse.y < bootY + 10)) {
             this.ctx.fillStyle = '#fff';
             this.ctx.fillRect(38, bootY - 20, this.w - 78, 30);
             this.ctx.fillStyle = '#0000aa';
@@ -530,18 +530,18 @@ export class Renderer {
             const themeY = bootY + 30;
             const themeIndex = metaList.length + 1;
 
-            if (world.selectedBIOSIndex === themeIndex || (world.mouse.y >= themeY - 20 && world.mouse.y < themeY + 10)) {
+            if (input.selectedBIOSIndex === themeIndex || (input.mouse.y >= themeY - 20 && input.mouse.y < themeY + 10)) {
                 this.ctx.fillStyle = '#fff';
                 this.ctx.fillRect(38, themeY - 20, this.w - 78, 30);
                 this.ctx.fillStyle = '#0000aa';
             } else {
                 this.ctx.fillStyle = '#0ff';
             }
-            this.ctx.fillText(`STARTING THEME: [${world.currentTheme.id.toUpperCase()}]`, 40, themeY);
+            this.ctx.fillText(`STARTING THEME: [${input.currentTheme.id.toUpperCase()}]`, 40, themeY);
         }
 
         // Explicitly draw cursor on top for BIOS
-        this.drawCursor(state, world.currentTheme, world.mouse);
+        this.drawCursor(state, input.currentTheme, input.mouse);
     }
 
     drawOldBIOS(rebootTimer) {

@@ -1130,7 +1130,20 @@ export class Game {
     }
 
     draw() {
-        this.renderer.draw(this.state, this, {
+        const inputData = {
+            currentTheme: this.currentTheme,
+            mouse: this.mouse,
+            shake: this.shake,
+            scareTimer: this.scareTimer,
+            scareText: this.scareText,
+            gameState: this.gameState,
+            rebootTimer: this.rebootTimer,
+            metaUpgrades: this.metaUpgrades,
+            glitchData: this.glitchData,
+            selectedBIOSIndex: this.selectedBIOSIndex
+        };
+
+        const entities = {
             fakeUI: this.fakeUI,
             upgrades: this.upgrades,
             debris: this.debris,
@@ -1144,8 +1157,12 @@ export class Game {
             reviewsTab: this.reviewsTab,
             mailWindow: this.mailWindow,
             mail: this.mail,
-            fakeCursor: this.fakeCursor
-        });
+            fakeCursor: this.fakeCursor,
+            // clippy needs to be in entities if referenced, or added to input
+            clippy: this.clippy // Assuming clippy might exist or be undefined
+        };
+
+        this.renderer.draw(this.state, entities, inputData);
     }
 
 }
