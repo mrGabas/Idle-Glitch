@@ -1,21 +1,21 @@
+import { Minigame } from './Minigame.js';
 
-import { UTILS } from '../core/config.js';
-
-export class SnakeGame {
-    constructor() {
-        this.reset();
+export class SnakeGame extends Minigame {
+    constructor(game) {
+        super(game);
         this.title = "SNAKE.EXE";
+        this.reset();
     }
 
     reset() {
         this.active = true;
-        this.won = false;
         this.lost = false;
+        this.gameOver = false; // Sync with base property
 
         // Grid
         this.cols = 20;
         this.rows = 15;
-        this.cellSize = 16; // Visual size, scaled in draw
+        this.cellSize = 16;
 
         this.snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
         this.dir = { x: 1, y: 0 };
@@ -23,7 +23,7 @@ export class SnakeGame {
 
         this.food = this.spawnFood();
 
-        this.score = 0;
+        this.score = 0; // Local score for display
         this.timer = 0;
         this.moveInterval = 0.15;
 
@@ -55,6 +55,8 @@ export class SnakeGame {
 
         // Input Handling
         if (input) {
+            // Check for both Actions (Game Input) and Raw Keys if needed, 
+            // but Action Mapping is preferred.
             if (input.isActionDown('UP') && this.dir.y === 0) this.nextDir = { x: 0, y: -1 };
             if (input.isActionDown('DOWN') && this.dir.y === 0) this.nextDir = { x: 0, y: 1 };
             if (input.isActionDown('LEFT') && this.dir.x === 0) this.nextDir = { x: -1, y: 0 };
@@ -91,20 +93,24 @@ export class SnakeGame {
         // Eat Food
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
+            if (this.game) this.game.state.addScore(10); // Reward Real Currency
+
             this.foodEaten++;
             this.food = this.spawnFood();
 
             // Speed up slightly
             this.moveInterval = Math.max(0.05, this.moveInterval * 0.98);
 
+            // Audio
+            if (this.game) this.game.events.emit('play_sound', 'buy');
+
             // Glitch Effect every 5th food
             if (this.foodEaten % 5 === 0) {
                 this.shake = 10;
-                // Maybe trigger external glitch via callback/event if possible? 
-                // For now visual shake in window.
+                if (this.game) this.game.events.emit('play_sound', 'glitch');
             }
 
-            return 'eat'; // Signal allowed?
+            return 'eat';
         } else {
             this.snake.pop(); // Remove tail
         }
@@ -113,14 +119,16 @@ export class SnakeGame {
     die() {
         this.lost = true;
         this.shake = 20;
+        if (this.game) this.game.events.emit('play_sound', 'error');
     }
 
+    // Optional: Raw Key Handler if actions aren't enough (e.g. specialized keys)
     onKeyDown(key) {
         if (this.lost) {
             if (key === 'Enter' || key === ' ') this.reset();
             return;
         }
-
+        // Redundant if using update(input), but good for reliability
         if (key === 'ArrowUp' && this.dir.y === 0) this.nextDir = { x: 0, y: -1 };
         if (key === 'ArrowDown' && this.dir.y === 0) this.nextDir = { x: 0, y: 1 };
         if (key === 'ArrowLeft' && this.dir.x === 0) this.nextDir = { x: -1, y: 0 };
@@ -142,11 +150,11 @@ export class SnakeGame {
         ctx.save();
         ctx.translate(x + sx, y + sy);
 
-        // BG
-        ctx.fillStyle = '#000'; // Dark
-        ctx.fillRect(0, 0, w, h);
+        // BG - already drawn by MinigameWindow usually, but safe to redraw specific area
+        // ctx.fillStyle = '#000'; 
+        // ctx.fillRect(0, 0, w, h);
 
-        // Grid (Optional)
+        // Grid (Optional - make it faint)
         ctx.strokeStyle = '#111';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -155,7 +163,6 @@ export class SnakeGame {
         ctx.stroke();
 
         // Snake
-        ctx.fillStyle = '#0f0';
         this.snake.forEach((s, i) => {
             if (i === 0) ctx.fillStyle = '#aff'; // Head
             else ctx.fillStyle = '#0f0';

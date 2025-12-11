@@ -4,6 +4,8 @@
  */
 import { SCRIPT } from '../data/chatScripts.js';
 import { CursedCaptcha } from '../entities/enemies.js';
+import { MinigameWindow } from './MinigameWindow.js';
+import { SnakeGame } from '../minigames/SnakeGame.js';
 
 export class ChatSystem {
     constructor(game) {
@@ -162,13 +164,21 @@ export class ChatSystem {
         const args = cmd.split(' ');
         const command = args[0].toLowerCase();
 
+        // ... existing code ...
+
         switch (command) {
             case '/help':
                 this.addMessage('SYSTEM', 'Available commands:');
                 this.addMessage('SYSTEM', '/help - Show this list');
+                this.addMessage('SYSTEM', '/snake - Launch SNAKE.EXE');
                 this.addMessage('SYSTEM', '/reset - Reboot system');
                 this.addMessage('SYSTEM', '/clear - Clear console');
                 this.addMessage('SYSTEM', '/verify <code_id> - Bypass captcha manually');
+                break;
+            case '/snake':
+                this.addMessage('SYSTEM', 'Launching SNAKE.EXE...');
+                this.game.uiManager.windowManager.add(new MinigameWindow(this.game.w, this.game.h, new SnakeGame(this.game)));
+                this.game.events.emit('play_sound', 'click');
                 break;
             case '/reset':
                 this.addMessage('SYSTEM', 'INITIATING SYSTEM REBOOT...');
