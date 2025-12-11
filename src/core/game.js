@@ -14,6 +14,7 @@ import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
 import { CursedCaptcha } from '../entities/enemies.js';
 import { Popup } from '../ui/windows.js';
+import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
 import { EntityManager } from '../managers/EntityManager.js';
@@ -192,6 +193,14 @@ export class Game {
         // Input Listeners
         this.input.on('resize', () => this.resize());
         this.input.on('keydown', (e) => {
+            // Priority -1: Minigame (Must override everything)
+            const uiEntities = this.entities.getAll('ui');
+            const minigame = uiEntities.find(el => el instanceof MinigameWindow && el.active);
+            if (minigame) {
+                minigame.handleKeyDown(e);
+                return;
+            }
+
             // Priority 0: BIOS Navigation
             if (this.gameState === 'BIOS') {
                 if (e.key === 'ArrowUp') {
