@@ -57,14 +57,98 @@ export class Window {
      * Draws the window.
      * @param {CanvasRenderingContext2D} ctx 
      */
+    /**
+     * Draws the window frame and delegates content drawing.
+     * @param {CanvasRenderingContext2D} ctx 
+     */
     draw(ctx) {
-        // Override me
-        // Default box for debugging
-        ctx.fillStyle = '#ccc';
+        if (!this.active) return;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(this.x + 5, this.y + 5, this.w, this.h);
+
+        // Main geometric frame
+        ctx.fillStyle = '#c0c0c0'; // Win95 Grey
         ctx.fillRect(this.x, this.y, this.w, this.h);
-        ctx.strokeRect(this.x, this.y, this.w, this.h);
+
+        // Bevel borders (High Light)
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(this.x, this.y, this.w, 2); // Top
+        ctx.fillRect(this.x, this.y, 2, this.h); // Left
+
+        // Bevel borders (Shadow)
         ctx.fillStyle = '#000';
-        ctx.fillText(this.title, this.x + 5, this.y + 15);
+        ctx.fillRect(this.x + this.w - 2, this.y, 2, this.h); // Right
+        ctx.fillRect(this.x, this.y + this.h - 2, this.w, 2); // Bottom
+
+        // Inner Bevel (Darker Grey)
+        ctx.fillStyle = '#dfdfdf';
+        ctx.fillRect(this.x + 2, this.y + 2, this.w - 4, 1);
+        ctx.fillRect(this.x + 2, this.y + 2, 1, this.h - 4);
+
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(this.x + this.w - 3, this.y + 2, 1, this.h - 4);
+        ctx.fillRect(this.x + 2, this.y + this.h - 3, this.w - 4, 1);
+
+        // Title Bar
+        // Active vs Inactive colors could be added here if we track focus state more deeply
+        const titleBarColor = this.manager && this.manager.windows[this.manager.windows.length - 1] === this
+            ? '#000080' // Active Blue
+            : '#808080'; // Inactive Grey
+
+        ctx.fillStyle = titleBarColor;
+        ctx.fillRect(this.x + 3, this.y + 3, this.w - 6, 18);
+
+        // Title Text
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(this.title, this.x + 6, this.y + 16);
+
+        // Close Button
+        if (this.isClosable) {
+            this.drawBevelButton(ctx, this.x + this.w - 19, this.y + 5, 14, 14, "X");
+        }
+
+        // Draw Content
+        this.drawContent(ctx, this.x + 4, this.y + 24, this.w - 8, this.h - 28);
+    }
+
+    /**
+     * Helper to draw a beveled button
+     */
+    drawBevelButton(ctx, x, y, w, h, text) {
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(x, y, w, h);
+
+        // Bevel
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x, y, w, 1);
+        ctx.fillRect(x, y, 1, h);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x + w - 1, y, 1, h);
+        ctx.fillRect(x, y + h - 1, w, 1);
+
+        if (text) {
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x + w / 2, y + h / 2 + 1);
+        }
+    }
+
+    /**
+     * Draw specific window content. Override this.
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {number} x - Content area x
+     * @param {number} y - Content area y
+     * @param {number} w - Content area width
+     * @param {number} h - Content area height
+     */
+    drawContent(ctx, x, y, w, h) {
+        // Default content placeholder
     }
 
     /**
@@ -81,20 +165,17 @@ export class Window {
             return null;
         }
 
-        // Close Button (Fixed position relative to top-right)
-        // Adjust these coords to match your specific window styling if needed,
-        // but base class should have a consistent area if it draws the frame.
-        // Assuming Standard Windows 95 style: Right edge - 18px
+        // Close Button Check
         if (this.isClosable) {
-            const bx = this.x + this.w - 18;
-            const by = this.y + 4;
+            const bx = this.x + this.w - 19;
+            const by = this.y + 5;
             if (mx >= bx && mx <= bx + 14 && my >= by && my <= by + 14) {
                 return 'close';
             }
         }
 
-        // Title Bar Drag
-        if (this.isDraggable && my < this.y + 24) {
+        // Title Bar Drag (Height is roughly 24 including borders)
+        if (this.isDraggable && my >= this.y && my < this.y + 24) {
             return 'drag';
         }
 

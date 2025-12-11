@@ -113,19 +113,9 @@ export class Renderer {
         if (entities.debris) entities.debris.forEach(d => d.draw(this.ctx));
         if (entities.particles) entities.particles.forEach(p => p.draw(this.ctx));
 
-        // Draw Popups/UI: Split into normal Popups and "Apps" (MinigameWindow) 
-        // to ensure Apps are on top of Error Popups.
+        // Draw Popups (Legacy or specific EntityManager popups)
         if (entities.popups) {
-            const apps = [];
-            const normal = [];
-            entities.popups.forEach(p => {
-                // MinigameWindow doesn't have 'type' property usually, or check constructor name
-                if (p.constructor.name === 'MinigameWindow') apps.push(p);
-                else normal.push(p);
-            });
-
-            normal.forEach(p => p.draw(this.ctx));
-            apps.forEach(app => app.draw(this.ctx));
+            entities.popups.forEach(p => p.draw(this.ctx));
         }
         if (entities.captchas) entities.captchas.forEach(c => c.draw(this.ctx));
         if (entities.loreFiles) entities.loreFiles.forEach(f => f.draw(this.ctx));
@@ -176,14 +166,10 @@ export class Renderer {
 
         if (entities.hunter) entities.hunter.draw(this.ctx);
 
-        if (uiManager.chat) uiManager.chat.draw(this.ctx, this.h);
-        if (uiManager.reviewsTab) uiManager.reviewsTab.draw(this.ctx);
-        if (uiManager.achievementsWindow) uiManager.achievementsWindow.draw(this.ctx);
-
         // Draw HUD Elements (Mail Icon)
         this.drawHUD(this.w, this.h, uiManager);
 
-        // Draw Windows (WindowManager - Top Layer)
+        // Draw Windows & UI Overlay (Delegated to UIManager)
         uiManager.draw(this.ctx);
 
         // Feedback / Reviews Button (Top Right, Below Mail)

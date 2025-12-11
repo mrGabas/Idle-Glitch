@@ -29,8 +29,6 @@ export class UIManager {
         this.mailWindow = new MailWindow(game.w, game.h, this.mail);
 
         this.achievementsWindow = new AchievementsWindow(game);
-
-        // this.activeNotepad = null; // Removed, now in WindowManager
     }
 
     resize(w, h) {
@@ -146,13 +144,20 @@ export class UIManager {
 
     // Draw method to be called by Renderer
     draw(ctx) {
+        // Draw Full-screen / Overlay Systems first (or last depending on desired z-order)
+        // Chat is bottom-aligned console
+        if (this.chat) this.chat.draw(ctx, this.game.h);
+
+        // Windows (WindowManager)
         this.windowManager.draw(ctx);
-        // Note: HUD icons are drawn by Renderer explicitly, 
-        // but windows should be drawn here.
+
+        // Overlays (Reviews, Achievements) - behave like modal overlays currently
+        if (this.reviewsTab) this.reviewsTab.draw(ctx);
+        if (this.achievementsWindow) this.achievementsWindow.draw(ctx);
     }
 
     startDrag(windowObj, mx, my) {
-        // Delegated to WindowManager
+        this.windowManager.startDrag(windowObj, mx, my);
     }
 
     handleMouseMove(mx, my) {

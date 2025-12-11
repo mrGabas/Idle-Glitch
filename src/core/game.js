@@ -13,7 +13,7 @@ import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
 import { CursedCaptcha } from '../entities/enemies.js';
-import { Popup } from '../ui/windows.js';
+import { Popup, NotepadWindow } from '../ui/windows.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
@@ -199,8 +199,10 @@ export class Game {
             // But if text input needed for other minigames... keep for now
 
             // Priority 1: Password/Notepad Input (Text Interaction)
-            if (this.uiManager.activeNotepad && this.uiManager.activeNotepad.locked) {
-                this.uiManager.activeNotepad.handleKeyDown(e);
+            // Check top-most window
+            const activeWindow = this.uiManager.windowManager.windows[this.uiManager.windowManager.windows.length - 1];
+            if (activeWindow instanceof NotepadWindow && activeWindow.locked) {
+                activeWindow.handleKeyDown(e);
                 return;
             }
 

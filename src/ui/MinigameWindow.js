@@ -28,55 +28,16 @@ export class MinigameWindow extends Window {
         }
     }
 
-    draw(ctx) {
-        if (!this.active) return;
-
-        let sx = 0;
-        if (this.shake > 0) {
-            sx = (Math.random() - 0.5) * this.shake;
-        }
-        const tx = this.x + sx;
-
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(tx + 5, this.y + 5, this.w, this.h);
-
-        // Main Window BG
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     */
+    drawContent(ctx, x, y, w, h) {
+        // Main Content BG
         ctx.fillStyle = '#000'; // Black for Terminal feel
-        ctx.fillRect(tx, this.y, this.w, this.h);
-
-        // Border
-        ctx.strokeStyle = '#0f0'; // Hacker Green
-        ctx.lineWidth = 2;
-        ctx.strokeRect(tx, this.y, this.w, this.h);
-
-        // Title Bar
-        ctx.fillStyle = '#0f0';
-        ctx.fillRect(tx, this.y, this.w, 24);
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 12px "Courier New", monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(this.title, tx + 6, this.y + 16);
-
-        // Close Button
-        const bx = tx + this.w - 18;
-        const by = this.y + 4;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(bx, by, 14, 14);
-        ctx.strokeStyle = '#0f0';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx, by, 14, 14);
-
-        ctx.strokeStyle = '#0f0';
-        ctx.beginPath();
-        ctx.moveTo(bx + 3, by + 3);
-        ctx.lineTo(bx + 11, by + 11);
-        ctx.moveTo(bx + 11, by + 3);
-        ctx.lineTo(bx + 3, by + 11);
-        ctx.stroke();
+        ctx.fillRect(x, y, w, h);
 
         // Content Area
-        this.minigame.draw(ctx, tx + 10, this.y + 30, this.w - 20, this.h - 40);
+        this.minigame.draw(ctx, x + 2, y + 2, w - 4, h - 4);
     }
 
     checkClick(mx, my) {
