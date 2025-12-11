@@ -27,12 +27,12 @@ export class SaveSystem {
     }
 
     // Legacy support for plain strings if needed, or helper for numbers
+    // Legacy support for plain strings if needed, or helper for numbers
     loadNumber(key, defaultValue) {
-        const val = localStorage.getItem(this.prefix + key);
-        return val ? parseFloat(val) : defaultValue;
+        return this.load(key, defaultValue);
     }
 
     saveNumber(key, value) {
-        localStorage.setItem(this.prefix + key, value.toString());
+        this.save(key, value);
     }
 }
