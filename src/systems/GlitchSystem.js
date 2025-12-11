@@ -235,7 +235,7 @@ export class GlitchSystem {
                 const file = loreFiles[i];
                 if (file instanceof ExecutableFile) {
                     if (file.programName === 'Snake') {
-                        this.game.entities.add('ui', new MinigameWindow(this.game.w, this.game.h, new SnakeGame()));
+                        this.game.uiManager.openMinigame(new SnakeGame());
                         this.game.events.emit('play_sound', 'startup');
                     }
                 } else {

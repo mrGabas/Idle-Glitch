@@ -177,15 +177,14 @@ export class Renderer {
         if (entities.hunter) entities.hunter.draw(this.ctx);
 
         if (uiManager.chat) uiManager.chat.draw(this.ctx, this.h);
-        if (uiManager.activeNotepad) uiManager.activeNotepad.draw(this.ctx);
         if (uiManager.reviewsTab) uiManager.reviewsTab.draw(this.ctx);
         if (uiManager.achievementsWindow) uiManager.achievementsWindow.draw(this.ctx);
 
-        // Mail Window
-        if (uiManager.mailWindow) uiManager.mailWindow.draw(this.ctx);
-
         // Draw HUD Elements (Mail Icon)
-        this.drawHUD(this.w, this.h, uiManager); // Pass uiManager instead of entities
+        this.drawHUD(this.w, this.h, uiManager);
+
+        // Draw Windows (WindowManager - Top Layer)
+        uiManager.draw(this.ctx);
 
         // Feedback / Reviews Button (Top Right, Below Mail)
         this.drawFeedbackIcon(this.w - 50, 110, '#6d2af7', '💬'); // Chat bubble emoji or draw custom

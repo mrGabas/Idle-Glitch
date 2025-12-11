@@ -5,13 +5,18 @@
 import { ChatSystem } from '../ui/chat.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { MailWindow, NotepadWindow } from '../ui/windows.js';
+import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { AchievementsWindow } from '../ui/achievementsWindow.js';
 
 import { MailSystem } from '../systems/MailSystem.js';
+import { WindowManager } from './WindowManager.js';
 
 export class UIManager {
     constructor(game) {
         this.game = game; // Reference to main game
+
+        // Window Manager (Handles Z-ordered windows like Notepad, Mail, Minigames)
+        this.windowManager = new WindowManager(game);
 
         // Initialize Sub-Systems
         this.chat = new ChatSystem(game);
@@ -19,22 +24,21 @@ export class UIManager {
 
         // Mail System
         this.mail = new MailSystem(game, this.chat);
+        // Create MailWindow instance but don't add to windowManager yet (until opened)
+        // Actually, let's keep it managed by us and add/remove when toggled.
         this.mailWindow = new MailWindow(game.w, game.h, this.mail);
 
         this.achievementsWindow = new AchievementsWindow(game);
 
-        this.activeNotepad = null;
-
-        // Dragging State
-        this.draggedWindow = null;
-        this.dragOffsetX = 0;
-        this.dragOffsetY = 0;
+        // this.activeNotepad = null; // Removed, now in WindowManager
     }
 
     resize(w, h) {
         if (this.mailWindow) this.mailWindow.resize(w, h);
         if (this.reviewsTab) this.reviewsTab.resize();
         if (this.achievementsWindow) this.achievementsWindow.resize();
+        // WindowManager windows might need resize too?
+        // Basic windows handle it manually or stay relative.
     }
 
     update(dt) {
@@ -43,104 +47,96 @@ export class UIManager {
         this.chat.update(dt, corruption);
         this.reviewsTab.update(dt);
 
-        // Notepad Shake Effect Update
-        // (Previously done in Game.draw or window.draw, but logic can be here)
-        // Actually, NotepadWindow.draw handles the visual shake logic using its own properties.
-        // Game.update didn't explicitly update activeNotepad, it just checked things.
-        // We can leave visual update in draw or add state update here if needed.
+        // Update Windows
+        this.windowManager.update(dt);
     }
 
     openNotepad(content, options = {}) {
-        this.activeNotepad = new NotepadWindow(this.game.w, this.game.h, content, options);
-        if (options.title) this.activeNotepad.title = options.title;
-        this.game.events.emit('play_sound', 'click');
+        const notepad = new NotepadWindow(this.game.w, this.game.h, content, options);
+        if (options.title) notepad.title = options.title;
+        this.windowManager.add(notepad);
+        // this.game.events.emit('play_sound', 'click'); // WindowManager.add plays click
     }
 
+    openMinigame(minigame) {
+        const win = new MinigameWindow(this.game.w, this.game.h, minigame);
+        this.windowManager.add(win);
+    }
+
+    // Toggle Mail
+    toggleMail() {
+        if (this.mailWindow.manager) {
+            this.mailWindow.close(); // Calls this.manager.close
+            // If MailWindow active flag logic is inside it? 
+            // We changed MailWindow to extend Window.
+            // If it's already in manager, close() removes it.
+            // If it's not (but active=false), we add it.
+
+            // Wait, logic in MailWindow.draw was 'if (!active) return'.
+            // Now WindowManager controls drawing list.
+            // So 'active' property on Window is slightly redundant if removal from list handles it.
+            // But let's check:
+            // If we use 'active' bool to toggle presence in manager:
+            // This is complex if we use the same instance.
+            // WindowManager.close removes it. So we can add it back.
+        } else {
+            this.mailWindow.active = true;
+            this.windowManager.add(this.mailWindow);
+        }
+    }
+
+    // Actually, MailWindow might need special handling because we want to keep the same instance.
+    // WindowManager.close calls onClose.
+    // If we just want to hide/show, we can add/remove.
+
     handleInput(mx, my) {
-        // Priority 1: Notepad (Modal-like top layer)
-        // Priority 1: Notepad (Modal-like top layer)
-        if (this.activeNotepad) {
-            // Check Title Bar for Drag
-            if (my >= this.activeNotepad.y && my <= this.activeNotepad.y + 24 && mx >= this.activeNotepad.x && mx <= this.activeNotepad.x + this.activeNotepad.w) {
-                // But wait, check close button first? Close button is inside the window area usually right aligned.
-                // Let's defer to window.checkClick, but we need to know if it was a capture or a close.
-            }
-
-            // Check if click closes it
-            const res = this.activeNotepad.checkClick(mx, my);
-            if (res === 'close') {
-                this.activeNotepad = null;
-                return true;
-            } else if (res === 'drag') {
-                this.startDrag(this.activeNotepad, mx, my);
-                return true;
-            } else if (res) {
-                return true;
-            }
-
-            // If click was outside, do we close? No, modal stays open usually? 
-            // Or maybe click blocking?
-            // "Modal-like top layer" -> Blocks everything.
-            // But if we clicked outside, we still return true?
-            // Original code: `return true;`. So yes, modal blocks everything.
+        // Priority 1: Windows (Top to Bottom)
+        if (this.windowManager.handleInput(mx, my)) {
             return true;
         }
 
         // Priority 2: Reviews Tab
         if (this.reviewsTab.visible) {
-            // checkClick handles close logic internal to the class or returns true if consumed
-            // ReviewsTab.checkClick returns true if consumed, and toggles visibility if close clicked.
             if (this.reviewsTab.checkClick(mx, my)) {
                 return true;
             }
         }
 
-        // Priority 2.5: Achievements Window
+        // Priority 3: Achievements Window
         if (this.achievementsWindow && this.achievementsWindow.visible) {
             if (this.achievementsWindow.checkClick(mx, my)) {
                 return true;
             }
         }
 
-        // Priority 3: Mail Window
-        // Priority 3: Mail Window
-        if (this.mailWindow.active) {
-            const res = this.mailWindow.checkClick(mx, my);
-            if (res === 'close') {
-                this.mailWindow.active = false;
-                return true;
-            } else if (res === 'drag') {
-                this.startDrag(this.mailWindow, mx, my);
-                return true;
-            } else if (res) {
-                return true;
-            }
-        }
+        // Mail Window is now in WindowManager
 
         // Priority 4: HUD Icons (Mail Icon)
-        // Center: w-50, 50. Size: ~40x40 hit area
         if (Math.hypot(mx - (this.game.w - 50), my - 50) < 25) {
-            this.mailWindow.active = !this.mailWindow.active;
-            this.game.events.emit('play_sound', 'click');
+            // Toggle Mail
+            if (this.mailWindow.manager) {
+                this.mailWindow.close();
+            } else {
+                this.mailWindow.active = true;
+                this.windowManager.add(this.mailWindow);
+            }
+            // this.game.events.emit('play_sound', 'click'); // Add does it
             return true;
         }
 
         // Priority 5: HUD Icons (Reviews Icon)
-        // Center: w-50, 110.
         if (Math.hypot(mx - (this.game.w - 50), my - 110) < 25) {
             this.reviewsTab.toggle();
             return true;
         }
 
         // Priority 6: HUD Icons (Achievements)
-        // Center: w-50, 170
         if (this.achievementsWindow && Math.hypot(mx - (this.game.w - 50), my - 170) < 25) {
             this.achievementsWindow.toggle();
             return true;
         }
 
-        // Priority 6: Chat Console Focus
-        // Pass 'h' because chat position depends on bottom align
+        // Priority 7: Chat Console Focus
         if (this.chat.checkClick(mx, my, this.game.h)) {
             return true;
         }
@@ -148,35 +144,23 @@ export class UIManager {
         return false; // Not consumed by UI
     }
 
+    // Draw method to be called by Renderer
+    draw(ctx) {
+        this.windowManager.draw(ctx);
+        // Note: HUD icons are drawn by Renderer explicitly, 
+        // but windows should be drawn here.
+    }
+
     startDrag(windowObj, mx, my) {
-        this.draggedWindow = windowObj;
-        this.dragOffsetX = mx - windowObj.x;
-        this.dragOffsetY = my - windowObj.y;
+        // Delegated to WindowManager
     }
 
     handleMouseMove(mx, my) {
-        if (this.draggedWindow) {
-            this.draggedWindow.x = mx - this.dragOffsetX;
-            this.draggedWindow.y = my - this.dragOffsetY;
-
-            // Clamp to screen
-            // Basic clamping
-            /*
-            if (this.draggedWindow.x < 0) this.draggedWindow.x = 0;
-            if (this.draggedWindow.y < 0) this.draggedWindow.y = 0;
-            if (this.draggedWindow.x + this.draggedWindow.w > this.game.w) this.draggedWindow.x = this.game.w - this.draggedWindow.w;
-            if (this.draggedWindow.y + this.draggedWindow.h > this.game.h) this.draggedWindow.y = this.game.h - this.draggedWindow.h;
-            */
-            return true;
-        }
-        return false;
+        return this.windowManager.handleMouseMove(mx, my);
     }
 
     handleMouseUp() {
-        if (this.draggedWindow) {
-            this.draggedWindow = null;
-            return true;
-        }
-        return false;
+        return this.windowManager.handleMouseUp();
     }
 }
+

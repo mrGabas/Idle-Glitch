@@ -778,7 +778,7 @@ export class Game {
                 context = 'menu';
             } else if (this.gameState === 'PLAYING') {
                 // Check minigames
-                const snake = this.entities.getAll('ui').find(el => el instanceof MinigameWindow && el.active && el.title === "SNAKE.EXE");
+                const snake = this.uiManager.windowManager.windows.find(el => el instanceof MinigameWindow && el.active && el.title === "SNAKE.EXE");
                 if (snake) {
                     context = 'snake';
                 }

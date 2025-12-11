@@ -3,6 +3,7 @@
  * @module ui/windows
  */
 import { UTILS } from '../core/config.js';
+import { Window } from './Window.js';
 
 export class Popup {
     constructor(w, h, theme) {
@@ -117,18 +118,25 @@ export class Popup {
     }
 }
 
-export class NotepadWindow {
-    constructor(w, h, content, options) {
-        this.w = 400;
-        this.h = 300;
-        this.x = (w - this.w) / 2;
-        this.y = (h - this.h) / 2;
+export class NotepadWindow extends Window {
+    constructor(gameW, gameH, content, options) {
+        const w = 400;
+        const h = 300;
+        const x = (gameW - w) / 2;
+        const y = (gameH - h) / 2;
+
+        super(x, y, w, h, options?.title || "Notepad.exe");
+
         this.content = content || "Error: Corrupted File";
         this.password = options?.password || null;
         this.locked = !!this.password;
         this.inputBuffer = "";
-        this.active = true;
-        this.title = this.locked ? "ENCRYPTED FILE" : "Notepad.exe";
+
+        // Locked title handling
+        if (this.locked) {
+            this.title = "ENCRYPTED FILE";
+        }
+
         this.shake = 0;
     }
 
@@ -238,27 +246,23 @@ export class NotepadWindow {
     }
 
     checkClick(mx, my) {
-        if (!this.active) return false;
+        // Base checks (Drag / Close Button)
+        const baseRes = super.checkClick(mx, my);
+        if (baseRes) return baseRes; // 'drag', 'close', 'consumed' if inside
 
-        // Check Close Button
-        const bx = this.x + this.w - 18;
-        const by = this.y + 4;
-        if (mx >= bx && mx <= bx + 14 && my >= by && my <= by + 14) {
-            this.active = false;
-            return 'close';
-        }
+        // Base returns 'consumed' if inside the window rect.
+        // Wait, super.checkClick returns 'consumed' if inside body.
+        // So we just need to ensure we return 'consumed' if we want to block input.
+        // But do we need special handling for password input focus?
+        // Currently input is global key listener if focused... 
+        // We need to ensure we know this window is focused.
+        // The WindowManager handles focus on click.
 
-        // Header Drag
-        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + 24) {
-            return 'drag';
-        }
+        // So actually, just relying on super.checkClick is likely enough for interactions,
+        // BUT we need to ensure handling input blocking?
+        // super.checkClick returns 'consumed' if inside bounds.
 
-        // Consume click inside window (prevent clicking game behind it)
-        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + this.h) {
-            return true;
-        }
-
-        return false;
+        return null;
     }
 
     handleKeyDown(e) {
@@ -284,20 +288,23 @@ export class NotepadWindow {
     }
 }
 
-export class MailWindow {
-    constructor(w, h, mailSystem) {
-        this.w = 500;
-        this.h = 400;
-        this.x = (w - this.w) / 2;
-        this.y = (h - this.h) / 2;
+export class MailWindow extends Window {
+    constructor(gameW, gameH, mailSystem) {
+        const w = 500;
+        const h = 400;
+        const x = (gameW - w) / 2;
+        const y = (gameH - h) / 2;
+
+        super(x, y, w, h, "Outlook_Express_Pirated_Edition.exe");
+
         this.mailSystem = mailSystem;
-        this.active = false;
-        this.title = "Outlook_Express_Pirated_Edition.exe";
         this.selectedId = null;
         this.scroll = 0;
     }
 
     resize(w, h) {
+        // Recenter? Or keep relative?
+        // If we simply set x,y back to center:
         this.x = (w - this.w) / 2;
         this.y = (h - this.h) / 2;
     }
@@ -429,41 +436,29 @@ export class MailWindow {
     }
 
     checkClick(mx, my) {
-        if (!this.active) return false;
+        // Base checks (Drag / Close)
+        const baseRes = super.checkClick(mx, my);
+        if (baseRes === 'close') return 'close';
+        if (baseRes === 'drag') return 'drag';
 
-        // Window Drag/Interaction area
-        if (mx < this.x || mx > this.x + this.w || my < this.y || my > this.y + this.h) {
-            return false;
-        }
-
-        // Close Button
-        const bx = this.x + this.w - 20;
-        const by = this.y + 5;
-        if (mx >= bx && mx <= bx + 16 && my >= by && my <= by + 16) {
-            this.active = false;
-            return 'close';
-        }
-
-        // Header Drag
-        if (my < this.y + 24) {
-            return 'drag';
-        }
-
-        // List Click
-        const listW = this.w * 0.4 - 10;
-        const subY = this.y + 30; // contentY
-        if (mx >= this.x + 10 && mx <= this.x + 10 + listW && my >= subY) {
-            const listY = my - subY;
-            const index = Math.floor(listY / 30);
-            const inbox = this.mailSystem.inbox;
-            if (index >= 0 && index < inbox.length) {
-                this.selectedId = inbox[index].id;
-                this.mailSystem.markRead(this.selectedId);
-                return true;
+        // If not frame interaction, check internal content
+        if (baseRes === 'consumed') {
+            // List Click Logic
+            const listW = this.w * 0.4 - 10;
+            const subY = this.y + 30; // contentY
+            if (mx >= this.x + 10 && mx <= this.x + 10 + listW && my >= subY) {
+                const listY = my - subY;
+                const index = Math.floor(listY / 30);
+                const inbox = this.mailSystem.inbox;
+                if (index >= 0 && index < inbox.length) {
+                    this.selectedId = inbox[index].id;
+                    this.mailSystem.markRead(this.selectedId);
+                    return 'consumed'; // Updated return value
+                }
             }
+            return 'consumed';
         }
-
-        return true; // Click consumed
+        return null;
     }
 
     getLines(ctx, text, maxWidth) {
@@ -489,3 +484,4 @@ export class MailWindow {
         return lines;
     }
 }
+

@@ -1,19 +1,18 @@
+import { Window } from './Window.js';
 
-import { TerminalHack } from '../minigames/TerminalHack.js';
-// Leaving import for now, but really MinigameWindow shouldn't depend on it if passed in. 
-// Ideally we remove this import to avoid circular dep if any, but it's safe if unused.
-// Actually, let's remove it to be clean.
+export class MinigameWindow extends Window {
+    constructor(gameW, gameH, minigame) {
+        const w = 400;
+        const h = 250;
+        const x = (gameW - w) / 2;
+        const y = (gameH - h) / 2;
+        const title = minigame.title || "MINIGAME.exe";
 
-export class MinigameWindow {
-    constructor(w, h, minigame) {
-        this.w = 400;
-        this.h = 250;
-        this.x = (w - this.w) / 2;
-        this.y = (h - this.h) / 2;
+        super(x, y, w, h, title);
 
-        this.active = true;
         this.minigame = minigame;
-        this.title = minigame.title || "MINIGAME.exe";
+        // input handled by update logic passing global input because minigames often need keyboard/etc.
+        // But for click input, checkClick delegates.
 
         // Shake effect for window
         this.shake = 0;
@@ -60,18 +59,20 @@ export class MinigameWindow {
         ctx.fillText(this.title, tx + 6, this.y + 16);
 
         // Close Button
+        const bx = tx + this.w - 18;
+        const by = this.y + 4;
         ctx.fillStyle = '#000';
-        ctx.fillRect(tx + this.w - 18, this.y + 4, 14, 14);
+        ctx.fillRect(bx, by, 14, 14);
         ctx.strokeStyle = '#0f0';
         ctx.lineWidth = 1;
-        ctx.strokeRect(tx + this.w - 18, this.y + 4, 14, 14);
+        ctx.strokeRect(bx, by, 14, 14);
 
         ctx.strokeStyle = '#0f0';
         ctx.beginPath();
-        ctx.moveTo(tx + this.w - 15, this.y + 7);
-        ctx.lineTo(tx + this.w - 7, this.y + 15);
-        ctx.moveTo(tx + this.w - 7, this.y + 7);
-        ctx.lineTo(tx + this.w - 15, this.y + 15);
+        ctx.moveTo(bx + 3, by + 3);
+        ctx.lineTo(bx + 11, by + 11);
+        ctx.moveTo(bx + 11, by + 3);
+        ctx.lineTo(bx + 3, by + 11);
         ctx.stroke();
 
         // Content Area
@@ -79,28 +80,18 @@ export class MinigameWindow {
     }
 
     checkClick(mx, my) {
-        if (!this.active) return false;
+        const baseRes = super.checkClick(mx, my);
+        if (baseRes) return baseRes;
 
-        // Check Close Button
-        const bx = this.x + this.w - 18;
-        const by = this.y + 4;
-        if (mx >= bx && mx <= bx + 14 && my >= by && my <= by + 14) {
-            this.active = false;
-            return 'close';
+        // Pass click to minigame if needed? 
+        // Currently minigames handle their own logic via update(input), 
+        // but if they need specific click events relative to window:
+        /*
+        if (this.minigame.onClick) {
+            this.minigame.onClick(mx - this.x, my - this.y);
         }
-
-        // Header Drag
-        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + 24) {
-            return 'drag';
-        }
-
-        // Consume all clicks inside window to prevent clicking through
-        if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + this.h) {
-            return true;
-        }
-
-        return false;
+        */
+        return null; // Not consumed if not in body, but body is consumed by super.
     }
-
-    // handleKeyDown(e) removed - minigame should poll input in update
 }
+
