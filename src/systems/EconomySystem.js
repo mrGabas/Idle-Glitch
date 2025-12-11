@@ -3,10 +3,17 @@ import { CFG, UTILS } from '../core/config.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 
 export class EconomySystem {
+    /**
+     * @param {import('../core/game.js').Game} game - Reference to the main Game instance.
+     */
     constructor(game) {
         this.game = game;
     }
 
+    /**
+     * Updates economy logic (auto-production).
+     * @param {number} dt - Delta time in seconds.
+     */
     update(dt) {
         // Auto score gain
         if (this.game.state.autoRate > 0) {
@@ -14,6 +21,12 @@ export class EconomySystem {
         }
     }
 
+    /**
+     * Handles click interactions for the economy system (Shop, Main Button).
+     * @param {number} mx - Mouse X coordinate relative to canvas.
+     * @param {number} my - Mouse Y coordinate relative to canvas.
+     * @returns {boolean} True if a click was handled.
+     */
     handleClick(mx, my) {
         // 1. Shop Upgrades
         let shopHit = false;
@@ -50,6 +63,9 @@ export class EconomySystem {
         return false;
     }
 
+    /**
+     * logic for clicking the main game button.
+     */
     handleMainClick() {
         let gain = this.game.state.clickPower;
         let isCrit = false;
@@ -78,6 +94,10 @@ export class EconomySystem {
         }
     }
 
+    /**
+     * Purchases a normal upgrade.
+     * @param {Object} u - The upgrade object.
+     */
     buyUpgrade(u) {
         this.game.state.score -= u.cost;
         u.count++;
@@ -90,6 +110,10 @@ export class EconomySystem {
         this.game.state.addCorruption(1.5);
     }
 
+    /**
+     * Purchases a meta-upgrade using Glitch Data.
+     * @param {Object} u - The meta-upgrade object.
+     */
     buyMetaUpgrade(u) {
         const currentLevel = this.game.metaUpgrades[u.id] || 0;
         if (u.maxLevel && currentLevel >= u.maxLevel) return;
@@ -105,6 +129,9 @@ export class EconomySystem {
         }
     }
 
+    /**
+     * Applies effects of purchased meta-upgrades.
+     */
     applyMetaUpgrades() {
         const boostLevel = this.game.metaUpgrades['prestige_boost'] || 0;
         if (boostLevel > 0) {
@@ -112,6 +139,9 @@ export class EconomySystem {
         }
     }
 
+    /**
+     * Calculates and awards offline progress gains.
+     */
     checkOfflineProgress() {
         if (this.game.metaUpgrades['offline_progress']) {
             const now = Date.now();

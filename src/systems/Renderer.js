@@ -5,6 +5,7 @@
  */
 import { CFG, UTILS } from '../core/config.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 export class Renderer {
     constructor(canvasId) {
@@ -13,7 +14,7 @@ export class Renderer {
         this.ctx = this.canvas.getContext('2d');
         this.w = 0;
         this.h = 0;
-        this.imageCache = {};
+        // this.imageCache = {}; // Removed in favor of AssetLoader
 
         // Matrix Rain Settings
         this.matrixFontSize = 16;
@@ -621,14 +622,7 @@ export class Renderer {
         const time = Date.now() / 1000;
 
         theme.parallax.layers.forEach(layer => {
-            // Load if missing
-            if (!this.imageCache[layer.src]) {
-                const img = new Image();
-                img.src = layer.src;
-                this.imageCache[layer.src] = img;
-            }
-
-            const img = this.imageCache[layer.src];
+            const img = assetLoader.getImage(layer.src);
             if (img && img.complete) {
                 // Scroll logic
                 const x = -(time * layer.speed) % this.w;

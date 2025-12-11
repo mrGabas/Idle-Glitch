@@ -12,6 +12,7 @@ import { Renderer } from '../systems/Renderer.js';
 import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
+import { CursedCaptcha } from '../entities/enemies.js';
 import { Popup } from '../ui/windows.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
@@ -116,6 +117,9 @@ export class Game {
         requestAnimationFrame((t) => this.loop(t));
     }
 
+    /**
+     * Saves the current game state to local storage.
+     */
     saveGame() {
         this.saveSystem.saveNumber('prestige_mult', this.prestigeMult);
         this.saveSystem.saveNumber('reboot_count', this.rebootCount);
@@ -132,6 +136,9 @@ export class Game {
 
 
 
+    /**
+     * Binds DOM event listeners to UI elements.
+     */
     bindUI() {
         // Buttons
         const startBtn = document.getElementById('btn-start');
@@ -318,12 +325,18 @@ export class Game {
         this.scareTimer = 1.5; // Displays for 1.5s
     }
 
+    /**
+     * Starts the gameplay loop.
+     */
     startGame() {
         this.audio.resume();
         this.setScreen(null);
         this.gameState = 'PLAYING';
     }
 
+    /**
+     * Toggles between PLAYING and PAUSED states.
+     */
     togglePause() {
         if (this.gameState === 'PLAYING') {
             this.gameState = 'PAUSED';
@@ -334,6 +347,10 @@ export class Game {
         }
     }
 
+    /**
+     * Opens the settings menu.
+     * @param {string} fromIds - The ID of the screen to return to.
+     */
     openSettings(fromIds) {
         this.previousState = this.gameState;
         this.gameState = 'SETTINGS';
@@ -341,6 +358,9 @@ export class Game {
         this.setScreen('settings-menu');
     }
 
+    /**
+     * Closes the settings menu and returns to previous state.
+     */
     closeSettings() {
         if (this.previousState === 'MENU') {
             this.gameState = 'MENU';
@@ -351,6 +371,10 @@ export class Game {
         }
     }
 
+    /**
+     * Sets the active DOM screen element.
+     * @param {string|null} id - The ID of the screen element to show, or null to hide all.
+     */
     setScreen(id) {
         document.querySelectorAll('.menu-screen').forEach(el => el.style.display = 'none');
         if (id) {
@@ -359,6 +383,9 @@ export class Game {
         }
     }
 
+    /**
+     * Resizes the canvas and systems to fit the window.
+     */
     resize() {
         if (this.renderer) this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.w = window.innerWidth; // Keep local ref for logic
@@ -368,10 +395,16 @@ export class Game {
         if (this.uiManager) this.uiManager.resize(this.w, this.h);
     }
 
+    /**
+     * Triggers the crash (BSOD) sequence via ThemeManager.
+     */
     triggerCrash() {
         this.themeManager.triggerCrash();
     }
 
+    /**
+     * Performs a hard reset (Prestige) of the game session.
+     */
     hardReset() {
         // Prestige Reset logic
         this.rebootCount++;
@@ -446,6 +479,11 @@ export class Game {
         }
     }
 
+    /**
+     * Handles interactions within the BIOS screen.
+     * @param {number} mx - Mouse X.
+     * @param {number} my - Mouse Y.
+     */
     handleBIOSClick(mx, my) {
         const startY = CFG.game.bios.startY;
 
@@ -481,6 +519,9 @@ export class Game {
 
 
 
+    /**
+     * Boots the system to start a new run from BIOS.
+     */
     bootSystem() {
         this.gameState = 'PLAYING';
         this.state.rebooting = true;
@@ -489,6 +530,10 @@ export class Game {
         this.state.startTime = Date.now();
     }
 
+    /**
+     * Handles global input dispatching.
+     * @param {MouseEvent} e - The mouse event.
+     */
     handleInput(e) {
         const rect = this.renderer.canvas.getBoundingClientRect();
         this.mouse.x = e.clientX - rect.left;
@@ -584,6 +629,13 @@ export class Game {
 
     }
 
+    /**
+     * Creates a floating text particle.
+     * @param {number} x - X coordinate.
+     * @param {number} y - Y coordinate.
+     * @param {string} text - Text to display.
+     * @param {string} color - CSS color string.
+     */
     createFloatingText(x, y, text, color) {
         const p = new Particle(x, y, color);
         p.text = text;
@@ -648,6 +700,10 @@ export class Game {
     }
 
     // Main Loop
+    /**
+     * Main Game Loop.
+     * @param {number} t - Current timestamp.
+     */
     loop(t) {
         const dt = (t - this.lastTime) / 1000;
         this.lastTime = t;
@@ -670,6 +726,10 @@ export class Game {
         requestAnimationFrame((t) => this.loop(t));
     }
 
+    /**
+     * Updates game logic.
+     * @param {number} dt - Delta time in seconds.
+     */
     update(dt) {
         // Glitch System Logic (Lag, Crashes, Spawning)
         this.glitchSystem.update(dt);
@@ -731,10 +791,16 @@ export class Game {
 
     }
 
+    /**
+     * Manually triggers a browser error simulation.
+     */
     triggerBrowserError() {
         this.glitchSystem.triggerBrowserError();
     }
 
+    /**
+     * Renders the game frame.
+     */
     draw() {
         const inputData = {
             currentTheme: this.themeManager.currentTheme,

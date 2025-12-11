@@ -17,6 +17,11 @@ export class EntityManager {
         };
     }
 
+    /**
+     * Adds an entity to the specified layer.
+     * @param {string} layer - The name of the layer (e.g., 'particles', 'debris').
+     * @param {Object} entity - The entity object to add.
+     */
     add(layer, entity) {
         if (this.layers[layer]) {
             this.layers[layer].push(entity);
@@ -25,10 +30,18 @@ export class EntityManager {
         }
     }
 
+    /**
+     * Retrieves all entities in a given layer.
+     * @param {string} layer - The layer name.
+     * @returns {Array<Object>} Array of entities in that layer.
+     */
     getAll(layer) {
         return this.layers[layer] || [];
     }
 
+    /**
+     * Clears all entities from all layers.
+     */
     clear() {
         this.layers = {
             particles: [],
@@ -39,6 +52,11 @@ export class EntityManager {
         };
     }
 
+    /**
+     * Updates all entities across all layers.
+     * @param {number} dt - Delta time in seconds.
+     * @param {import('../core/game.js').Game} gameContext - Reference to the main Game instance.
+     */
     update(dt, gameContext) {
         for (const layerName in this.layers) {
             const layer = this.layers[layerName];

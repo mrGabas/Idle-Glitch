@@ -9,27 +9,37 @@ import { UTILS } from './config.js';
 
 export class GameState {
     constructor() {
-        // Persistent/Core State
+        /** @type {number} Current currency amount */
         this.score = 0;
+        /** @type {number} Currency per click */
         this.clickPower = 1;
+        /** @type {number} Currency generated per second */
         this.autoRate = 0;
+        /** @type {number} Global corruption level (0-100) */
         this.corruption = 0;
+        /** @type {number} Prestige multiplier applied to gains */
         this.multiplier = 1;
 
         // Session State
+        /** @type {number} Timestamp when the current session started */
         this.startTime = Date.now();
+        /** @type {number} Intensity of visual glitches (0.0 to 1.0) */
         this.glitchIntensity = 0;
 
         // Flags
+        /** @type {boolean} Whether the game is currently showing a BSOD */
         this.crashed = false;
+        /** @type {boolean} Whether the game is in the reboot sequence */
         this.rebooting = false;
+        /** @type {boolean} Whether a fake crash is active */
         this.falseCrash = false;
+        /** @type {number} Timer for the crash effect */
         this.crashTimer = 0;
     }
 
     /**
-     * Add score (currency)
-     * @param {number} amount 
+     * Increases the player's score by the specified amount.
+     * @param {number} amount - The amount of currency to add.
      */
     addScore(amount) {
         if (isNaN(amount)) return;
@@ -39,8 +49,8 @@ export class GameState {
     }
 
     /**
-     * modify corruption
-     * @param {number} amount 
+     * Modifies the corruption level, clamping it between 0 and 100.
+     * @param {number} amount - The amount to change corruption by (can be negative).
      */
     addCorruption(amount) {
         this.corruption = Math.max(0, Math.min(100, this.corruption + amount));
@@ -48,28 +58,47 @@ export class GameState {
         events.emit('state_updated', this);
     }
 
+    /**
+     * Sets the corruption level directly.
+     * @param {number} val - The new corruption percentage (0-100).
+     */
     setCorruption(val) {
         this.corruption = Math.max(0, Math.min(100, val));
         events.emit('corruption_changed', this.corruption);
         events.emit('state_updated', this);
     }
 
+    /**
+     * Sets the global prestige multiplier.
+     * @param {number} val - The new multiplier value.
+     */
     setMultiplier(val) {
         this.multiplier = val;
         events.emit('multiplier_changed', this.multiplier);
         events.emit('state_updated', this);
     }
 
+    /**
+     * Sets the click power (currency per click).
+     * @param {number} val - The new click power.
+     */
     setClickPower(val) {
         this.clickPower = val;
         events.emit('state_updated', this);
     }
 
+    /**
+     * Sets the auto-production rate.
+     * @param {number} val - The new currency per second.
+     */
     setAutoRate(val) {
         this.autoRate = val;
         events.emit('state_updated', this);
     }
 
+    /**
+     * Resets the current session state (score, corruption) but keeps meta-progression.
+     */
     resetSession() {
         this.score = 0;
         this.clickPower = 1;
