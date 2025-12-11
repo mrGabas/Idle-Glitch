@@ -182,7 +182,7 @@ export class SnakeGame {
             ctx.textAlign = 'center';
             ctx.fillText("GAME OVER", w / 2, h / 2);
             ctx.font = '12px "Courier New"';
-            ctx.fillText("Press Enter to Restart", w / 2, h / 2 + 20);
+            ctx.fillText("Press Enter or A to Restart", w / 2, h / 2 + 20);
         }
 
         ctx.restore();

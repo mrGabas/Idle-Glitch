@@ -16,6 +16,7 @@ export class InputHandler {
 
         // Virtual Buttons (for mobile/touch)
         this.virtualButtons = {};
+        this.prevVirtualButtons = {};
 
         // Action Map
         this.actions = {
@@ -56,6 +57,7 @@ export class InputHandler {
     update() {
         // Store current keys as previous for next frame's "pressed" check
         this.prevKeys = { ...this.keys };
+        this.prevVirtualButtons = { ...this.virtualButtons };
         // We do shallow copy. 
         // Note: usage of isActionPressed depends on calling update() at end of frame or start.
     }
@@ -81,10 +83,8 @@ export class InputHandler {
      * @returns {boolean}
      */
     isActionPressed(actionName) {
-        // Check Virtual Button (If we had justPressed logic for virtuals, we'd need similar prev state)
-        // For now, assume virtual buttons are simple state. 
-        // If we want "pressed" for virtuals, we need prevVirtuals.
-        // Let's implement basics first.
+        // Check Virtual Button
+        if (this.virtualButtons[actionName] && !this.prevVirtualButtons[actionName]) return true;
 
         const keys = this.actions[actionName];
         if (!keys) return false;
@@ -97,6 +97,17 @@ export class InputHandler {
      * @param {string} actionName 
      * @param {boolean} active 
      */
+    /**
+     * Sets the state of a virtual button.
+     * @param {string} actionName 
+     * @param {boolean} active 
+     */
+    setVirtualButtonState(actionName, active) {
+        this.virtualButtons[actionName] = active;
+        // If we want to simulate key events for other systems:
+        // this.emit(active ? 'keydown' : 'keyup', { key: 'Virtual' + actionName });
+    }
+
     getPressedKeys() {
         const pressed = [];
         for (const code in this.keys) {

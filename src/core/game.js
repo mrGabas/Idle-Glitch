@@ -25,6 +25,7 @@ import { ThemeManager } from '../managers/ThemeManager.js';
 import { UIManager } from '../managers/UIManager.js';
 import { AchievementSystem } from '../systems/AchievementSystem.js';
 import { AchievementPopup } from '../ui/notifications.js';
+import { VirtualControls } from '../ui/VirtualControls.js';
 
 /**
  * @typedef {Object} GameState
@@ -45,6 +46,7 @@ export class Game {
         this.saveSystem = new SaveSystem();
         this.renderer = new Renderer('gameCanvas');
         this.input = new InputHandler();
+        this.virtualControls = new VirtualControls(this);
         this.audio = new SoundEngine(); // Keep for resume()
         this.resize(); // Initialize dimensions early
 
@@ -742,6 +744,7 @@ export class Game {
         if (this.gameState !== 'PLAYING' && !this.state.crashed && !this.state.rebooting) {
             // Still draw even if paused, just don't update
             this.draw();
+            this.input.update(); // Update input even when paused to prevent stuck keys
             requestAnimationFrame((t) => this.loop(t));
             return;
         }
@@ -754,6 +757,8 @@ export class Game {
         this.update(safeDt);
         this.draw();
 
+        this.input.update(); // Update input at end of frame
+
         requestAnimationFrame((t) => this.loop(t));
     }
 
@@ -762,8 +767,24 @@ export class Game {
      * @param {number} dt - Delta time in seconds.
      */
     update(dt) {
-        this.input.update();
         this.handleGlobalInput();
+
+        // Update Virtual Controls Context
+        if (this.virtualControls && this.virtualControls.active) {
+            let context = 'none';
+            if (this.gameState === 'BIOS') {
+                context = 'bios';
+            } else if (this.gameState === 'SETTINGS' || this.gameState === 'PAUSED') {
+                context = 'menu';
+            } else if (this.gameState === 'PLAYING') {
+                // Check minigames
+                const snake = this.entities.getAll('ui').find(el => el instanceof MinigameWindow && el.active && el.title === "SNAKE.EXE");
+                if (snake) {
+                    context = 'snake';
+                }
+            }
+            this.virtualControls.setContext(context);
+        }
 
         // Glitch System Logic (Lag, Crashes, Spawning)
         this.glitchSystem.update(dt);
