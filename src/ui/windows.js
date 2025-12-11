@@ -107,7 +107,7 @@ export class Popup {
 }
 
 export class NotepadWindow {
-    constructor(w, h, content) {
+    constructor(w, h, content, options) {
         this.w = 400;
         this.h = 300;
         this.x = (w - this.w) / 2;

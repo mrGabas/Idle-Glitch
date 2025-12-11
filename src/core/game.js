@@ -24,6 +24,7 @@ import { ReviewsTab } from '../ui/reviewsTab.js';
 import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
 import { LoreFile } from '../entities/items.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
+import { ThemeManager } from '../managers/ThemeManager.js';
 
 /**
  * @typedef {Object} GameState
@@ -50,11 +51,11 @@ export class Game {
         this.hunter = null;
         this.fakeCursor = new FakeCursor(0, 0, this);
 
-        this.currentTheme = THEMES.rainbow_paradise;
-
         // Save loading
         this.prestigeMult = this.saveSystem.loadNumber('prestige_mult', 1.0);
         this.rebootCount = this.saveSystem.loadNumber('reboot_count', 0);
+
+        this.themeManager = new ThemeManager(this);
 
         // META DATA
         this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
@@ -70,10 +71,6 @@ export class Game {
         // Direct assignment is fine for init.
 
         this.applyMetaUpgrades();
-        this.loadThemeUpgrades();
-
-        this.applyMetaUpgrades();
-        this.loadThemeUpgrades();
 
         this.chat = new ChatSystem(this);
         this.reviewsTab = new ReviewsTab(this);
@@ -84,7 +81,7 @@ export class Game {
 
         // Load Theme
         const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
-        this.setTheme(savedTheme);
+        this.themeManager.setTheme(savedTheme);
 
         this.entities = new EntityManager();
         // this.debris, this.popups, this.captchas, this.loreFiles, this.particles -> managed by this.entities
@@ -136,7 +133,7 @@ export class Game {
         this.saveSystem.saveNumber('last_save', Date.now());
         // Save rate for offline calc
         this.saveSystem.saveNumber('last_auto_rate', this.state.autoRate);
-        this.saveSystem.save('selected_theme', this.currentTheme.id);
+        this.saveSystem.save('selected_theme', this.themeManager.currentTheme.id);
     }
 
     applyMetaUpgrades() {
@@ -168,9 +165,7 @@ export class Game {
         }
     }
 
-    loadThemeUpgrades() {
-        this.upgrades = this.currentTheme.upgrades.map(u => ({ ...u, count: 0, cost: u.baseCost }));
-    }
+
 
     bindUI() {
         // Buttons
@@ -409,32 +404,8 @@ export class Game {
         if (this.mailWindow) this.mailWindow.resize(this.w, this.h); // Mail window might need it too? (Wait, MailWindow logic is position based, might need update)
     }
 
-    setTheme(id) {
-        this.currentTheme = THEMES[id];
-        this.loadThemeUpgrades();
-        if (this.fakeUI) this.fakeUI.init(this.w, this.h);
-    }
-
-    switchTheme(newThemeId) {
-        this.currentTheme = THEMES[newThemeId];
-        this.loadThemeUpgrades();
-        this.state.corruption = 0;
-
-        // Flash effect
-        const flash = document.createElement('div');
-        flash.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:999;transition:opacity 2s;';
-        document.body.appendChild(flash);
-        setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 2000); }, 100);
-
-        // Re-init fake UI for new theme colors
-        this.fakeUI.init(this.w, this.h);
-    }
-
     triggerCrash() {
-        this.state.crashed = true;
-        this.gameState = 'CRASH'; // Change state to distinguish from PLAYING
-        this.events.emit('play_sound', 'error');
-        // Reset save? Or just reboot sequence.
+        this.themeManager.triggerCrash();
     }
 
     hardReset() {
@@ -467,7 +438,7 @@ export class Game {
         this.state.multiplier = 1 * this.prestigeMult; // Re-apply base
 
         // Reset to default theme for new run
-        this.setTheme('rainbow_paradise');
+        this.themeManager.reset();
 
         // Clear entities
         this.entities.clear();
@@ -503,9 +474,9 @@ export class Game {
         // Theme Selector
         if (index === META_UPGRADES.length + 1 && this.metaUpgrades['start_theme']) {
             const themeIds = Object.keys(THEMES);
-            let idx = themeIds.indexOf(this.currentTheme.id);
+            let idx = themeIds.indexOf(this.themeManager.currentTheme.id);
             idx = (idx + 1) % themeIds.length;
-            this.setTheme(themeIds[idx]);
+            this.themeManager.setTheme(themeIds[idx]);
             this.events.emit('play_sound', 'click');
         }
     }
@@ -535,9 +506,9 @@ export class Game {
             if (my >= themeY - 20 && my < themeY + 10) {
                 // Cycle Theme
                 const themeIds = Object.keys(THEMES);
-                let idx = themeIds.indexOf(this.currentTheme.id);
+                let idx = themeIds.indexOf(this.themeManager.currentTheme.id);
                 idx = (idx + 1) % themeIds.length;
-                this.setTheme(themeIds[idx]);
+                this.themeManager.setTheme(themeIds[idx]);
                 this.events.emit('play_sound', 'click');
             }
         }
@@ -666,7 +637,7 @@ export class Game {
                 popupHit = true;
                 if (res === 'bonus') {
                     this.addScore(this.state.autoRate * 20 + 500);
-                    this.createParticles(mx, my, this.currentTheme.colors.accent);
+                    this.createParticles(mx, my, this.themeManager.currentTheme.colors.accent);
                     this.events.emit('play_sound', 'buy');
                 } else {
                     this.events.emit('play_sound', 'click');
@@ -677,7 +648,7 @@ export class Game {
 
         // 2. Shop Upgrades
         let shopHit = false;
-        this.upgrades.forEach((u, i) => {
+        this.themeManager.upgrades.forEach((u, i) => {
             const col = i % 2;
             const row = Math.floor(i / 2);
             const bx = (this.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
@@ -729,7 +700,7 @@ export class Game {
                     }
                     this.state.addScore(100 * this.state.multiplier);
 
-                    if (this.currentTheme.id === 'rainbow_paradise') {
+                    if (this.themeManager.currentTheme.id === 'rainbow_paradise') {
                         this.state.addCorruption(1.5);
                     } else {
                         this.state.addCorruption(0.5);
@@ -741,14 +712,14 @@ export class Game {
         if (hitUI) {
             this.shake = 3;
             // Additional lock logic for early game
-            if (this.currentTheme.id === 'rainbow_paradise' && this.state.corruption < 30) {
+            if (this.themeManager.currentTheme.id === 'rainbow_paradise' && this.state.corruption < 30) {
                 this.events.emit('play_sound', 'error');
                 this.createFloatingText(mx, my, "LOCKED", "#888");
                 return; // No corruption if locked?
             }
 
             this.events.emit('play_sound', 'glitch');
-            if (this.currentTheme.id === 'rainbow_paradise') {
+            if (this.themeManager.currentTheme.id === 'rainbow_paradise') {
                 this.state.addCorruption(0.2);
             }
         }
@@ -829,8 +800,8 @@ export class Game {
             this.shake = 2;
         }
 
-        this.createParticles(this.w / 2, this.h / 2 - 100, this.currentTheme.colors.accent);
-        if (this.currentTheme.id === 'rainbow_paradise') this.state.corruption += 0.05;
+        this.createParticles(this.w / 2, this.h / 2 - 100, this.themeManager.currentTheme.colors.accent);
+        if (this.themeManager.currentTheme.id === 'rainbow_paradise') this.state.corruption += 0.05;
     }
 
     buyUpgrade(u) {
@@ -985,45 +956,8 @@ export class Game {
             return;
         }
 
-        // Theme Transition & Mechanics
-        const tId = this.currentTheme.id;
-
-        // 1. Rainbow -> Ad Purgatory
-        if (tId === 'rainbow_paradise') {
-            this.state.glitchIntensity = Math.max(0, (this.state.corruption - 30) / 70);
-            if (this.state.corruption >= 100) this.switchTheme('ad_purgatory');
-        }
-        // 2. Ad Purgatory -> Dev Desktop
-        else if (tId === 'ad_purgatory') {
-            this.state.glitchIntensity = 0.2 + (this.state.corruption / 100) * 0.2;
-            if (this.state.corruption >= 100) this.switchTheme('dev_desktop');
-
-            // AD MECHANIC: Aggressive Popups
-            if (Math.random() < 0.02 + (this.state.corruption * 0.001)) {
-                if (this.entities.getAll('ui').length < 15) this.entities.add('ui', new Popup(this.w, this.h, this.currentTheme));
-            }
-        }
-        // 3. Dev Desktop -> Digital Decay
-        else if (tId === 'dev_desktop') {
-            this.state.glitchIntensity = 0.3 + (this.state.corruption / 100) * 0.2;
-            if (this.state.corruption >= 100) this.switchTheme('digital_decay');
-        }
-        // 4. Digital Decay -> Legacy System
-        else if (tId === 'digital_decay') {
-            this.state.glitchIntensity = 0.4 + (this.state.corruption / 100) * 0.4;
-            if (this.state.corruption >= 100) this.switchTheme('legacy_system');
-        }
-        // 5. Legacy System -> Null Void
-        else if (tId === 'legacy_system') {
-            this.state.glitchIntensity = 0.6 + (this.state.corruption / 100) * 0.4;
-            // Scanline effect is visual content
-            if (this.state.corruption >= 100) this.switchTheme('null_void');
-        }
-        // 5. Null Void -> CRASH
-        else if (tId === 'null_void') {
-            this.state.glitchIntensity = 0.8 + (this.state.corruption / 100) * 0.2;
-            if (this.state.corruption >= 100) this.triggerCrash();
-        }
+        // Theme Transition & Mechanics handled by Manager
+        this.themeManager.update(dt);
 
         // Entities
         this.entities.update(dt, this);
@@ -1048,8 +982,13 @@ export class Game {
         // Popups
         // Managed by EntityManager now (ui layer)
         // But spawning logic remains here
+        // Popups (Managed by ThemeManager for Ad Purgatory mostly, but random ones here?)
+        // The original simplified popup logic was for random chaos, now mainly in ThemeManager.
+        // But the original code had a separate block here for general random popups?
+        // Let's keep it if it's general chaos, or move it if it's theme specific.
+        // It uses `game.state.glitchIntensity`.
         if (Math.random() < 0.001 + (this.state.glitchIntensity * 0.02)) {
-            if (this.entities.getAll('ui').length < 5) this.entities.add('ui', new Popup(this.w, this.h, this.currentTheme));
+            if (this.entities.getAll('ui').length < 5) this.entities.add('ui', new Popup(this.w, this.h, this.themeManager.currentTheme));
         }
 
         if (this.shake > 0) this.shake *= 0.9;
@@ -1152,7 +1091,7 @@ export class Game {
 
     draw() {
         const inputData = {
-            currentTheme: this.currentTheme,
+            currentTheme: this.themeManager.currentTheme,
             mouse: this.mouse,
             shake: this.shake,
             scareTimer: this.scareTimer,
@@ -1166,7 +1105,7 @@ export class Game {
 
         const entities = {
             fakeUI: this.fakeUI,
-            upgrades: this.upgrades,
+            upgrades: this.themeManager.upgrades,
             debris: this.entities.getAll('debris'),
             particles: this.entities.getAll('particles'),
             popups: this.entities.getAll('ui'),

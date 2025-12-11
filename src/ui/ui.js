@@ -12,7 +12,7 @@ export class CrazyFaces {
 
     init(w, h) {
         this.elements = [];
-        const theme = this.game.currentTheme;
+        const theme = this.game.themeManager.currentTheme;
         const isGlitchTheme = theme.id === 'digital_decay';
 
         // CrazyFaces Colors
