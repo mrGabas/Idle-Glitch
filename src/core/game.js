@@ -9,22 +9,19 @@ import { SoundEngine } from './audio.js';
 import { events } from './events.js';
 import { SaveSystem } from './SaveSystem.js';
 import { Renderer } from '../systems/Renderer.js';
-import { ChatSystem } from '../ui/chat.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
-import { Popup, NotepadWindow } from '../ui/windows.js';
+import { Popup } from '../ui/windows.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
 import { EntityManager } from '../managers/EntityManager.js';
 // New imports for Mail
-import { MailSystem } from '../systems/MailSystem.js';
 import { FakeCursor } from '../entities/FakeCursor.js';
-import { MailWindow } from '../ui/windows.js';
-import { ReviewsTab } from '../ui/reviewsTab.js';
 import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
 import { LoreFile } from '../entities/items.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 import { ThemeManager } from '../managers/ThemeManager.js';
+import { UIManager } from '../managers/UIManager.js';
 
 /**
  * @typedef {Object} GameState
@@ -72,12 +69,9 @@ export class Game {
 
         this.applyMetaUpgrades();
 
-        this.chat = new ChatSystem(this);
-        this.reviewsTab = new ReviewsTab(this);
+        this.applyMetaUpgrades();
 
-        // Mail System
-        this.mail = new MailSystem(this);
-        this.mailWindow = new MailWindow(this.w, this.h, this.mail);
+        this.uiManager = new UIManager(this);
 
         // Load Theme
         const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
@@ -87,8 +81,6 @@ export class Game {
         // this.debris, this.popups, this.captchas, this.loreFiles, this.particles -> managed by this.entities
         // We can keep references locally if we need direct access or just use getters.
         // For simplicity and to follow requirements, we should use the manager.
-
-        this.activeNotepad = null;
 
         this.fakeUI = new CrazyFaces(this);
 
@@ -158,7 +150,7 @@ export class Game {
                     const gained = lastRate * diff * 0.25;
                     if (gained > 0) {
                         this.state.addScore(gained);
-                        this.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
+                        this.uiManager.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
                     }
                 }
             }
@@ -234,24 +226,24 @@ export class Game {
             }
 
             // Priority 1: Password/Notepad Input
-            if (this.activeNotepad && this.activeNotepad.locked) {
-                this.activeNotepad.handleKeyDown(e);
+            if (this.uiManager.activeNotepad && this.uiManager.activeNotepad.locked) {
+                this.uiManager.activeNotepad.handleKeyDown(e);
                 return;
             }
 
             // Priority 2: Chat Console Input
-            if (this.chat && this.chat.isFocused) {
-                this.chat.handleKeyDown(e);
+            if (this.uiManager.chat && this.uiManager.chat.isFocused) {
+                this.uiManager.chat.handleKeyDown(e);
                 // Don't return necessarily, maybe allows some game shortcuts still? 
                 // But for typing safety, let's return if it's a character key
                 if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') return;
             }
 
             if (e.key === 'Escape') {
-                if (this.activeNotepad) {
-                    this.activeNotepad = null;
-                } else if (this.chat && this.chat.isFocused) {
-                    this.chat.isFocused = false;
+                if (this.uiManager.activeNotepad) {
+                    this.uiManager.activeNotepad = null;
+                } else if (this.uiManager.chat && this.uiManager.chat.isFocused) {
+                    this.uiManager.chat.isFocused = false;
                 } else if (this.gameState === 'PLAYING') {
                     this.togglePause();
                 } else if (this.gameState === 'PAUSED') {
@@ -294,8 +286,8 @@ export class Game {
         // Scroll / Wheel
         this.input.on('wheel', (e) => {
             if (this.gameState === 'PLAYING') {
-                if (this.reviewsTab.visible) {
-                    this.reviewsTab.handleScroll(e.deltaY);
+                if (this.uiManager.reviewsTab.visible) {
+                    this.uiManager.reviewsTab.handleScroll(e.deltaY);
                 }
             }
         });
@@ -401,7 +393,7 @@ export class Game {
         this.h = window.innerHeight;
         if (this.fakeUI) this.fakeUI.init(this.w, this.h);
         if (this.fakeCursor) this.fakeCursor.resize(this.w, this.h);
-        if (this.mailWindow) this.mailWindow.resize(this.w, this.h); // Mail window might need it too? (Wait, MailWindow logic is position based, might need update)
+        if (this.uiManager) this.uiManager.resize(this.w, this.h);
     }
 
     triggerCrash() {
@@ -447,10 +439,10 @@ export class Game {
         // For now, new instance is safe.
         this.entities = new EntityManager();
 
-        this.activeNotepad = null;
+        this.uiManager.activeNotepad = null;
         this.hunter = null;
-        this.chat.messages = [];
-        this.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
+        this.uiManager.chat.messages = [];
+        this.uiManager.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
 
         // Apply passive metas
         this.applyMetaUpgrades();
@@ -546,10 +538,7 @@ export class Game {
         const mx = this.mouse.x;
         const my = this.mouse.y;
 
-        // Add chat console focus check (Only if not in BIOS)
-        if (this.gameState !== 'BIOS' && this.chat.checkClick(mx, my, this.h)) {
-            return;
-        }
+        if (this.uiManager.handleInput(mx, my)) return;
 
         if (this.gameState === 'BIOS') {
             this.handleBIOSClick(mx, my);
@@ -560,48 +549,13 @@ export class Game {
 
         // Mouse updated above
 
-        // 0. Notepad (Top Priority)
-        if (this.activeNotepad) {
-            const close = this.activeNotepad.checkClick(mx, my);
-            if (close) this.activeNotepad = null;
-            return; // Block other inputs
-        }
-
-        // 0.05 Reviews Tab
-        if (this.reviewsTab.visible) {
-            this.reviewsTab.checkClick(mx, my);
-            return;
-        }
-
-        // 0.055 Mail Window
-        if (this.mailWindow.active) {
-            const consumed = this.mailWindow.checkClick(mx, my);
-            if (consumed) return;
-        }
-
-        // 0.056 Mail Icon/Button (Top Right, Pos 1)
-        // Center: w-50, 50. Size: ~40x40 hit area
-        if (Math.hypot(mx - (this.w - 50), my - 50) < 25) {
-            this.mailWindow.active = !this.mailWindow.active;
-            this.events.emit('play_sound', 'click');
-            return;
-        }
-
-        // 0.06 Reviews Button (Top Right, Pos 2)
-        // Center: w-50, 110.
-        if (Math.hypot(mx - (this.w - 50), my - 110) < 25) {
-            this.reviewsTab.toggle();
-            return;
-        }
-
         // 0.1 Lore Files
         const loreFiles = this.entities.getAll('items');
         for (let i = 0; i < loreFiles.length; i++) {
             if (loreFiles[i].checkClick(mx, my)) {
                 // Open lore
                 const file = loreFiles[i];
-                this.activeNotepad = new NotepadWindow(this.w, this.h, file.content, { password: file.password });
-                this.activeNotepad.title = file.label; // Lock title logic handles this in constructor but we can override or let it be
+                this.uiManager.openNotepad(file.content, { password: file.password, title: file.label });
                 loreFiles.splice(i, 1); // Manual splice from array returned by reference? Yes getAll returns ref.
                 this.events.emit('play_sound', 'click');
                 return;
@@ -622,7 +576,7 @@ export class Game {
                 this.addScore(this.state.autoRate * 120 + 1000); // Bonus
                 this.state.addCorruption(-5); // Cleans corruption
                 this.createParticles(mx, my, '#0f0');
-                this.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
+                this.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
                 captchas.splice(i, 1);
                 return;
             }
@@ -673,12 +627,7 @@ export class Game {
             return;
         }
 
-        // 3.5 Chat Console Focus
-        // We pass 'h' because chat position depends on it
-        if (this.chat.checkClick(mx, my, this.h)) {
-            // Focus handled inside checkClick
-            return;
-        }
+
 
         // 4. DESTRUCTION OF FAKE UI
         let hitUI = false;
@@ -867,6 +816,8 @@ export class Game {
             return; // STOP ALL OTHER UPDATES
         }
 
+        this.themeManager.update(safeDt);
+        this.uiManager.update(safeDt);
         this.update(safeDt);
         this.draw();
 
@@ -909,8 +860,6 @@ export class Game {
         this.addScore(this.state.autoRate * dt);
         // 5. Update Timer
         this.state.timer += dt;
-        this.chat.update(dt, this.state.corruption); // Keep chat update
-        this.reviewsTab.update(dt);
 
         // Mail Notification Logic (e.g. flashing icon) can go here if needed
         // For now, mail checks are interval-based in MailSystem constructor
@@ -946,7 +895,7 @@ export class Game {
                 // If gameState is PLAYING, we just end the reboot sequence.
                 if (this.gameState === 'PLAYING') {
                     this.state.rebooting = false;
-                    this.chat.addMessage('SYSTEM', 'SYSTEM REBOOT SUCCESSFUL.');
+                    this.uiManager.chat.addMessage('SYSTEM', 'SYSTEM REBOOT SUCCESSFUL.');
                     this.events.emit('play_sound', 'startup');
                 } else {
                     // If we were crashing/rebooting into BIOS
@@ -1036,7 +985,7 @@ export class Game {
         // Managed by EntityManager (items layer) or manual?
         // Let's use items layer.
 
-        if (this.state.corruption > 10 && Math.random() < 0.0003 && !this.activeNotepad) {
+        if (this.state.corruption > 10 && Math.random() < 0.0003 && !this.uiManager.activeNotepad) {
             if (this.entities.getAll('items').length < 2) this.entities.add('items', new LoreFile(this.w, this.h));
         }
 
@@ -1080,7 +1029,7 @@ export class Game {
         // Reward
         const reward = this.state.autoRate * 60; // 1 min of production
         this.addScore(reward);
-        this.chat.addMessage('SYSTEM', `Recalibrating... compensation awarded: ${UTILS.fmt(reward)}`);
+        this.uiManager.chat.addMessage('SYSTEM', `Recalibrating... compensation awarded: ${UTILS.fmt(reward)}`);
         this.events.emit('play_sound', 'startup');
     }
 
@@ -1111,18 +1060,12 @@ export class Game {
             popups: this.entities.getAll('ui'),
             captchas: this.entities.getAll('enemies').filter(e => e instanceof CursedCaptcha),
             loreFiles: this.entities.getAll('items'),
-            hunter: this.hunter, // Single instance, maybe move to enemies layer later?
-            chat: this.chat,
-            activeNotepad: this.activeNotepad,
-            reviewsTab: this.reviewsTab,
-            mailWindow: this.mailWindow,
-            mail: this.mail,
+            hunter: this.hunter,
             fakeCursor: this.fakeCursor,
-            // clippy needs to be in entities if referenced, or added to input
-            clippy: this.clippy // Assuming clippy might exist or be undefined
+            clippy: this.clippy
         };
 
-        this.renderer.draw(this.state, entities, inputData);
+        this.renderer.draw(this.state, entities, inputData, this.uiManager);
     }
 
 }

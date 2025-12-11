@@ -7,8 +7,9 @@
 import { EMAILS } from '../data/emails.js';
 
 export class MailSystem {
-    constructor(game) {
+    constructor(game, chatSystem) {
         this.game = game;
+        this.chatSystem = chatSystem;
         this.inbox = [];
         this.triggeredIds = new Set();
         this.hasUnread = false;
@@ -54,7 +55,7 @@ export class MailSystem {
         this.inbox.unshift(mailObj); // Newest first
         this.hasUnread = true;
         this.game.events.emit('play_sound', 'buy'); // Notification sound
-        this.game.chat.addMessage('SYSTEM', `New Message from ${mail.sender}`);
+        if (this.chatSystem) this.chatSystem.addMessage('SYSTEM', `New Message from ${mail.sender}`);
     }
 
     markRead(id) {

@@ -88,13 +88,14 @@ export class ThemeManager {
         // 6. Null Void -> CRASH
         else if (tId === 'null_void') {
             state.glitchIntensity = 0.8 + (state.corruption / 100) * 0.2;
-            if (state.corruption >= 100) this.triggerCrash();
+            if (state.corruption >= 100 && !state.crashed && !state.rebooting) this.triggerCrash();
         }
     }
 
     triggerCrash() {
         this.game.state.crashed = true;
         this.game.gameState = 'CRASH';
+        this.game.rebootTimer = 3.0; // 3 seconds BSOD
         this.game.events.emit('play_sound', 'error');
     }
 

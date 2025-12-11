@@ -31,8 +31,9 @@ export class Renderer {
      * @param {Object} state - Game state (score, corruption, etc)
      * @param {Object} entities - Arrays of game objects
      * @param {Object} input - Input processing data (mouse, theme, flags)
+     * @param {Object} uiManager - The UI Manager instance
      */
-    draw(state, entities, input) {
+    draw(state, entities, input, uiManager) {
         const { currentTheme, mouse, shake, scareTimer, scareText } = input;
 
         if (state.crashed) {
@@ -40,12 +41,6 @@ export class Renderer {
             return;
         }
         if (state.rebooting) {
-            // "rebooting" state is now the "Reboot sequence" or BIOS? 
-            // We changed logic: hardReset -> state.gameState = 'BIOS'. 
-            // State.rebooting was the timed sequence.
-            // Let's support both.
-            // If gameState is BIOS, we draw interactive.
-            // If state.rebooting is true, we draw the old text sequence.
             this.drawOldBIOS(input.rebootTimer);
             return;
         }
@@ -166,15 +161,15 @@ export class Renderer {
 
         if (entities.hunter) entities.hunter.draw(this.ctx);
 
-        if (entities.chat) entities.chat.draw(this.ctx, this.h);
-        if (entities.activeNotepad) entities.activeNotepad.draw(this.ctx);
-        if (entities.reviewsTab) entities.reviewsTab.draw(this.ctx);
+        if (uiManager.chat) uiManager.chat.draw(this.ctx, this.h);
+        if (uiManager.activeNotepad) uiManager.activeNotepad.draw(this.ctx);
+        if (uiManager.reviewsTab) uiManager.reviewsTab.draw(this.ctx);
 
         // Mail Window
-        if (entities.mailWindow) entities.mailWindow.draw(this.ctx);
+        if (uiManager.mailWindow) uiManager.mailWindow.draw(this.ctx);
 
         // Draw HUD Elements (Mail Icon)
-        this.drawHUD(this.w, this.h, entities);
+        this.drawHUD(this.w, this.h, uiManager); // Pass uiManager instead of entities
 
         // Feedback / Reviews Button (Top Right, Below Mail)
         this.drawFeedbackIcon(this.w - 50, 110);
@@ -228,7 +223,7 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawHUD(w, h, entities) {
+    drawHUD(w, h, uiManager) {
         // Mail Icon (Top Right)
         const mx = w - 50;
         const my = 50;
@@ -246,7 +241,7 @@ export class Renderer {
         this.ctx.stroke();
 
         // Notification Badge
-        if (entities.mail && entities.mail.hasUnread) {
+        if (uiManager.mail && uiManager.mail.hasUnread) {
             this.ctx.fillStyle = '#f00';
             this.ctx.beginPath();
             this.ctx.arc(mx + 15, my - 10, 8, 0, Math.PI * 2);

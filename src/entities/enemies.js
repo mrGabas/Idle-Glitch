@@ -142,7 +142,7 @@ export class CursedCaptcha {
             context.state.score -= context.state.autoRate * 60;
             if (context.state.score < 0) context.state.score = 0;
             context.shake = 5;
-            context.chat.addMessage('SYSTEM', 'VERIFICATION FAILED: ACCESS DENIED');
+            context.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION FAILED: ACCESS DENIED');
             context.state.addCorruption(5); // Was manually adding
             return 'timeout';
         }

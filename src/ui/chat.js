@@ -3,6 +3,7 @@
  * @module ui/chat
  */
 import { SCRIPT } from '../data/chatScripts.js';
+import { CursedCaptcha } from '../entities/enemies.js';
 
 export class ChatSystem {
     constructor(game) {
@@ -183,28 +184,31 @@ export class ChatSystem {
             case '/unlock':
             case '/login':
                 // Check if user is trying to unlock a file
-                if (this.game.activeNotepad && this.game.activeNotepad.locked) {
+                if (this.game.uiManager.activeNotepad && this.game.uiManager.activeNotepad.locked) {
                     const pass = args[1];
                     if (!pass) {
                         this.addMessage('SYSTEM', 'Usage: /verify <password>');
-                    } else if (pass === this.game.activeNotepad.password) {
-                        this.game.activeNotepad.locked = false;
-                        this.game.activeNotepad.title = "Notepad.exe [DECRYPTED]";
+                    } else if (pass === this.game.uiManager.activeNotepad.password) {
+                        this.game.uiManager.activeNotepad.locked = false;
+                        this.game.uiManager.activeNotepad.title = "Notepad.exe [DECRYPTED]";
                         this.addMessage('SYSTEM', 'ACCESS GRANTED. FILE DECRYPTED.');
                         this.game.events.emit('play_sound', 'buy');
                     } else {
                         this.addMessage('SYSTEM', 'ACCESS DENIED. INCORRECT PASSWORD.');
                         this.game.events.emit('play_sound', 'error');
-                        this.game.activeNotepad.shake = 10;
+                        this.game.uiManager.activeNotepad.shake = 10;
                     }
                     break;
                 }
 
                 // Active Captchas?
-                if (this.game.captchas.length > 0) {
+                const enemies = this.game.entities.getAll('enemies');
+                const captchaIndex = enemies.findIndex(e => e instanceof CursedCaptcha);
+
+                if (captchaIndex !== -1) {
                     this.addMessage('SYSTEM', 'Verifying integrity...');
                     // Clear one captcha
-                    this.game.captchas.pop(); // Remove last
+                    enemies.splice(captchaIndex, 1);
                     this.addMessage('SYSTEM', 'Threat neutralized.');
                     this.game.events.emit('play_sound', 'buy');
                     break;
