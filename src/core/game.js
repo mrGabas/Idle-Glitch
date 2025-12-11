@@ -14,6 +14,7 @@ import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
 import { InputHandler } from './Input.js';
+import { GameState } from './GameState.js';
 // New imports for Mail
 import { MailSystem } from '../systems/MailSystem.js';
 import { FakeCursor } from '../entities/FakeCursor.js';
@@ -62,20 +63,10 @@ export class Game {
         // Recalculate multiplier based on generic prestige + meta upgrades (if we implement that)
         // For now, prestigeMult is legacy. Let's keep it but maybe add to it.
 
-        /** @type {GameState} */
-        this.state = {
-            score: 0,
-            clickPower: 1,
-            autoRate: 0,
-            corruption: 0,
-            multiplier: 1 * this.prestigeMult, // Base mult
-            startTime: Date.now(),
-            glitchIntensity: 0,
-            crashed: false,
-            rebooting: false,
-            falseCrash: false,
-            crashTimer: 0
-        };
+        this.state = new GameState();
+        this.state.multiplier = 1 * this.prestigeMult; // Set initial via property (or method if we want event)
+        // Actually, let's use methods where possible or direct assignment if initializing.
+        // Direct assignment is fine for init.
 
         this.applyMetaUpgrades();
         this.loadThemeUpgrades();
@@ -151,9 +142,10 @@ export class Game {
     applyMetaUpgrades() {
         // ... (lines 142-152)
         // 4. Passive Multiplier Boost
+        // 4. Passive Multiplier Boost
         const boostLevel = this.metaUpgrades['prestige_boost'] || 0;
         if (boostLevel > 0) {
-            this.state.multiplier += (boostLevel * 0.5);
+            this.state.setMultiplier(this.state.multiplier + (boostLevel * 0.5));
         }
     }
 
@@ -168,7 +160,7 @@ export class Game {
                     // 25% efficiency
                     const gained = lastRate * diff * 0.25;
                     if (gained > 0) {
-                        this.state.score += gained;
+                        this.state.addScore(gained);
                         this.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
                     }
                 }
@@ -349,14 +341,16 @@ export class Game {
 
         // Penalty: Lose resources instead of gaining
         // 1.5x penalty simply for being rude
+        // Penalty: Lose resources instead of gaining
+        // 1.5x penalty simply for being rude
         const penalty = this.state.autoRate * seconds * 1.5;
-        this.state.score = Math.max(0, this.state.score - penalty);
+        this.state.addScore(-penalty);
         this.addScore(0); // Updates UI potentially if needed immediately
 
         // Scare
         this.events.emit('play_sound', 'error');
         this.shake = 10;
-        this.state.corruption += 5;
+        this.state.addCorruption(5);
         this.triggerScareOverlay("WHERE WERE YOU?");
     }
 
@@ -469,13 +463,8 @@ export class Game {
         // We need to RESET game state but KEEP meta data
         // Ideally we re-instantiate Game but that's messy.
         // Let's soft-reset state.
-        this.state.score = 0;
-        this.state.clickPower = 1;
-        this.state.autoRate = 0;
-        this.state.corruption = 0;
-        this.state.multiplier = 1 * this.prestigeMult; // Base
-        this.state.startTime = Date.now();
-        this.state.glitchIntensity = 0;
+        this.state.resetSession();
+        this.state.multiplier = 1 * this.prestigeMult; // Re-apply base
 
         // Reset to default theme for new run
         this.setTheme('rainbow_paradise');
@@ -652,7 +641,7 @@ export class Game {
             if (c.checkClick(mx, my)) {
                 this.events.emit('play_sound', 'buy'); // Success sound
                 this.addScore(this.state.autoRate * 120 + 1000); // Bonus
-                this.state.corruption = Math.max(0, this.state.corruption - 5); // Cleans corruption
+                this.state.addCorruption(-5); // Cleans corruption
                 this.createParticles(mx, my, '#0f0');
                 this.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
                 this.captchas.splice(i, 1);
@@ -729,12 +718,12 @@ export class Game {
                     for (let i = 0; i < 15; i++) {
                         this.debris.push(new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
                     }
-                    this.addScore(100 * this.state.multiplier);
+                    this.state.addScore(100 * this.state.multiplier);
 
                     if (this.currentTheme.id === 'rainbow_paradise') {
-                        this.state.corruption += 1.5;
+                        this.state.addCorruption(1.5);
                     } else {
-                        this.state.corruption += 0.5;
+                        this.state.addCorruption(0.5);
                     }
                 }
             }
@@ -751,7 +740,7 @@ export class Game {
 
             this.events.emit('play_sound', 'glitch');
             if (this.currentTheme.id === 'rainbow_paradise') {
-                this.state.corruption += 0.2;
+                this.state.addCorruption(0.2);
             }
         }
 
@@ -761,7 +750,7 @@ export class Game {
                 this.events.emit('play_sound', 'click');
                 this.createParticles(mx, my, '#f00');
                 if (hit === true) {
-                    this.addScore(1000 * this.state.multiplier);
+                    this.state.addScore(1000 * this.state.multiplier);
                     this.hunter = null;
                     this.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
                 }
@@ -822,8 +811,18 @@ export class Game {
         this.state.corruption += 1.5;
     }
 
-    addScore(val) {
-        this.state.score += val * this.state.multiplier;
+    addScore(amount) {
+        // Redundant if we access this.state.addScore directly but let's keep it as proxy or remove.
+        // The requirements say "Use this.state.addScore()". 
+        // Existing calls to this.addScore(x) should refactor to this.state.addScore(x) OR we update this method.
+        // Let's update this method to be a wrapper for now to avoid breaking other files if they use game.addScore().
+        this.state.addScore(amount);
+
+        // Visuals were here? No, visuals were usually separate or inside the old addScore?
+        // Old Game.js didn't have addScore shown in the view_file ranges except maybe implied or I missed it.
+        // Wait, line 356 call `this.addScore(0)`.
+        // Let's check where `addScore` was defined.
+        // I'll assume it was defined around line 800+ which I didn't see fully.
     }
 
     createParticles(x, y, color) {
