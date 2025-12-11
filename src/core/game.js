@@ -187,6 +187,8 @@ export class Game {
         if (sfx) sfx.oninput = (e) => this.audio.setSFXVolume(e.target.value);
         if (music) music.oninput = (e) => this.audio.setMusicVolume(e.target.value);
 
+
+
         // Input Listeners
         this.input.on('resize', () => this.resize());
         this.input.on('keydown', (e) => {

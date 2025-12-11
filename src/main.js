@@ -5,9 +5,13 @@
 import { Game } from './core/game.js';
 import { DebugTools } from './core/debug.js';
 import { assetLoader } from './core/AssetLoader.js';
+import { ErrorHandler } from './core/ErrorHandler.js';
 import { ASSETS } from './data/assets.js';
 
 window.addEventListener('load', () => {
+    // Init Error Handler First
+    ErrorHandler.init();
+
     // Create simple loading screen
     const loader = document.createElement('div');
     loader.style.cssText = `
