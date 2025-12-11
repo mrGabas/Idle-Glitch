@@ -153,35 +153,37 @@ export class GlitchSystem {
         }
 
         // --- MINIGAME LOGIC ---
-        const uiEntities = this.game.entities.getAll('ui');
-        let activeMinigameIndex = -1;
-        let activeMinigame = null;
-        for (let i = 0; i < uiEntities.length; i++) {
-            if (uiEntities[i] instanceof MinigameWindow) {
-                activeMinigame = uiEntities[i];
-                activeMinigameIndex = i;
+        // Iterate UI Windows to find active Minigames
+        const windows = this.game.uiManager.windowManager.windows;
+        let activeMinigameWindow = null;
+
+        for (const win of windows) {
+            if (win instanceof MinigameWindow && win.active) {
+                activeMinigameWindow = win;
                 break;
             }
         }
 
-        if (activeMinigame) {
-            if (activeMinigame.minigame instanceof TerminalHack) {
-                if (activeMinigame.minigame.won) {
+        if (activeMinigameWindow) {
+            const mg = activeMinigameWindow.minigame;
+
+            if (mg instanceof TerminalHack) {
+                if (mg.won) {
                     this.game.events.emit('play_sound', 'startup');
                     this.game.state.addScore(this.game.state.autoRate * 300 + 5000);
                     this.game.state.addCorruption(-20);
                     this.game.uiManager.chat.addMessage('SYSTEM', 'OVERRIDE SUCCESSFUL. CORRUPTION PURGED.');
                     this.game.shake = 2;
-                    uiEntities.splice(activeMinigameIndex, 1);
-                } else if (activeMinigame.minigame.lost) {
+                    this.game.uiManager.windowManager.close(activeMinigameWindow);
+                } else if (mg.lost) {
                     this.game.events.emit('play_sound', 'error');
                     this.game.state.addCorruption(5);
                     this.game.shake = 20;
                     this.game.uiManager.chat.addMessage('SYSTEM', 'OVERRIDE FAILED. SYSTEM UNSTABLE.');
-                    uiEntities.splice(activeMinigameIndex, 1);
+                    this.game.uiManager.windowManager.close(activeMinigameWindow);
                 }
-            } else if (activeMinigame.minigame instanceof SnakeGame) {
-                if (activeMinigame.minigame.lost) {
+            } else if (mg instanceof SnakeGame) {
+                if (mg.lost) {
                     // Snake Game Over logic handled visually. 
                     // Won't close automatically so user can see score.
                 }
@@ -190,7 +192,13 @@ export class GlitchSystem {
             // Spawn Chance
             // Corruption > 40
             if (state.corruption > 40 && !state.crashed && !state.rebooting && Math.random() < 0.0005) {
-                this.game.entities.add('ui', new MinigameWindow(this.game.w, this.game.h, new TerminalHack()));
+                // Check if we already have one open? (Handled by activeMinigameWindow check above, kind of)
+                // But we need to make sure we don't open multiple.
+                // The loop above finds ANY, so if one exists, we won't enter this 'else'.
+                // Wait! The logic structure was 'if (active) ... else { spawn }'.
+                // So if any minigame is active, we don't spawn another. Correct.
+
+                this.game.uiManager.openMinigame(new TerminalHack());
                 this.game.events.emit('play_sound', 'error');
                 this.game.uiManager.chat.addMessage('SYSTEM', 'WARNING: INTRUSION DETECTED. OVERRIDE REQUIRED.');
             }
