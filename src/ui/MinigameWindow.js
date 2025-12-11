@@ -1,17 +1,19 @@
 
 import { TerminalHack } from '../minigames/TerminalHack.js';
+// Leaving import for now, but really MinigameWindow shouldn't depend on it if passed in. 
+// Ideally we remove this import to avoid circular dep if any, but it's safe if unused.
+// Actually, let's remove it to be clean.
 
 export class MinigameWindow {
-    constructor(w, h) {
+    constructor(w, h, minigame) {
         this.w = 400;
         this.h = 250;
         this.x = (w - this.w) / 2;
         this.y = (h - this.h) / 2;
 
         this.active = true;
-        this.title = "SYSTEM_OVERRIDE.exe [WARNING]";
-
-        this.hack = new TerminalHack();
+        this.minigame = minigame;
+        this.title = minigame.title || "MINIGAME.exe";
 
         // Shake effect for window
         this.shake = 0;
@@ -19,7 +21,7 @@ export class MinigameWindow {
 
     update(dt) {
         if (!this.active) return;
-        this.hack.update(dt);
+        this.minigame.update(dt);
 
         if (this.shake > 0) {
             this.shake *= 0.9;
@@ -57,12 +59,35 @@ export class MinigameWindow {
         ctx.textAlign = 'left';
         ctx.fillText(this.title, tx + 6, this.y + 16);
 
+        // Close Button
+        ctx.fillStyle = '#000';
+        ctx.fillRect(tx + this.w - 18, this.y + 4, 14, 14);
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tx + this.w - 18, this.y + 4, 14, 14);
+
+        ctx.strokeStyle = '#0f0';
+        ctx.beginPath();
+        ctx.moveTo(tx + this.w - 15, this.y + 7);
+        ctx.lineTo(tx + this.w - 7, this.y + 15);
+        ctx.moveTo(tx + this.w - 7, this.y + 7);
+        ctx.lineTo(tx + this.w - 15, this.y + 15);
+        ctx.stroke();
+
         // Content Area
-        this.hack.draw(ctx, tx + 10, this.y + 30, this.w - 20, this.h - 40);
+        this.minigame.draw(ctx, tx + 10, this.y + 30, this.w - 20, this.h - 40);
     }
 
     checkClick(mx, my) {
         if (!this.active) return false;
+
+        // Check Close Button
+        const bx = this.x + this.w - 18;
+        const by = this.y + 4;
+        if (mx >= bx && mx <= bx + 14 && my >= by && my <= by + 14) {
+            this.active = false;
+            return 'close';
+        }
 
         // Header Drag
         if (mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + 24) {
@@ -80,9 +105,9 @@ export class MinigameWindow {
     handleKeyDown(e) {
         if (!this.active) return;
 
-        // Pass only printable characters
-        if (e.key.length === 1) {
-            this.hack.onKeyDown(e.key);
+        // Pass only printable characters or arrows
+        if (e.key.length === 1 || e.key.startsWith('Arrow') || e.key === 'Enter') {
+            this.minigame.onKeyDown(e.key);
         }
     }
 }

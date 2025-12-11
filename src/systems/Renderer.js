@@ -112,7 +112,21 @@ export class Renderer {
         // Entities
         if (entities.debris) entities.debris.forEach(d => d.draw(this.ctx));
         if (entities.particles) entities.particles.forEach(p => p.draw(this.ctx));
-        if (entities.popups) entities.popups.forEach(p => p.draw(this.ctx));
+
+        // Draw Popups/UI: Split into normal Popups and "Apps" (MinigameWindow) 
+        // to ensure Apps are on top of Error Popups.
+        if (entities.popups) {
+            const apps = [];
+            const normal = [];
+            entities.popups.forEach(p => {
+                // MinigameWindow doesn't have 'type' property usually, or check constructor name
+                if (p.constructor.name === 'MinigameWindow') apps.push(p);
+                else normal.push(p);
+            });
+
+            normal.forEach(p => p.draw(this.ctx));
+            apps.forEach(app => app.draw(this.ctx));
+        }
         if (entities.captchas) entities.captchas.forEach(c => c.draw(this.ctx));
         if (entities.loreFiles) entities.loreFiles.forEach(f => f.draw(this.ctx));
 

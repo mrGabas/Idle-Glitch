@@ -84,3 +84,61 @@ export class LoreFile {
         return false;
     }
 }
+
+export class ExecutableFile {
+    constructor(w, h, programName) {
+        this.w = 50;
+        this.h = 60;
+        this.programName = programName || "Snake";
+        this.label = this.programName + ".exe";
+
+        let safe = false;
+        while (!safe) {
+            this.x = UTILS.rand(50, w - 100);
+            this.y = UTILS.rand(50, h - 100);
+            const cx = w / 2;
+            const cy = h / 2;
+            if (Math.hypot(this.x - cx, this.y - cy) > 200) safe = true;
+        }
+
+        this.active = true;
+        this.life = 60.0;
+    }
+
+    update(dt) {
+        if (this.active) this.life -= dt;
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Icon (Exe usually blue/white square or window)
+        ctx.fillStyle = '#000080';
+        ctx.fillRect(5, 5, 40, 35);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(5, 5, 40, 10); // Header
+        ctx.fillRect(10, 20, 30, 15); // "Window" inside
+
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(this.label, 25, 55);
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+    }
+
+    checkClick(mx, my) {
+        if (!this.active) return false;
+        if (mx >= this.x && mx <= this.x + 50 && my >= this.y && my <= this.y + 60) {
+            this.active = false;
+            return true;
+        }
+        return false;
+    }
+}

@@ -72,7 +72,7 @@ export class EntityManager {
                 }
 
                 // Check for life
-                if (entity.life !== undefined && entity.life <= 0) {
+                if ((entity.life !== undefined && entity.life <= 0) || (entity.active === false)) {
                     layer.splice(i, 1);
                     continue;
                 }
