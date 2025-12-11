@@ -19,9 +19,9 @@ export class MinigameWindow {
         this.shake = 0;
     }
 
-    update(dt) {
+    update(dt, game) {
         if (!this.active) return;
-        this.minigame.update(dt);
+        this.minigame.update(dt, game.input); // Pass input to minigame
 
         if (this.shake > 0) {
             this.shake *= 0.9;
@@ -102,12 +102,5 @@ export class MinigameWindow {
         return false;
     }
 
-    handleKeyDown(e) {
-        if (!this.active) return;
-
-        // Pass only printable characters or arrows
-        if (e.key.length === 1 || e.key.startsWith('Arrow') || e.key === 'Enter') {
-            this.minigame.onKeyDown(e.key);
-        }
-    }
+    // handleKeyDown(e) removed - minigame should poll input in update
 }

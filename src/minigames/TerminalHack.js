@@ -30,7 +30,7 @@ export class TerminalHack {
         return hex[Math.floor(Math.random() * 16)] + hex[Math.floor(Math.random() * 16)];
     }
 
-    update(dt) {
+    update(dt, input) {
         if (!this.active || this.won || this.lost) return;
 
         this.timer -= dt;
@@ -38,41 +38,37 @@ export class TerminalHack {
             this.timer = 0;
             this.lost = true;
             this.active = false;
+            return;
         }
-    }
 
-    onKeyDown(key) {
-        if (!this.active || this.won || this.lost) return;
+        if (input) {
+            // Polling for text input
+            const keys = input.getPressedKeys();
+            for (const key of keys) {
+                // Ignore non-character keys (codes like KeyA, Enter, etc)
+                // We only want typed characters for Hex entry
+                if (key.length !== 1) continue;
 
-        // Key should be uppercase for comparison if we want case-insensitive, 
-        // but Requirement says "Hex codes", usually uppercase. 
-        // Let's assume input key is the char.
-        // The player types the full Hex code? Or just characters?
-        // "Type them correctly". Usually "AF " implies typing 'A', 'F', then Space or just next code?
-        // Let's treat it as a stream of characters avoiding spaces if possible, 
-        // OR treating the sequence as a single string to match.
+                const targetStr = this.sequence.join("");
+                const expectedChar = targetStr[this.currentIndex];
+                const inputChar = key.toUpperCase();
 
-        // Simplest: Flatten sequence to string "AF3D99".
-        // Player types chars. Match against current char.
-
-        const targetStr = this.sequence.join("");
-        const expectedChar = targetStr[this.currentIndex];
-
-        // Normalize key to uppercase
-        const inputChar = key.toUpperCase();
-
-        if (inputChar === expectedChar) {
-            this.currentIndex++;
-            if (this.currentIndex >= targetStr.length) {
-                this.won = true;
-                this.active = false;
+                if (inputChar === expectedChar) {
+                    this.currentIndex++;
+                    if (this.currentIndex >= targetStr.length) {
+                        this.won = true;
+                        this.active = false;
+                        return; // Stop processing 
+                    }
+                } else {
+                    // Mistake penalty
+                    this.timer -= 1.0;
+                }
             }
-        } else {
-            // Mistake penalty? Time deduction?
-            this.timer -= 1.0;
-            // Optional: Shake or visual feedback
         }
     }
+
+    // onKeyDown removed - input handled via poll in update
 
     draw(ctx, x, y, w, h) {
         // CRT / Terminal Look

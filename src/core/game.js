@@ -193,63 +193,19 @@ export class Game {
         // Input Listeners
         this.input.on('resize', () => this.resize());
         this.input.on('keydown', (e) => {
-            // Priority -1: Minigame (Must override everything)
-            const uiEntities = this.entities.getAll('ui');
-            const minigame = uiEntities.find(el => el instanceof MinigameWindow && el.active);
-            if (minigame) {
-                minigame.handleKeyDown(e);
-                return;
-            }
+            // Priority -1: Minigame text input (if any) - snake handles its own polling now
+            // But if text input needed for other minigames... keep for now
 
-            // Priority 0: BIOS Navigation
-            if (this.gameState === 'BIOS') {
-                if (e.key === 'ArrowUp') {
-                    this.selectedBIOSIndex = Math.max(0, this.selectedBIOSIndex - 1);
-                    this.events.emit('play_sound', 'click');
-                }
-                if (e.key === 'ArrowDown') {
-                    // Calculate max index based on upgrades + Boot + Theme (if unlocked)
-                    let max = META_UPGRADES.length; // 0 to length-1 are upgrades. length is Boot. length+1 is Theme
-                    if (this.metaUpgrades['start_theme']) max++;
-
-                    this.selectedBIOSIndex = Math.min(max, this.selectedBIOSIndex + 1);
-                    this.events.emit('play_sound', 'click');
-                }
-                if (e.key === 'Enter') {
-                    this.handleBIOSAction(this.selectedBIOSIndex);
-                }
-                if (e.key === 'F10') {
-                    this.bootSystem();
-                }
-                return;
-            }
-
-            // Priority 1: Password/Notepad Input
+            // Priority 1: Password/Notepad Input (Text Interaction)
             if (this.uiManager.activeNotepad && this.uiManager.activeNotepad.locked) {
                 this.uiManager.activeNotepad.handleKeyDown(e);
                 return;
             }
 
-            // Priority 2: Chat Console Input
+            // Priority 2: Chat Console Input (Text Interaction)
             if (this.uiManager.chat && this.uiManager.chat.isFocused) {
                 this.uiManager.chat.handleKeyDown(e);
-                // Don't return necessarily, maybe allows some game shortcuts still? 
-                // But for typing safety, let's return if it's a character key
                 if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') return;
-            }
-
-            if (e.key === 'Escape') {
-                if (this.uiManager.activeNotepad) {
-                    this.uiManager.activeNotepad = null;
-                } else if (this.uiManager.chat && this.uiManager.chat.isFocused) {
-                    this.uiManager.chat.isFocused = false;
-                } else if (this.gameState === 'PLAYING') {
-                    this.togglePause();
-                } else if (this.gameState === 'PAUSED') {
-                    this.togglePause();
-                } else if (this.gameState === 'SETTINGS') {
-                    this.closeSettings();
-                }
             }
         });
 
@@ -487,6 +443,47 @@ export class Game {
     }
 
     // --- LOGIC ---
+
+    handleGlobalInput() {
+        // Minigames are handled in their own update loop via EntityManager -> MinigameWindow
+
+        // BIOS Navigation
+        if (this.gameState === 'BIOS') {
+            if (this.input.isActionPressed('UP')) {
+                this.selectedBIOSIndex = Math.max(0, this.selectedBIOSIndex - 1);
+                this.events.emit('play_sound', 'click');
+            }
+            if (this.input.isActionPressed('DOWN')) {
+                // Calculate max index based on upgrades + Boot + Theme (if unlocked)
+                let max = META_UPGRADES.length;
+                if (this.metaUpgrades['start_theme']) max++;
+
+                this.selectedBIOSIndex = Math.min(max, this.selectedBIOSIndex + 1);
+                this.events.emit('play_sound', 'click');
+            }
+            if (this.input.isActionPressed('CONFIRM')) {
+                this.handleBIOSAction(this.selectedBIOSIndex);
+            }
+            // F10 is usually special, not in default action map, but we can check raw key if needed or map it
+            // Let's assume F10 is raw check for now or add to 'START' action?
+            // "Boot" is essentially confirm on the boot button, which is index driven.
+        }
+
+        // Global Cancel/Pause
+        if (this.input.isActionPressed('CANCEL')) {
+            if (this.uiManager.activeNotepad) {
+                this.uiManager.activeNotepad = null;
+            } else if (this.uiManager.chat && this.uiManager.chat.isFocused) {
+                this.uiManager.chat.isFocused = false;
+            } else if (this.gameState === 'PLAYING') {
+                this.togglePause();
+            } else if (this.gameState === 'PAUSED') {
+                this.togglePause();
+            } else if (this.gameState === 'SETTINGS') {
+                this.closeSettings();
+            }
+        }
+    }
 
     handleBIOSAction(index) {
         // Upgrades
@@ -765,6 +762,9 @@ export class Game {
      * @param {number} dt - Delta time in seconds.
      */
     update(dt) {
+        this.input.update();
+        this.handleGlobalInput();
+
         // Glitch System Logic (Lag, Crashes, Spawning)
         this.glitchSystem.update(dt);
 

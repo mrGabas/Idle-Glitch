@@ -42,8 +42,24 @@ export class SnakeGame {
         return p;
     }
 
-    update(dt) {
-        if (!this.active || this.lost) return;
+    update(dt, input) {
+        if (!this.active) return;
+
+        // Restart on input if lost
+        if (this.lost) {
+            if (input && input.isActionPressed('CONFIRM')) {
+                this.reset();
+            }
+            return;
+        }
+
+        // Input Handling
+        if (input) {
+            if (input.isActionDown('UP') && this.dir.y === 0) this.nextDir = { x: 0, y: -1 };
+            if (input.isActionDown('DOWN') && this.dir.y === 0) this.nextDir = { x: 0, y: 1 };
+            if (input.isActionDown('LEFT') && this.dir.x === 0) this.nextDir = { x: -1, y: 0 };
+            if (input.isActionDown('RIGHT') && this.dir.x === 0) this.nextDir = { x: 1, y: 0 };
+        }
 
         if (this.shake > 0) this.shake *= 0.9;
 
