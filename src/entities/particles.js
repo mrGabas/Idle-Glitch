@@ -13,10 +13,10 @@ export class Particle {
         this.life = 1.0;
         this.size = size;
     }
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= 0.02;
+    update(dt) {
+        this.x += this.vx * (dt * 60); // approximate based on 60fps expectation
+        this.y += this.vy * (dt * 60);
+        this.life -= dt;
     }
     draw(ctx) {
         ctx.globalAlpha = this.life;
@@ -38,8 +38,11 @@ export class Debris extends Particle {
         this.collected = false;
     }
 
-    update(dt, h, mx, my) {
+    update(dt, context) {
         if (this.collected) return;
+        const h = context.h;
+        const mx = context.mouse.x;
+        const my = context.mouse.y;
 
         // Physics
         this.vy += this.gravity;
@@ -70,6 +73,9 @@ export class Debris extends Particle {
                 if (dist < 10) {
                     this.life = 0; // Collected
                     this.collected = true;
+                    // Handle collection side-effect directly
+                    context.state.addScore(10 * context.state.multiplier);
+                    context.events.emit('play_sound', 'click');
                     return 'collected';
                 }
             }

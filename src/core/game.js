@@ -15,6 +15,7 @@ import { Particle, Debris } from '../entities/particles.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
+import { EntityManager } from '../managers/EntityManager.js';
 // New imports for Mail
 import { MailSystem } from '../systems/MailSystem.js';
 import { FakeCursor } from '../entities/FakeCursor.js';
@@ -71,8 +72,9 @@ export class Game {
         this.applyMetaUpgrades();
         this.loadThemeUpgrades();
 
-        /** @type {Particle[]} */
-        this.particles = [];
+        this.applyMetaUpgrades();
+        this.loadThemeUpgrades();
+
         this.chat = new ChatSystem(this);
         this.reviewsTab = new ReviewsTab(this);
 
@@ -83,14 +85,12 @@ export class Game {
         // Load Theme
         const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
         this.setTheme(savedTheme);
-        /** @type {Debris[]} */
-        this.debris = [];
-        /** @type {Popup[]} */
-        this.popups = [];
-        /** @type {CursedCaptcha[]} */
-        this.captchas = [];
-        /** @type {LoreFile[]} */
-        this.loreFiles = [];
+
+        this.entities = new EntityManager();
+        // this.debris, this.popups, this.captchas, this.loreFiles, this.particles -> managed by this.entities
+        // We can keep references locally if we need direct access or just use getters.
+        // For simplicity and to follow requirements, we should use the manager.
+
         this.activeNotepad = null;
 
         this.fakeUI = new CrazyFaces(this);
@@ -470,13 +470,14 @@ export class Game {
         this.setTheme('rainbow_paradise');
 
         // Clear entities
-        this.particles = [];
+        this.entities.clear();
+        // Need to add clear method to EntityManager or implementing it via resetting layers?
+        // Let's implement reset in Game by making new instance OR iterating layers.
+        // For now, new instance is safe.
+        this.entities = new EntityManager();
+
         this.activeNotepad = null;
         this.hunter = null;
-        this.debris = [];
-        this.popups = [];
-        this.captchas = [];
-        this.loreFiles = [];
         this.chat.messages = [];
         this.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
 
@@ -623,35 +624,43 @@ export class Game {
         }
 
         // 0.1 Lore Files
-        for (let i = 0; i < this.loreFiles.length; i++) {
-            if (this.loreFiles[i].checkClick(mx, my)) {
+        const loreFiles = this.entities.getAll('items');
+        for (let i = 0; i < loreFiles.length; i++) {
+            if (loreFiles[i].checkClick(mx, my)) {
                 // Open lore
-                const file = this.loreFiles[i];
+                const file = loreFiles[i];
                 this.activeNotepad = new NotepadWindow(this.w, this.h, file.content, { password: file.password });
                 this.activeNotepad.title = file.label; // Lock title logic handles this in constructor but we can override or let it be
-                this.loreFiles.splice(i, 1);
+                loreFiles.splice(i, 1); // Manual splice from array returned by reference? Yes getAll returns ref.
                 this.events.emit('play_sound', 'click');
                 return;
             }
         }
 
         // 0.2 Captchas (Priority)
-        for (let i = 0; i < this.captchas.length; i++) {
-            const c = this.captchas[i];
-            if (c.checkClick(mx, my)) {
+        const captchas = this.entities.getAll('enemies'); // Assuming captchas are enemies? Or create distinct layer?
+        // Let's use 'enemies' for now or 'captchas' if I add it to Manager logic explicitly.
+        // Prompt said: "layers for particles, debris, popups, enemies".
+        // Captcha is enemy-like.
+
+        for (let i = 0; i < captchas.length; i++) {
+            const c = captchas[i];
+            // Check if it IS a captcha (since enemies layer might have hunter too)
+            if (c instanceof CursedCaptcha && c.checkClick(mx, my)) {
                 this.events.emit('play_sound', 'buy'); // Success sound
                 this.addScore(this.state.autoRate * 120 + 1000); // Bonus
                 this.state.addCorruption(-5); // Cleans corruption
                 this.createParticles(mx, my, '#0f0');
                 this.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
-                this.captchas.splice(i, 1);
+                captchas.splice(i, 1);
                 return;
             }
         }
 
         // 1. Popups
         let popupHit = false;
-        for (let p of this.popups) {
+        const popups = this.entities.getAll('ui');
+        for (let p of popups) {
             const res = p.checkClick(mx, my);
             if (res) {
                 popupHit = true;
@@ -710,13 +719,13 @@ export class Game {
 
                 // Spawn debris
                 for (let i = 0; i < 3; i++) {
-                    this.debris.push(new Debris(mx, my, el.color));
+                    this.entities.add('debris', new Debris(mx, my, el.color));
                 }
 
                 if (destroyed) {
                     // Big debris explosion
                     for (let i = 0; i < 15; i++) {
-                        this.debris.push(new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
+                        this.entities.add('debris', new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
                     }
                     this.state.addScore(100 * this.state.multiplier);
 
@@ -772,7 +781,30 @@ export class Game {
             ctx.fillText(p.text, p.x, p.y);
             ctx.globalAlpha = 1;
         };
-        this.particles.push(p);
+        // Ensure update signature match if Particle doesn't fully cover it?
+        // Particle.update() in entities/particles.js is:
+        /*
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= 0.02;
+        }
+        */
+        // EntityManager calls entity.update(dt, context).
+        // Particle.update takes no args in original file?
+        // Let's check Particle.update signature again.
+        // It was: update() { ... }
+        // EntityManager calls update(dt, context).
+        // JS ignores extra args, but dt is missing inside Particle.update?
+        // Particle.update uses hardcoded 0.02 decay.
+        // Floating text sets life=1.0.
+        // If Particle.update is called, it decays by 0.02 per frame?
+        // If EntityManager calls it, it works.
+        // But wait, I didn't update Particle.update signature in particles.js to use dt! 
+        // I only updated Debris. 
+        // I should check particles.js again.
+
+        this.entities.add('particles', p);
     }
 
     clickMain() {
@@ -827,7 +859,7 @@ export class Game {
 
     createParticles(x, y, color) {
         for (let i = 0; i < 8; i++) {
-            this.particles.push(new Particle(x, y, color));
+            this.entities.add('particles', new Particle(x, y, color));
         }
     }
 
@@ -968,7 +1000,7 @@ export class Game {
 
             // AD MECHANIC: Aggressive Popups
             if (Math.random() < 0.02 + (this.state.corruption * 0.001)) {
-                if (this.popups.length < 15) this.popups.push(new Popup(this.w, this.h, this.currentTheme));
+                if (this.entities.getAll('ui').length < 15) this.entities.add('ui', new Popup(this.w, this.h, this.currentTheme));
             }
         }
         // 3. Dev Desktop -> Digital Decay
@@ -994,11 +1026,10 @@ export class Game {
         }
 
         // Entities
-        this.particles.forEach((p, i) => {
-            p.update();
-            if (p.life <= 0) this.particles.splice(i, 1);
-        });
-
+        this.entities.update(dt, this);
+        // We rely on entities updating and mutating state if needed or we check conditions here?
+        // Debris collection logic was:
+        /*
         this.debris.forEach((d, i) => {
             const res = d.update(dt, this.h, this.mouse.x, this.mouse.y);
             if (res === 'collected') {
@@ -1007,14 +1038,18 @@ export class Game {
             }
             if (d.life <= 0) this.debris.splice(i, 1);
         });
+        */
+        // I need to update Debris class to handle this or use the returned status if I modify EntityManager to capture it.
+        // My EntityManager implementation returns nothing on update list.
+        // So I must push logic to Debris.update or iterate debris manually if I want to keep it simple without deeper refactor.
+        // "Game.js becomes a high-level orchestrator".
+        // Let's modify Debris to use context.
 
-        this.popups.forEach((p, i) => {
-            p.life -= dt;
-            if (p.life <= 0) this.popups.splice(i, 1);
-        });
-
+        // Popups
+        // Managed by EntityManager now (ui layer)
+        // But spawning logic remains here
         if (Math.random() < 0.001 + (this.state.glitchIntensity * 0.02)) {
-            if (this.popups.length < 5) this.popups.push(new Popup(this.w, this.h, this.currentTheme));
+            if (this.entities.getAll('ui').length < 5) this.entities.add('ui', new Popup(this.w, this.h, this.currentTheme));
         }
 
         if (this.shake > 0) this.shake *= 0.9;
@@ -1047,46 +1082,32 @@ export class Game {
             }
         }
 
-        // Captchas
-        this.captchas.forEach((c, i) => {
-            const res = c.update(dt, this.mouse.x, this.mouse.y, this.w, this.h);
-            if (res === 'timeout') {
-                this.captchas.splice(i, 1);
-                this.events.emit('play_sound', 'error');
-                this.state.score -= this.state.autoRate * 60; // Penalty
-                if (this.state.score < 0) this.state.score = 0;
-                this.shake = 5;
-                this.chat.addMessage('SYSTEM', 'VERIFICATION FAILED: ACCESS DENIED');
-                this.state.corruption += 5;
-            }
-        });
-
+        const enemies = this.entities.getAll('enemies');
+        // Captchas spawn
         if (this.state.corruption > 15 && Math.random() < 0.0005) {
-            if (this.captchas.length < 1) {
-                this.captchas.push(new CursedCaptcha(this.w, this.h));
+            const caps = enemies.filter(e => e instanceof CursedCaptcha);
+            if (caps.length < 1) {
+                this.entities.add('enemies', new CursedCaptcha(this.w, this.h));
                 this.events.emit('play_sound', 'error');
             }
         }
 
         // Lore Files
-        this.loreFiles.forEach((f, i) => {
-            f.life -= dt;
-            if (f.life <= 0) this.loreFiles.splice(i, 1);
-        });
+        // Lore Files
+        // Managed by EntityManager (items layer) or manual?
+        // Let's use items layer.
 
         if (this.state.corruption > 10 && Math.random() < 0.0003 && !this.activeNotepad) {
-            if (this.loreFiles.length < 2) this.loreFiles.push(new LoreFile(this.w, this.h));
+            if (this.entities.getAll('items').length < 2) this.entities.add('items', new LoreFile(this.w, this.h));
         }
 
         // Hunter Update
         if (this.hunter && this.hunter.active) {
-            const status = this.hunter.update(this.mouse.x, this.mouse.y, dt);
+            const status = this.hunter.update(dt, this); // Updated signature
             if (status === 'damage') {
                 this.state.score -= this.state.autoRate * dt * 2;
                 if (this.state.score < 0) this.state.score = 0;
                 this.shake = 5;
-                // Rendering hit effect should be in draw
-                // WE need a visual flag for "being hit" or handle it in draw via hunter state
             }
         }
     }
@@ -1146,12 +1167,12 @@ export class Game {
         const entities = {
             fakeUI: this.fakeUI,
             upgrades: this.upgrades,
-            debris: this.debris,
-            particles: this.particles,
-            popups: this.popups,
-            captchas: this.captchas,
-            loreFiles: this.loreFiles,
-            hunter: this.hunter,
+            debris: this.entities.getAll('debris'),
+            particles: this.entities.getAll('particles'),
+            popups: this.entities.getAll('ui'),
+            captchas: this.entities.getAll('enemies').filter(e => e instanceof CursedCaptcha),
+            loreFiles: this.entities.getAll('items'),
+            hunter: this.hunter, // Single instance, maybe move to enemies layer later?
             chat: this.chat,
             activeNotepad: this.activeNotepad,
             reviewsTab: this.reviewsTab,

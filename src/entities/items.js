@@ -37,6 +37,12 @@ export class LoreFile {
         this.life = 30.0; // Exist for 30 seconds
     }
 
+    update(dt) {
+        if (this.active) {
+            this.life -= dt;
+        }
+    }
+
     draw(ctx) {
         if (!this.active) return;
 

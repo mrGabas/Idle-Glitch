@@ -38,6 +38,12 @@ export class Popup {
         this.active = true;
     }
 
+    update(dt) {
+        if (this.active) {
+            this.life -= dt;
+        }
+    }
+
     draw(ctx) {
         if (!this.active) return;
         // Shadow

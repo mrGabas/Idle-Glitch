@@ -16,7 +16,25 @@ export class GlitchHunter {
         this.pulse = 0;
     }
 
-    update(mx, my, dt) {
+    update(dt, context) {
+        // Adapt context to existing signature or use context properties
+        // The original signature was update(mx, my, dt)
+        // Let's assume context IS the Game instance or similar. 
+        // In Game.js, I will pass `this` (the game) as context? Or `this.renderer.draw` inputData?
+        // Let's pass `this` (Game instance) as context to all entity updates.
+        // So context.mouse.x, context.mouse.y.
+
+        // This is tricky without modifying all entity files.
+        // BUT, the prompt requirement is "Refactor Game.js... replace manual loops with entityManager.update".
+        // It's acceptable to modify entities to standardized update(dt, game).
+
+        // However, I can't modify all entities easily in one go if they are scattered?
+        // Let's modify GlitchHunter.
+
+        // I will read GlitchHunter first.
+        const mx = context.mouse.x;
+        const my = context.mouse.y;
+
         if (!this.active) return;
 
         // 1. Move to cursor
@@ -106,11 +124,28 @@ export class CursedCaptcha {
         this.cbSize = 24;
     }
 
-    update(dt, mx, my, w, h) {
+    update(dt, context) {
+        // context is Game instance
+        const mx = context.mouse.x;
+        const my = context.mouse.y;
+        const w = context.w;
+        const h = context.h;
+
         if (!this.active) return;
         this.life -= dt;
-        if (this.life <= 0) return 'timeout';
+        this.shake = Math.sin(Date.now() / 50) * 5;
 
+        // Timeout penalty handling moved here from Game.js
+        if (this.life <= 0) {
+            // Apply penalty directly
+            context.events.emit('play_sound', 'error');
+            context.state.score -= context.state.autoRate * 60;
+            if (context.state.score < 0) context.state.score = 0;
+            context.shake = 5;
+            context.chat.addMessage('SYSTEM', 'VERIFICATION FAILED: ACCESS DENIED');
+            context.state.addCorruption(5); // Was manually adding
+            return 'timeout';
+        }
         // Check distance to checkbox center (absolute coords)
         const absCbX = this.x + this.cbX + this.cbSize / 2;
         const absCbY = this.y + this.cbY + this.cbSize / 2;

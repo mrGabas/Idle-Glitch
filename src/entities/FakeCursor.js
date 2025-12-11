@@ -41,6 +41,9 @@ export class FakeCursor {
     update(dt) {
         if (!this.active) return;
 
+        // Ensure we handle context passed if we switch signature, but constructor takes game so this.game is valid.
+        // We will just use this.game.entities.
+
         this.timer -= dt;
 
         // State Machine
@@ -51,8 +54,9 @@ export class FakeCursor {
                 this.targetX = Math.random() * this.w;
                 this.targetY = Math.random() * this.h;
                 // Sometimes target a specific UI element?
-                if (Math.random() < 0.3 && this.game.popups.length > 0) {
-                    const target = UTILS.randArr(this.game.popups);
+                const popups = this.game.entities.getAll('ui');
+                if (Math.random() < 0.3 && popups.length > 0) {
+                    const target = UTILS.randArr(popups);
                     this.targetX = target.x + target.w - 15; // Close button
                     this.targetY = target.y + 15;
                     this.targetElement = target;
@@ -95,11 +99,12 @@ export class FakeCursor {
     performClick() {
         // fake click logic
         // If we targeted a popup
-        if (this.targetElement && this.game.popups.includes(this.targetElement)) {
+        const popups = this.game.entities.getAll('ui');
+        if (this.targetElement && popups.includes(this.targetElement)) {
             // Close it
-            const idx = this.game.popups.indexOf(this.targetElement);
+            const idx = popups.indexOf(this.targetElement);
             if (idx !== -1) {
-                this.game.popups.splice(idx, 1);
+                popups.splice(idx, 1);
                 this.game.events.emit('play_sound', 'click');
                 this.game.chat.addMessage('GHOST', 'Closed that for you.');
             }
