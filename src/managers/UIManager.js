@@ -47,6 +47,35 @@ export class UIManager {
 
         // Update Windows
         this.windowManager.update(dt);
+
+        // --- Input Context Management ---
+        const input = this.game.input;
+        if (input) {
+            // Check for CANCEL to drop focus
+            if (input.isActionPressed('CANCEL')) {
+                if (this.chat.isFocused) {
+                    this.chat.isFocused = false;
+                    // input.setContext('global'); // Will be handled below
+                }
+                // Determine if we need to close a minigame? 
+                // MinigameWindow usually handles its own close on X, but ESC could also work?
+                // For now, let's just handle focus dropping.
+            }
+
+            // Determine Context
+            if (this.chat.isFocused) {
+                if (input.context !== 'chat') input.setContext('chat');
+            } else if (this.windowManager.hasActiveInputWindow()) {
+                // If a minigame or interactive window is top-most
+                // This method doesn't exist yet on WindowManager, we should implement it or check manually
+                // For now, let's check basic assumption: if any window is open? No, most are passive.
+                // We need to know if an ACTIVE INPUT window is there.
+                // Shortcuts:
+                if (input.context !== 'minigame') input.setContext('minigame');
+            } else {
+                if (input.context !== 'global') input.setContext('global');
+            }
+        }
     }
 
     openNotepad(content, options = {}) {
@@ -137,6 +166,11 @@ export class UIManager {
         // Priority 7: Chat Console Focus
         if (this.chat.checkClick(mx, my, this.game.h)) {
             return true;
+        }
+
+        // Handle clicking outside to blur chat
+        if (this.chat.isFocused) {
+            this.chat.isFocused = false;
         }
 
         return false; // Not consumed by UI

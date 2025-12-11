@@ -59,6 +59,24 @@ export class WindowManager {
         return this.windows.find(w => w instanceof typeClass);
     }
 
+    /**
+     * Checks if there's any active window that requires exclusive input.
+     * @returns {boolean}
+     */
+    hasActiveInputWindow() {
+        // Only MinigameWindow grabs input for now
+        // We look from top (active) down
+        // If the top window is a MinigameWindow, return true.
+        if (this.windows.length === 0) return false;
+
+        const top = this.windows[this.windows.length - 1];
+        // We need to import MinigameWindow or match by name/prop to avoid circular dependency if we imported class
+        // Check constructor name provided minification doesn't mangle it too much or property
+        if (top.constructor.name === 'MinigameWindow') return true;
+
+        return false;
+    }
+
     update(dt) {
         // Update all windows
         this.windows.forEach(w => w.update(dt, this.game));

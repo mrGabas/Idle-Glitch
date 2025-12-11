@@ -18,6 +18,9 @@ export class InputHandler {
         this.virtualButtons = {};
         this.prevVirtualButtons = {};
 
+        // Context State ('global', 'chat', 'minigame', 'ui')
+        this.context = 'global';
+
         // Action Map
         this.actions = {
             'UP': ['ArrowUp', 'KeyW'],
@@ -33,6 +36,11 @@ export class InputHandler {
         this.listeners = {};
 
         this._bindEvents();
+    }
+
+    setContext(ctx) {
+        this.context = ctx;
+        // Optional: clear keys on context switch to prevent stuck inputs?
     }
 
     _bindEvents() {
@@ -68,6 +76,14 @@ export class InputHandler {
      * @returns {boolean}
      */
     isActionDown(actionName) {
+        // Always allow CANCEL to work regardless of context
+        if (actionName !== 'CANCEL' && this.context !== 'global') {
+            // If we are in a special context (chat/minigame), ignore global game actions
+            // unless checking for specific UI actions if we had them.
+            // For now, blocking all non-CANCEL actions is safe.
+            return false;
+        }
+
         // Check Virtual Button
         if (this.virtualButtons[actionName]) return true;
 
@@ -83,6 +99,11 @@ export class InputHandler {
      * @returns {boolean}
      */
     isActionPressed(actionName) {
+        // Always allow CANCEL to work regardless of context
+        if (actionName !== 'CANCEL' && this.context !== 'global') {
+            return false;
+        }
+
         // Check Virtual Button
         if (this.virtualButtons[actionName] && !this.prevVirtualButtons[actionName]) return true;
 
@@ -92,11 +113,6 @@ export class InputHandler {
         return keys.some(k => this.keys[k] && !this.prevKeys[k]);
     }
 
-    /**
-     * Sets the state of a virtual button.
-     * @param {string} actionName 
-     * @param {boolean} active 
-     */
     /**
      * Sets the state of a virtual button.
      * @param {string} actionName 
