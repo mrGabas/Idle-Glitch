@@ -20,11 +20,18 @@ export class Renderer {
         this.matrixFontSize = 16;
         this.matrixColumns = 0;
         this.matrixDrops = [];
+
+        // Caches
+        this.timeString = "";
+        this.lastTimeUpdate = 0;
+        this.mainButtonGrad = null;
     }
 
     setSize(w, h) {
         this.w = this.canvas.width = w;
         this.h = this.canvas.height = h;
+        this.mainButtonGrad = null; // Invalidate cache
+        this.matrixDrops = []; // Reset matrix
     }
 
     /**
@@ -36,6 +43,13 @@ export class Renderer {
      */
     draw(state, entities, input, uiManager) {
         const { currentTheme, mouse, shake, scareTimer, scareText } = input;
+
+        // Optimize Time String (Update once per second)
+        const now = Date.now();
+        if (now - this.lastTimeUpdate > 1000) {
+            this.timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            this.lastTimeUpdate = now;
+        }
 
         if (state.crashed) {
             this.drawBSOD();
@@ -156,8 +170,10 @@ export class Renderer {
             this.ctx.fillRect(this.w - 100, this.h - 40, 100, 40);
             this.ctx.fillStyle = '#fff';
             this.ctx.font = '14px sans-serif';
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            this.ctx.fillText(time, this.w - 80, this.h - 15);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '14px sans-serif';
+            // Use cached time string
+            this.ctx.fillText(this.timeString, this.w - 80, this.h - 15);
 
             // Clippy Logic (Visual only)
             if (entities.clippy) entities.clippy.draw(this.ctx);
@@ -287,8 +303,13 @@ export class Renderer {
         this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
 
         // Gradient
-        const grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
-        theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
+        // Gradient
+        let grad = this.mainButtonGrad;
+        if (!grad) {
+            grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
+            theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
+            this.mainButtonGrad = grad;
+        }
 
         this.ctx.fillStyle = grad;
         this.ctx.fill();
@@ -625,9 +646,11 @@ export class Renderer {
 
     drawMatrixRain() {
         // 1. Init
-        const cols = Math.floor(this.w / this.matrixFontSize);
+        // Reduce density: fewer columns
+        const fontSize = 20; // Increased from 16
+        const cols = Math.floor(this.w / fontSize);
         if (this.matrixDrops.length !== cols) {
-            this.matrixDrops = Array(cols).fill(1).map(() => Math.random() * -100); // Randomize start
+            this.matrixDrops = Array(cols).fill(1).map(() => Math.random() * -100);
         }
 
         // 2. Fade effect (Trails)
@@ -636,15 +659,17 @@ export class Renderer {
 
         // 3. Text settings
         this.ctx.fillStyle = '#0F0';
-        this.ctx.font = this.matrixFontSize + 'px monospace';
+        // 3. Text settings
+        this.ctx.fillStyle = '#0F0';
+        this.ctx.font = fontSize + 'px monospace';
 
         // 4. Draw drops
         for (let i = 0; i < this.matrixDrops.length; i++) {
             // Random Katakana / Matrix char
             const text = String.fromCharCode(0x30A0 + Math.random() * 96);
 
-            const x = i * this.matrixFontSize;
-            const y = this.matrixDrops[i] * this.matrixFontSize;
+            const x = i * fontSize;
+            const y = this.matrixDrops[i] * fontSize;
 
             // Randomly brighter character
             if (Math.random() > 0.95) this.ctx.fillStyle = '#CFFFCD';
