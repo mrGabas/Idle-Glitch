@@ -9,6 +9,7 @@ import { SoundEngine } from './audio.js';
 import { events } from './events.js';
 import { SaveSystem } from './SaveSystem.js';
 import { Renderer } from '../systems/Renderer.js';
+import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris } from '../entities/particles.js';
 import { Popup } from '../ui/windows.js';
@@ -54,6 +55,8 @@ export class Game {
 
         this.themeManager = new ThemeManager(this);
 
+        this.economySystem = new EconomySystem(this);
+
         // META DATA
         this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
         this.lifetimeGlitchData = this.saveSystem.loadNumber('lifetime_glitch_data', 0);
@@ -67,9 +70,7 @@ export class Game {
         // Actually, let's use methods where possible or direct assignment if initializing.
         // Direct assignment is fine for init.
 
-        this.applyMetaUpgrades();
-
-        this.applyMetaUpgrades();
+        this.economySystem.applyMetaUpgrades();
 
         this.uiManager = new UIManager(this);
 
@@ -99,7 +100,7 @@ export class Game {
         this.lastTime = 0;
         // Last Save Time for Offline Progress
         this.lastSaveTime = this.saveSystem.loadNumber('last_save', Date.now());
-        this.checkOfflineProgress();
+        this.economySystem.checkOfflineProgress();
 
         // Auto-save loop
         setInterval(() => this.saveGame(), 30000);
@@ -128,34 +129,7 @@ export class Game {
         this.saveSystem.save('selected_theme', this.themeManager.currentTheme.id);
     }
 
-    applyMetaUpgrades() {
-        // ... (lines 142-152)
-        // 4. Passive Multiplier Boost
-        // 4. Passive Multiplier Boost
-        const boostLevel = this.metaUpgrades['prestige_boost'] || 0;
-        if (boostLevel > 0) {
-            this.state.setMultiplier(this.state.multiplier + (boostLevel * 0.5));
-        }
-    }
 
-    checkOfflineProgress() {
-        if (this.metaUpgrades['offline_progress']) {
-            const now = Date.now();
-            const diff = (now - this.lastSaveTime) / 1000; // seconds
-
-            if (diff > 60) {
-                const lastRate = this.saveSystem.loadNumber('last_auto_rate', 0);
-                if (lastRate > 0) {
-                    // 25% efficiency
-                    const gained = lastRate * diff * 0.25;
-                    if (gained > 0) {
-                        this.state.addScore(gained);
-                        this.uiManager.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
-                    }
-                }
-            }
-        }
-    }
 
 
 
@@ -445,7 +419,8 @@ export class Game {
         this.uiManager.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
 
         // Apply passive metas
-        this.applyMetaUpgrades();
+        // Apply passive metas
+        this.economySystem.applyMetaUpgrades();
     }
 
     // --- LOGIC ---
@@ -453,7 +428,7 @@ export class Game {
     handleBIOSAction(index) {
         // Upgrades
         if (index < META_UPGRADES.length) {
-            this.buyMetaUpgrade(META_UPGRADES[index]);
+            this.economySystem.buyMetaUpgrade(META_UPGRADES[index]);
             return;
         }
 
@@ -482,7 +457,7 @@ export class Game {
             // Hitbox approximation
             if (my >= y - 20 && my < y + 10) {
                 // Clicked Item
-                this.buyMetaUpgrade(u);
+                this.economySystem.buyMetaUpgrade(u);
             }
         });
 
@@ -506,20 +481,7 @@ export class Game {
         }
     }
 
-    buyMetaUpgrade(u) {
-        const currentLevel = this.metaUpgrades[u.id] || 0;
-        if (u.maxLevel && currentLevel >= u.maxLevel) return;
 
-        if (this.glitchData >= u.baseCost) {
-            this.glitchData -= u.baseCost;
-            this.metaUpgrades[u.id] = currentLevel + 1;
-            this.events.emit('play_sound', 'buy');
-            this.saveGame();
-            this.applyMetaUpgrades();
-        } else {
-            this.events.emit('play_sound', 'error');
-        }
-    }
 
     bootSystem() {
         this.gameState = 'PLAYING';
@@ -600,32 +562,8 @@ export class Game {
         }
         if (popupHit) return;
 
-        // 2. Shop Upgrades
-        let shopHit = false;
-        this.themeManager.upgrades.forEach((u, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-            const bx = (this.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
-            const by = this.h / 2 + 50 + row * CFG.game.shop.rowHeight;
-
-            if (mx >= bx && mx <= bx + CFG.game.shop.width && my >= by && my <= by + CFG.game.shop.height) {
-                shopHit = true;
-                if (this.state.score >= u.cost) {
-                    this.buyUpgrade(u);
-                } else {
-                    this.events.emit('play_sound', 'error');
-                }
-            }
-        });
-        if (shopHit) return;
-
-        // 3. Main Button
-        const cx = this.w / 2;
-        const cy = this.h / 2 - 100;
-        if (Math.hypot(mx - cx, my - cy) < CFG.game.mainButtonRadius) {
-            this.clickMain();
-            return;
-        }
+        // 2. Shop & Main Button checks delegated to EconomySystem
+        if (this.economySystem.handleClick(mx, my)) return;
 
 
 
@@ -727,41 +665,9 @@ export class Game {
         this.entities.add('particles', p);
     }
 
-    clickMain() {
-        let gain = this.state.clickPower;
-        let isCrit = false;
 
-        // Critical Click Check
-        const critLevel = this.metaUpgrades['critical_click'] || 0;
-        if (critLevel > 0 && Math.random() < critLevel * 0.1) {
-            gain *= 5;
-            isCrit = true;
-        }
 
-        this.addScore(gain);
 
-        if (isCrit) {
-            this.events.emit('play_sound', 'buy'); // Better sound needed?
-            this.createFloatingText(this.w / 2, this.h / 2 - 150, "CRITICAL!", "#ff0");
-            this.shake = 5;
-        } else {
-            this.events.emit('play_sound', 'click');
-            this.shake = 2;
-        }
-
-        this.createParticles(this.w / 2, this.h / 2 - 100, this.themeManager.currentTheme.colors.accent);
-        if (this.themeManager.currentTheme.id === 'rainbow_paradise') this.state.corruption += 0.05;
-    }
-
-    buyUpgrade(u) {
-        this.state.score -= u.cost;
-        u.count++;
-        u.cost = Math.floor(u.cost * 1.4);
-        if (u.type === 'auto') this.state.autoRate += u.val;
-        if (u.type === 'click') this.state.clickPower += u.val;
-        this.events.emit('play_sound', 'buy');
-        this.state.corruption += 1.5;
-    }
 
     addScore(amount) {
         // Redundant if we access this.state.addScore directly but let's keep it as proxy or remove.
@@ -857,7 +763,7 @@ export class Game {
             this.mouse.x = this.w - this.mouse.x;
         }
 
-        this.addScore(this.state.autoRate * dt);
+        this.economySystem.update(dt);
         // 5. Update Timer
         this.state.timer += dt;
 

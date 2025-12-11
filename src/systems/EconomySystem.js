@@ -1,0 +1,133 @@
+
+import { CFG, UTILS } from '../core/config.js';
+import { META_UPGRADES } from '../data/metaUpgrades.js';
+
+export class EconomySystem {
+    constructor(game) {
+        this.game = game;
+    }
+
+    update(dt) {
+        // Auto score gain
+        if (this.game.state.autoRate > 0) {
+            this.game.state.addScore(this.game.state.autoRate * dt);
+        }
+    }
+
+    handleClick(mx, my) {
+        // 1. Shop Upgrades
+        let shopHit = false;
+        // Access upgrades via themeManager
+        const upgrades = this.game.themeManager.upgrades;
+
+        upgrades.forEach((u, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            // Re-calculate positions or use CFG constants directly as Game.js did
+            const bx = (this.game.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
+            const by = this.game.h / 2 + 50 + row * CFG.game.shop.rowHeight;
+
+            if (mx >= bx && mx <= bx + CFG.game.shop.width && my >= by && my <= by + CFG.game.shop.height) {
+                shopHit = true;
+                if (this.game.state.score >= u.cost) {
+                    this.buyUpgrade(u);
+                } else {
+                    this.game.events.emit('play_sound', 'error');
+                }
+            }
+        });
+
+        if (shopHit) return true;
+
+        // 2. Main Button
+        const cx = this.game.w / 2;
+        const cy = this.game.h / 2 - 100;
+        if (Math.hypot(mx - cx, my - cy) < CFG.game.mainButtonRadius) {
+            this.handleMainClick();
+            return true;
+        }
+
+        return false;
+    }
+
+    handleMainClick() {
+        let gain = this.game.state.clickPower;
+        let isCrit = false;
+
+        // Critical Click Check
+        const critLevel = this.game.metaUpgrades['critical_click'] || 0;
+        if (critLevel > 0 && Math.random() < critLevel * 0.1) {
+            gain *= 5;
+            isCrit = true;
+        }
+
+        this.game.state.addScore(gain);
+
+        if (isCrit) {
+            this.game.events.emit('play_sound', 'buy');
+            this.game.createFloatingText(this.game.w / 2, this.game.h / 2 - 150, "CRITICAL!", "#ff0");
+            this.game.shake = 5;
+        } else {
+            this.game.events.emit('play_sound', 'click');
+            this.game.shake = 2;
+        }
+
+        this.game.createParticles(this.game.w / 2, this.game.h / 2 - 100, this.game.themeManager.currentTheme.colors.accent);
+        if (this.game.themeManager.currentTheme.id === 'rainbow_paradise') {
+            this.game.state.addCorruption(0.05);
+        }
+    }
+
+    buyUpgrade(u) {
+        this.game.state.score -= u.cost;
+        u.count++;
+        u.cost = Math.floor(u.cost * 1.4);
+
+        if (u.type === 'auto') this.game.state.autoRate += u.val;
+        if (u.type === 'click') this.game.state.clickPower += u.val;
+
+        this.game.events.emit('play_sound', 'buy');
+        this.game.state.addCorruption(1.5);
+    }
+
+    buyMetaUpgrade(u) {
+        const currentLevel = this.game.metaUpgrades[u.id] || 0;
+        if (u.maxLevel && currentLevel >= u.maxLevel) return;
+
+        if (this.game.glitchData >= u.baseCost) {
+            this.game.glitchData -= u.baseCost;
+            this.game.metaUpgrades[u.id] = currentLevel + 1;
+            this.game.events.emit('play_sound', 'buy');
+            this.game.saveGame();
+            this.applyMetaUpgrades();
+        } else {
+            this.game.events.emit('play_sound', 'error');
+        }
+    }
+
+    applyMetaUpgrades() {
+        const boostLevel = this.game.metaUpgrades['prestige_boost'] || 0;
+        if (boostLevel > 0) {
+            this.game.state.setMultiplier(this.game.state.multiplier + (boostLevel * 0.5));
+        }
+    }
+
+    checkOfflineProgress() {
+        if (this.game.metaUpgrades['offline_progress']) {
+            const now = Date.now();
+            const diff = (now - this.game.lastSaveTime) / 1000; // seconds
+
+            if (diff > 60) {
+                const lastRate = this.game.saveSystem.loadNumber('last_auto_rate', 0);
+                if (lastRate > 0) {
+                    // 25% efficiency
+                    const gained = lastRate * diff * 0.25;
+                    if (gained > 0) {
+                        this.game.state.addScore(gained);
+                        this.game.uiManager.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
+                    }
+                }
+            }
+        }
+    }
+}
