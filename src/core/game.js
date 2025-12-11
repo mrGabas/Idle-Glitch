@@ -17,9 +17,7 @@ import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
 import { EntityManager } from '../managers/EntityManager.js';
 // New imports for Mail
-import { FakeCursor } from '../entities/FakeCursor.js';
-import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
-import { LoreFile } from '../entities/items.js';
+import { GlitchSystem } from '../systems/GlitchSystem.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 import { ThemeManager } from '../managers/ThemeManager.js';
 import { UIManager } from '../managers/UIManager.js';
@@ -47,7 +45,7 @@ export class Game {
         this.resize(); // Initialize dimensions early
 
         this.hunter = null;
-        this.fakeCursor = new FakeCursor(0, 0, this);
+
 
         // Save loading
         this.prestigeMult = this.saveSystem.loadNumber('prestige_mult', 1.0);
@@ -56,6 +54,7 @@ export class Game {
         this.themeManager = new ThemeManager(this);
 
         this.economySystem = new EconomySystem(this);
+        this.glitchSystem = new GlitchSystem(this);
 
         // META DATA
         this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
@@ -161,10 +160,10 @@ export class Game {
 
         // Fake Browser Error Buttons
         const waitBtn = document.getElementById('btn-error-wait');
-        if (waitBtn) waitBtn.onclick = () => this.handleBrowserWait();
+        if (waitBtn) waitBtn.onclick = () => this.glitchSystem.handleBrowserWait();
 
         const killBtn = document.getElementById('btn-error-kill');
-        if (killBtn) killBtn.onclick = () => this.handleBrowserKill();
+        if (killBtn) killBtn.onclick = () => this.glitchSystem.handleBrowserKill();
 
         // Volume Sliders
         const sfx = document.getElementById('vol-sfx');
@@ -235,7 +234,6 @@ export class Game {
                 this.realMouse.x = e.clientX;
                 this.realMouse.y = e.clientY;
 
-                // Update game mouse for BIOS or if no lag
                 if (this.gameState === 'BIOS' || this.state.corruption <= 60) {
                     const rect = this.renderer.canvas.getBoundingClientRect();
                     this.mouse.x = e.clientX - rect.left;
@@ -366,7 +364,7 @@ export class Game {
         this.w = window.innerWidth; // Keep local ref for logic
         this.h = window.innerHeight;
         if (this.fakeUI) this.fakeUI.init(this.w, this.h);
-        if (this.fakeCursor) this.fakeCursor.resize(this.w, this.h);
+        if (this.glitchSystem) this.glitchSystem.resize(this.w, this.h);
         if (this.uiManager) this.uiManager.resize(this.w, this.h);
     }
 
@@ -511,38 +509,10 @@ export class Game {
 
         // Mouse updated above
 
-        // 0.1 Lore Files
-        const loreFiles = this.entities.getAll('items');
-        for (let i = 0; i < loreFiles.length; i++) {
-            if (loreFiles[i].checkClick(mx, my)) {
-                // Open lore
-                const file = loreFiles[i];
-                this.uiManager.openNotepad(file.content, { password: file.password, title: file.label });
-                loreFiles.splice(i, 1); // Manual splice from array returned by reference? Yes getAll returns ref.
-                this.events.emit('play_sound', 'click');
-                return;
-            }
-        }
 
-        // 0.2 Captchas (Priority)
-        const captchas = this.entities.getAll('enemies'); // Assuming captchas are enemies? Or create distinct layer?
-        // Let's use 'enemies' for now or 'captchas' if I add it to Manager logic explicitly.
-        // Prompt said: "layers for particles, debris, popups, enemies".
-        // Captcha is enemy-like.
 
-        for (let i = 0; i < captchas.length; i++) {
-            const c = captchas[i];
-            // Check if it IS a captcha (since enemies layer might have hunter too)
-            if (c instanceof CursedCaptcha && c.checkClick(mx, my)) {
-                this.events.emit('play_sound', 'buy'); // Success sound
-                this.addScore(this.state.autoRate * 120 + 1000); // Bonus
-                this.state.addCorruption(-5); // Cleans corruption
-                this.createParticles(mx, my, '#0f0');
-                this.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
-                captchas.splice(i, 1);
-                return;
-            }
-        }
+        // 0.1 Handle Entity/Glitch Clicks
+        if (this.glitchSystem.handleClick(mx, my)) return;
 
         // 1. Popups
         let popupHit = false;
@@ -611,19 +581,7 @@ export class Game {
             }
         }
 
-        if (this.hunter && this.hunter.active) {
-            const hit = this.hunter.checkClick(mx, my);
-            if (hit) {
-                this.events.emit('play_sound', 'click');
-                this.createParticles(mx, my, '#f00');
-                if (hit === true) {
-                    this.state.addScore(1000 * this.state.multiplier);
-                    this.hunter = null;
-                    this.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
-                }
-                return;
-            }
-        }
+
     }
 
     createFloatingText(x, y, text, color) {
@@ -704,24 +662,6 @@ export class Game {
         // Cap dt to avoid huge jumps on lag
         const safeDt = Math.min(dt, 0.1);
 
-        // --- FALSE CRASH LOGIC ---
-        if (this.state.falseCrash) {
-            this.state.crashTimer += dt;
-
-            // 1. Initial Freeze (0-3s) -> Black Screen handled by Renderer
-
-            // 2. Text Appearance (3s)
-
-            // 3. Recovery (6s)
-            if (this.state.crashTimer > 6.0) {
-                this.state.falseCrash = false;
-                document.body.style.cursor = 'default';
-                this.chat.addMessage('SYSTEM', 'ERROR: SYSTEM RECOVERED');
-                this.events.emit('play_sound', 'startup'); // Or some reboot sound
-            }
-            return; // STOP ALL OTHER UPDATES
-        }
-
         this.themeManager.update(safeDt);
         this.uiManager.update(safeDt);
         this.update(safeDt);
@@ -731,37 +671,11 @@ export class Game {
     }
 
     update(dt) {
-        // --- INPUT DECAY LOGIC ---
-        // Calculate Lag
-        let lagAmount = 0;
-        if (this.state.corruption > 60) {
-            // max 500ms lag at 100 corruption
-            lagAmount = (this.state.corruption - 60) * 12;
-        }
+        // Glitch System Logic (Lag, Crashes, Spawning)
+        this.glitchSystem.update(dt);
 
-        if (lagAmount > 0 && this.mouseHistory.length > 0) {
-            const targetTime = Date.now() - lagAmount;
-            // Find closest historical position
-            let best = this.mouseHistory[this.mouseHistory.length - 1];
-            for (let i = this.mouseHistory.length - 1; i >= 0; i--) {
-                if (this.mouseHistory[i].time <= targetTime) {
-                    best = this.mouseHistory[i];
-                    break;
-                }
-            }
-            this.mouse.x = best.x;
-            this.mouse.y = best.y;
-        } else {
-            // No lag
-            this.mouse.x = this.realMouse.x;
-            this.mouse.y = this.realMouse.y;
-        }
-
-        // Calculate Inversion
-        if (this.state.corruption > 85) {
-            // Simple X-axis inversion
-            this.mouse.x = this.w - this.mouse.x;
-        }
+        // Stop updates if crashed
+        if (this.state.falseCrash || this.state.crashed || this.state.rebooting) return;
 
         this.economySystem.update(dt);
         // 5. Update Timer
@@ -771,46 +685,7 @@ export class Game {
         // For now, mail checks are interval-based in MailSystem constructor
 
 
-        // Crash Logic
-        if (this.state.crashed) {
-            this.rebootTimer -= dt;
-            if (this.rebootTimer <= 0) {
-                this.state.crashed = false;
-                this.state.rebooting = true;
-                this.rebootTimer = 5.0; // 5s BIOS
-            }
-            return;
-        }
-
-        if (this.state.rebooting) {
-            this.rebootTimer -= dt;
-            if (this.rebootTimer <= 0) {
-                // Was calling hardReset(), creating a loop if coming from BIOS start.
-                // Reset logic is:
-                // 1. Crash -> Wait -> crashed=false, rebooting=true.
-                // 2. Rebooting -> Wait -> rebooting=false, hardReset() -> BIOS.
-                // But now we have BIOS -> rebooting=true -> Game. 
-                // So we need to know WHERE we are rebooting to.
-
-                // If we are coming from BIOS (bootSystem), we want to PLAY.
-                // If we are coming from Crash, we simply go to BIOS (via hardReset).
-
-                // Current hardReset sets gameState='BIOS'.
-                // bootSystem sets gameState='PLAYING'.
-
-                // If gameState is PLAYING, we just end the reboot sequence.
-                if (this.gameState === 'PLAYING') {
-                    this.state.rebooting = false;
-                    this.uiManager.chat.addMessage('SYSTEM', 'SYSTEM REBOOT SUCCESSFUL.');
-                    this.events.emit('play_sound', 'startup');
-                } else {
-                    // If we were crashing/rebooting into BIOS
-                    this.hardReset();
-                }
-            }
-            return;
-        }
-
+        // Crash Logic handled by GlitchSystem
         // Theme Transition & Mechanics handled by Manager
         this.themeManager.update(dt);
 
@@ -853,95 +728,11 @@ export class Game {
             this.scareTimer -= dt;
         }
 
-        // Hunter Spawn
-        if (!this.hunter && this.state.corruption > 40 && Math.random() < 0.001) {
-            this.hunter = new GlitchHunter(this.w, this.h);
-            this.chat.addMessage('SYSTEM', 'WARNING: VIRUS DETECTED');
-            this.events.emit('play_sound', 'error');
-        }
 
-        // Fake Cursor Update (Fourth Wall)
-        if (this.state.corruption > 20) {
-            if (!this.fakeCursor.active && Math.random() < 0.0005 * this.state.corruption) {
-                this.fakeCursor.reset(this.w, this.h);
-            }
-            this.fakeCursor.update(dt);
-        }
-
-        // Fake Browser Error Trigger (Corruption > 60)
-        if (this.state.corruption > 60 && !this.state.crashed && !this.state.rebooting && !this.state.falseCrash) {
-            // Rare event
-            if (Math.random() < 0.0001) {
-                this.triggerBrowserError();
-            }
-        }
-
-        const enemies = this.entities.getAll('enemies');
-        // Captchas spawn
-        if (this.state.corruption > 15 && Math.random() < 0.0005) {
-            const caps = enemies.filter(e => e instanceof CursedCaptcha);
-            if (caps.length < 1) {
-                this.entities.add('enemies', new CursedCaptcha(this.w, this.h));
-                this.events.emit('play_sound', 'error');
-            }
-        }
-
-        // Lore Files
-        // Lore Files
-        // Managed by EntityManager (items layer) or manual?
-        // Let's use items layer.
-
-        if (this.state.corruption > 10 && Math.random() < 0.0003 && !this.uiManager.activeNotepad) {
-            if (this.entities.getAll('items').length < 2) this.entities.add('items', new LoreFile(this.w, this.h));
-        }
-
-        // Hunter Update
-        if (this.hunter && this.hunter.active) {
-            const status = this.hunter.update(dt, this); // Updated signature
-            if (status === 'damage') {
-                this.state.score -= this.state.autoRate * dt * 2;
-                if (this.state.score < 0) this.state.score = 0;
-                this.shake = 5;
-            }
-        }
-    }
-
-    // --- FALSE CRASH MECHANIC ---
-    triggerFalseCrash() {
-        if (this.state.falseCrash) return;
-
-        this.state.falseCrash = true;
-        this.state.crashTimer = 0;
-
-        // Force cursor change
-        document.body.style.cursor = 'wait'; // System "loading" cursor
-
-        // Stop audio?
-        // this.audio.stopAll(); // Optional: silence is scarier
     }
 
     triggerBrowserError() {
-        const el = document.getElementById('browser-error-overlay');
-        if (el) el.style.display = 'flex';
-        this.gameState = 'PAUSED'; // Pause game logic effectively
-        this.events.emit('play_sound', 'error');
-    }
-
-    handleBrowserWait() {
-        const el = document.getElementById('browser-error-overlay');
-        if (el) el.style.display = 'none';
-        this.gameState = 'PLAYING';
-
-        // Reward
-        const reward = this.state.autoRate * 60; // 1 min of production
-        this.addScore(reward);
-        this.uiManager.chat.addMessage('SYSTEM', `Recalibrating... compensation awarded: ${UTILS.fmt(reward)}`);
-        this.events.emit('play_sound', 'startup');
-    }
-
-    handleBrowserKill() {
-        // Fake reload/crash
-        location.reload();
+        this.glitchSystem.triggerBrowserError();
     }
 
     draw() {
@@ -967,7 +758,7 @@ export class Game {
             captchas: this.entities.getAll('enemies').filter(e => e instanceof CursedCaptcha),
             loreFiles: this.entities.getAll('items'),
             hunter: this.hunter,
-            fakeCursor: this.fakeCursor,
+            fakeCursor: this.glitchSystem.fakeCursor,
             clippy: this.clippy
         };
 
