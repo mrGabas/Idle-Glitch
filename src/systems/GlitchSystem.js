@@ -127,7 +127,7 @@ export class GlitchSystem {
         }
 
         // Lore Files
-        if (state.corruption > 10 && Math.random() < 0.0003 && !this.game.uiManager.activeNotepad) {
+        if (state.corruption > 10 && Math.random() < 0.001 && !this.game.uiManager.activeNotepad) {
             if (this.game.entities.getAll('items').length < 2) {
                 this.game.entities.add('items', new LoreFile(this.game.w, this.game.h));
             }
@@ -135,10 +135,10 @@ export class GlitchSystem {
 
         // Snake Game Spawn (Desktop Themes or Random)
         const currentThemeId = this.game.themeManager.currentTheme.id;
-        if ((currentThemeId === 'dev_desktop' || currentThemeId === 'legacy_system') || Math.random() < 0.0001) {
+        if ((currentThemeId === 'dev_desktop' || currentThemeId === 'legacy_system') || Math.random() < 0.0005) {
             const items = this.game.entities.getAll('items');
             const hasSnake = items.some(i => i instanceof ExecutableFile && i.programName === 'Snake');
-            const chance = (currentThemeId === 'dev_desktop' || currentThemeId === 'legacy_system') ? 0.002 : 0.00005;
+            const chance = (currentThemeId === 'dev_desktop' || currentThemeId === 'legacy_system') ? 0.002 : 0.0005;
 
             if (!hasSnake && Math.random() < chance) {
                 this.game.entities.add('items', new ExecutableFile(this.game.w, this.game.h, 'Snake'));

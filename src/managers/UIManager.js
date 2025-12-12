@@ -81,6 +81,17 @@ export class UIManager {
     openNotepad(content, options = {}) {
         const notepad = new NotepadWindow(this.game.w, this.game.h, content, options);
         if (options.title) notepad.title = options.title;
+
+        // Track active instance
+        this.activeNotepad = notepad;
+
+        // Add callback to clear reference on close
+        notepad.onClose = () => {
+            if (this.activeNotepad === notepad) {
+                this.activeNotepad = null;
+            }
+        };
+
         this.windowManager.add(notepad);
         // this.game.events.emit('play_sound', 'click'); // WindowManager.add plays click
     }
