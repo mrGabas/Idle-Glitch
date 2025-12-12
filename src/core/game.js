@@ -491,6 +491,7 @@ export class Game {
 
     handleBIOSAction(index) {
         // Upgrades
+        // Upgrades
         if (index < META_UPGRADES.length) {
             this.economySystem.buyMetaUpgrade(META_UPGRADES[index]);
             return;
@@ -743,7 +744,7 @@ export class Game {
         const dt = (t - this.lastTime) / 1000;
         this.lastTime = t;
 
-        if (this.gameState !== 'PLAYING' && !this.state.crashed && !this.state.rebooting) {
+        if (this.gameState !== 'PLAYING' && this.gameState !== 'BIOS' && !this.state.crashed && !this.state.rebooting) {
             // Still draw even if paused, just don't update
             this.draw();
             this.input.update(); // Update input even when paused to prevent stuck keys
@@ -786,6 +787,12 @@ export class Game {
                 }
             }
             this.virtualControls.setContext(context);
+        }
+
+        // BIOS Logic Gate: Only process input and return
+        if (this.gameState === 'BIOS') {
+            this.input.update();
+            return;
         }
 
         // Glitch System Logic (Lag, Crashes, Spawning)

@@ -513,8 +513,14 @@ export class Renderer {
                 this.ctx.fillStyle = '#fff';
             }
 
+            // Handle Cost Scaling
+            let cost = u.baseCost;
+            if (u.costScale) {
+                cost = Math.floor(u.baseCost * Math.pow(u.costScale, owned));
+            }
+
             this.ctx.fillText(label, 40, y);
-            this.ctx.fillText(u.baseCost + " MB", 400, y);
+            this.ctx.fillText(cost + " MB", 400, y);
         });
 
         // "BOOT SYSTEM" Option

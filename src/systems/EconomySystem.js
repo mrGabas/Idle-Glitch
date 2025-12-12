@@ -116,16 +116,23 @@ export class EconomySystem {
      */
     buyMetaUpgrade(u) {
         const currentLevel = this.game.metaUpgrades[u.id] || 0;
-        if (u.maxLevel && currentLevel >= u.maxLevel) return;
+        if (u.maxLevel && currentLevel >= u.maxLevel) return false;
 
-        if (this.game.glitchData >= u.baseCost) {
-            this.game.glitchData -= u.baseCost;
+        let cost = u.baseCost;
+        if (u.costScale) {
+            cost = Math.floor(u.baseCost * Math.pow(u.costScale, currentLevel));
+        }
+
+        if (this.game.glitchData >= cost) {
+            this.game.glitchData -= cost;
             this.game.metaUpgrades[u.id] = currentLevel + 1;
             this.game.events.emit('play_sound', 'buy');
             this.game.saveGame();
             this.applyMetaUpgrades();
+            return true;
         } else {
             this.game.events.emit('play_sound', 'error');
+            return false;
         }
     }
 
