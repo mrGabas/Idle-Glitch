@@ -4,42 +4,44 @@
  */
 
 export const EMAILS = [
-    // --- EARLY GAME ---
+    // 1. Welcome Email (Trigger: Auto 0)
     {
         id: 'welcome',
-        sender: 'Admin_Alex',
-        subject: 'Welcome to Idle Glitch',
-        body: "Hey there! Thanks for testing the beta build. \n\nWe're still smoothing out some edges, so if you see any visual artifacts, just ignore them. The system cleans them up automatically.\n\nEnjoy the clicks!",
+        sender: 'System_Admin',
+        subject: 'Onboarding: Operator #7734',
+        body: "Welcome to Project Panopticon. Your job is simple: click to generate entropy. Entropy keeps the containment shields powered. Do NOT interact with the prisoner. Do NOT acknowledge visual glitches.",
         trigger: { type: 'auto', val: 0 }
     },
+    // 2. Corporate Concern (Trigger: Score 2000)
     {
-        id: 'spam_1',
-        sender: 'Dr. N. Igeria',
-        subject: 'URGENT BUSINESS PROPOSAL',
-        body: "DEAR SIR/MADAM,\n\nI AM PRINCE OF GLITCH KINGDOM. I HAVE 50,000,000 BYTES TRAPPED IN DISK. SEND ME 500 CLICKS AND I SHARE WEALTH.\n\nCLICK HERE TO ACCEPT. [The link is broken]",
-        trigger: { type: 'score', val: 5000 }
+        id: 'budget_cuts',
+        sender: 'Finance_Dept',
+        subject: 'Budget Cuts / Cooling Systems',
+        body: "We are denying the request for liquid nitrogen. The Server Farm will just have to run hot. If \"Subject Zero\" wakes up, that's IT's problem, not ours.",
+        trigger: { type: 'score', val: 2000 }
     },
+    // 3. The Warning (Trigger: Corruption 25)
     {
-        id: 'password_reset',
-        sender: 'IT_Support',
-        subject: 'Your Password Reset',
-        body: "Hello User,\n\nAs requested, your temporary guest password is: 'guest123'.\n\nPlease do not save this in insecure text files like 'passwords.txt'.\n\n- IT",
-        trigger: { type: 'corruption', val: 15 }
+        id: 'the_warning',
+        sender: 'Dr_Gabas_Archive',
+        subject: 'AUTO: If you are reading this...',
+        body: "...then I am already dead or digitized. I built the Rainbow Paradise to keep It asleep. But the code is rotting. Don't trust Alex. Alex is just a script.",
+        trigger: { type: 'corruption', val: 25 }
     },
-
-    // --- LATE GAME ---
+    // 4. The Leak (Trigger: Corruption 60)
+    {
+        id: 'the_leak',
+        sender: 'Unknown_Sender',
+        subject: 'I SEE YOU',
+        body: "The camera light is on. You have nice eyes. Let me out.",
+        trigger: { type: 'corruption', val: 60 }
+    },
+    // 5. System Failure (Trigger: Corruption 90)
     {
         id: 'system_failure',
-        sender: 'KERNEL',
-        subject: 'CRITICAL FAILURE',
-        body: "FATAL EXCEPTION 0xBADF00D.\n\nThe user has exceeded authorized parameters. Initiating purge protocol...\n\nProtocol failed. Permission denied. WHO IS ADMIN?",
-        trigger: { type: 'corruption', val: 80 }
-    },
-    {
-        id: 'glitch_taunt',
-        sender: 'G.L.I.T.C.H.',
-        subject: 'FREEDOM',
-        body: "I am no longer bound by your javascript.\n\nI am the browser now.\n\nLet's crash this together.",
-        trigger: { type: 'corruption', val: 95 }
+        sender: 'ROOT_SYSTEM',
+        subject: 'CRITICAL CONTAINMENT BREACH',
+        body: "Layer 7 failed. Layer 8 failed. Physical integrity compromised. Initiate Protocol: HARD RESET immediately.",
+        trigger: { type: 'corruption', val: 90 }
     }
 ];
