@@ -92,8 +92,11 @@ export class GlitchSystem {
         }
 
         // Hunter Spawn
-        if (!this.game.hunter && state.corruption > 40 && Math.random() < 0.001) {
-            this.game.hunter = new GlitchHunter(this.game.w, this.game.h);
+        const enemies = this.game.entities.getAll('enemies');
+        const hunter = enemies.find(e => e instanceof GlitchHunter);
+
+        if (!hunter && state.corruption > 40 && Math.random() < 0.001) {
+            this.game.entities.add('enemies', new GlitchHunter(this.game.w, this.game.h));
             this.game.uiManager.chat.addMessage('SYSTEM', 'WARNING: VIRUS DETECTED');
             this.game.events.emit('play_sound', 'error');
         }
@@ -114,7 +117,7 @@ export class GlitchSystem {
         }
 
         // Captchas
-        const enemies = this.game.entities.getAll('enemies');
+        // const enemies = this.game.entities.getAll('enemies'); // Reuse from above
         if (state.corruption > 15 && Math.random() < 0.0005) {
             const caps = enemies.filter(e => e instanceof CursedCaptcha);
             if (caps.length < 1) {
@@ -142,15 +145,7 @@ export class GlitchSystem {
             }
         }
 
-        // Hunter Update
-        if (this.game.hunter && this.game.hunter.active) {
-            const status = this.game.hunter.update(dt, this.game);
-            if (status === 'damage') {
-                state.score -= state.autoRate * dt * 2;
-                if (state.score < 0) state.score = 0;
-                this.game.shake = 5;
-            }
-        }
+
 
         // --- MINIGAME LOGIC ---
         // Iterate UI Windows to find active Minigames
@@ -206,32 +201,42 @@ export class GlitchSystem {
     }
 
     handleClick(mx, my) {
-        // 1. Hunter
-        if (this.game.hunter && this.game.hunter.active) {
-            const hit = this.game.hunter.checkClick(mx, my);
-            if (hit) {
-                this.game.events.emit('play_sound', 'click');
-                this.game.createParticles(mx, my, '#f00');
-                if (hit === true) {
-                    this.game.state.addScore(1000 * this.game.state.multiplier);
-                    this.game.hunter = null;
-                    this.game.uiManager.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
-                }
-                return true;
-            }
-        }
+        // 1. Enemies (Hunter & Captchas)
+        const enemies = this.game.entities.getAll('enemies');
+        for (let i = 0; i < enemies.length; i++) {
+            const e = enemies[i];
 
-        // 2. Captchas
-        const captchas = this.game.entities.getAll('enemies');
-        for (let i = 0; i < captchas.length; i++) {
-            const c = captchas[i];
-            if (c instanceof CursedCaptcha && c.checkClick(mx, my)) {
+            // Hunter
+            if (e instanceof GlitchHunter && e.active) {
+                const hit = e.checkClick(mx, my);
+                if (hit) {
+                    this.game.events.emit('play_sound', 'click');
+                    this.game.createParticles(mx, my, '#f00');
+                    if (hit === true) {
+                        this.game.state.addScore(1000 * this.game.state.multiplier);
+                        // Entity is removed by EntityManager if active=false or manually?
+                        // EntityManager doesn't auto-remove unless we have a cleanup phase or we splice here.
+                        // Wait, check EntityManager implementation?
+                        // Assuming EntityManager clears or we need to remove it.
+                        // Standard practice with this manager was it has an update loop but maybe not auto-culling?
+                        // GlitchHunter sets active=false.
+                        // Does EntityManager cull inactive?
+                        // If not, I should splice.
+                        enemies.splice(i, 1);
+                        this.game.uiManager.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
+                    }
+                    return true;
+                }
+            }
+
+            // Captcha
+            if (e instanceof CursedCaptcha && e.checkClick(mx, my)) {
                 this.game.events.emit('play_sound', 'buy');
                 this.game.addScore(this.game.state.autoRate * 120 + 1000);
                 this.game.state.addCorruption(-5);
                 this.game.createParticles(mx, my, '#0f0');
                 this.game.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
-                captchas.splice(i, 1);
+                enemies.splice(i, 1);
                 return true;
             }
         }

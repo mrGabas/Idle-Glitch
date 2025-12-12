@@ -17,25 +17,10 @@ export class GlitchHunter {
     }
 
     update(dt, context) {
-        // Adapt context to existing signature or use context properties
-        // The original signature was update(mx, my, dt)
-        // Let's assume context IS the Game instance or similar. 
-        // In Game.js, I will pass `this` (the game) as context? Or `this.renderer.draw` inputData?
-        // Let's pass `this` (Game instance) as context to all entity updates.
-        // So context.mouse.x, context.mouse.y.
+        if (!this.active) return;
 
-        // This is tricky without modifying all entity files.
-        // BUT, the prompt requirement is "Refactor Game.js... replace manual loops with entityManager.update".
-        // It's acceptable to modify entities to standardized update(dt, game).
-
-        // However, I can't modify all entities easily in one go if they are scattered?
-        // Let's modify GlitchHunter.
-
-        // I will read GlitchHunter first.
         const mx = context.mouse.x;
         const my = context.mouse.y;
-
-        if (!this.active) return;
 
         // 1. Move to cursor
         const dx = mx - this.x;
@@ -53,9 +38,12 @@ export class GlitchHunter {
 
         // 3. Attack (if reached cursor)
         if (dist < this.size + 10) {
-            return 'damage'; // Signal player damage
+            // Apply damage directly
+            context.state.score -= context.state.autoRate * dt * 2;
+            if (context.state.score < 0) context.state.score = 0;
+            context.shake = 5;
+            // No return needed for damage, or return null
         }
-        return null;
     }
 
     draw(ctx) {

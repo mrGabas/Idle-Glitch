@@ -131,7 +131,10 @@ export class Renderer {
         if (entities.popups) {
             entities.popups.forEach(p => p.draw(this.ctx));
         }
-        if (entities.captchas) entities.captchas.forEach(c => c.draw(this.ctx));
+        if (entities.enemies) {
+            entities.enemies.forEach(e => e.draw(this.ctx));
+        }
+
         if (entities.loreFiles) entities.loreFiles.forEach(f => f.draw(this.ctx));
 
         // PostFX
@@ -168,19 +171,15 @@ export class Renderer {
             // Clock/Tray
             this.ctx.fillStyle = '#0b288b';
             this.ctx.fillRect(this.w - 100, this.h - 40, 100, 40);
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '14px sans-serif';
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '14px sans-serif';
             // Use cached time string
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '14px sans-serif';
             this.ctx.fillText(this.timeString, this.w - 80, this.h - 15);
 
             // Clippy Logic (Visual only)
             if (entities.clippy) entities.clippy.draw(this.ctx);
             else if (Math.random() < 0.05) this.drawClippy(this.w - 80, this.h - 100);
         }
-
-        if (entities.hunter) entities.hunter.draw(this.ctx);
 
         // Draw HUD Elements (Mail Icon)
         this.drawHUD(this.w, this.h, uiManager);

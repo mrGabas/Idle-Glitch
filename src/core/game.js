@@ -50,7 +50,7 @@ export class Game {
         this.audio = new SoundEngine(); // Keep for resume()
         this.resize(); // Initialize dimensions early
 
-        this.hunter = null;
+
 
 
         // Save loading
@@ -458,7 +458,7 @@ export class Game {
         this.entities = new EntityManager();
 
         this.uiManager.activeNotepad = null;
-        this.hunter = null;
+
         this.uiManager.chat.messages = [];
         this.uiManager.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
 
@@ -871,9 +871,9 @@ export class Game {
             debris: this.entities.getAll('debris'),
             particles: this.entities.getAll('particles'),
             popups: this.entities.getAll('ui'),
-            captchas: this.entities.getAll('enemies').filter(e => e instanceof CursedCaptcha),
-            loreFiles: this.entities.getAll('items'),
-            hunter: this.hunter,
+            captchas: [], // Captchas and hunter are now in generic 'enemies' list
+            hunter: null,
+            enemies: this.entities.getAll('enemies'),
             fakeCursor: this.glitchSystem.fakeCursor,
             clippy: this.clippy
         };
