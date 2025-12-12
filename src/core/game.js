@@ -342,6 +342,7 @@ export class Game {
      * Starts the gameplay loop.
      */
     startGame() {
+        // Init Audio Context (Interaction required)
         this.audio.resume();
         this.setScreen(null);
         this.gameState = 'PLAYING';

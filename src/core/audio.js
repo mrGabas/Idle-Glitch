@@ -37,11 +37,12 @@ export class SoundEngine {
     }
 
     resume() {
+        // Strict Browser Policy: Context initialized only on user interaction (resume)
         if (!this.ctx) {
             this.init();
         }
 
-        if (this.ctx.state === 'suspended') {
+        if (this.ctx && this.ctx.state === 'suspended') {
             this.ctx.resume();
         }
         this.enabled = true;
@@ -60,7 +61,9 @@ export class SoundEngine {
     }
 
     play(type) {
-        if (!this.enabled || !this.ctx) return;
+        // Guard: Context must be ready (initialized in resume())
+        if (!this.ctx) return;
+        if (!this.enabled) return;
 
         try {
             const t = this.ctx.currentTime;
