@@ -38,9 +38,11 @@ export class VirtualControls {
         });
         document.body.appendChild(this.container);
 
-        // Inject Styles (Idempotent check ideally, but overwriting is fine)
-        const style = document.createElement('style');
-        style.textContent = `
+        // Inject Styles
+        if (!document.getElementById('virtual-controls-style')) {
+            const style = document.createElement('style');
+            style.id = 'virtual-controls-style';
+            style.textContent = `
             .v-btn {
                 position: absolute;
                 background: rgba(0, 0, 0, 0.3);
@@ -68,7 +70,8 @@ export class VirtualControls {
                 pointer-events: none;
             }
         `;
-        document.head.appendChild(style);
+            document.head.appendChild(style);
+        }
 
         // --- BUTTON GROUPS ---
         this.groups = {
