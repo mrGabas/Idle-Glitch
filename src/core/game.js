@@ -11,7 +11,7 @@ import { SaveSystem } from './SaveSystem.js';
 import { Renderer } from '../systems/Renderer.js';
 import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFaces } from '../ui/ui.js';
-import { Particle, Debris } from '../entities/particles.js';
+import { Particle, Debris, FloatingText } from '../entities/particles.js';
 import { CursedCaptcha } from '../entities/enemies.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
@@ -86,8 +86,15 @@ export class Game {
         this.uiManager = new UIManager(this);
 
         // Load Theme
+        // Load Theme
         const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
         this.themeManager.setTheme(savedTheme);
+
+        // NEW: Load Theme Upgrades (Must be after setTheme)
+        const themeData = this.saveSystem.load('theme_data', null);
+        if (themeData) {
+            this.themeManager.loadThemeUpgrades(themeData);
+        }
 
         this.entities = new EntityManager();
         // this.debris, this.popups, this.captchas, this.loreFiles, this.particles -> managed by this.entities
@@ -112,6 +119,12 @@ export class Game {
         // Last Save Time for Offline Progress
         this.lastSaveTime = this.saveSystem.loadNumber('last_save', Date.now());
         this.economySystem.checkOfflineProgress();
+
+        // NEW: Load Mail Data
+        const mailData = this.saveSystem.load('mail_data', null);
+        if (this.uiManager && this.uiManager.mail && mailData) {
+            this.uiManager.mail.importData(mailData);
+        }
 
         // Auto-save loop
         setInterval(() => this.saveGame(), 30000);
@@ -141,6 +154,14 @@ export class Game {
         // Save rate for offline calc
         this.saveSystem.saveNumber('last_auto_rate', this.state.autoRate);
         this.saveSystem.save('selected_theme', this.themeManager.currentTheme.id);
+
+        // NEW: Save Theme Upgrades
+        this.saveSystem.save('theme_data', this.themeManager.getSaveData());
+
+        // NEW: Save Mail Data
+        if (this.uiManager && this.uiManager.mail) {
+            this.saveSystem.save('mail_data', this.uiManager.mail.exportData());
+        }
     }
 
 
@@ -673,42 +694,7 @@ export class Game {
      * @param {string} color - CSS color string.
      */
     createFloatingText(x, y, text, color) {
-        const p = new Particle(x, y, color);
-        p.text = text;
-        p.vy = -2;
-        p.vx = 0;
-        p.life = 1.0;
-        p.draw = (ctx) => {
-            ctx.globalAlpha = p.life;
-            ctx.font = "bold 16px Arial";
-            ctx.fillStyle = color;
-            ctx.fillText(p.text, p.x, p.y);
-            ctx.globalAlpha = 1;
-        };
-        // Ensure update signature match if Particle doesn't fully cover it?
-        // Particle.update() in entities/particles.js is:
-        /*
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.life -= 0.02;
-        }
-        */
-        // EntityManager calls entity.update(dt, context).
-        // Particle.update takes no args in original file?
-        // Let's check Particle.update signature again.
-        // It was: update() { ... }
-        // EntityManager calls update(dt, context).
-        // JS ignores extra args, but dt is missing inside Particle.update?
-        // Particle.update uses hardcoded 0.02 decay.
-        // Floating text sets life=1.0.
-        // If Particle.update is called, it decays by 0.02 per frame?
-        // If EntityManager calls it, it works.
-        // But wait, I didn't update Particle.update signature in particles.js to use dt! 
-        // I only updated Debris. 
-        // I should check particles.js again.
-
-        this.entities.add('particles', p);
+        this.entities.add('particles', new FloatingText(x, y, text, color));
     }
 
 
@@ -791,7 +777,6 @@ export class Game {
 
         // BIOS Logic Gate: Only process input and return
         if (this.gameState === 'BIOS') {
-            this.input.update();
             return;
         }
 

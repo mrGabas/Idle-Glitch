@@ -66,6 +66,23 @@ export class MailSystem {
         }
     }
 
+    exportData() {
+        return {
+            inbox: this.inbox,
+            triggeredIds: Array.from(this.triggeredIds)
+        };
+    }
+
+    importData(data) {
+        if (data) {
+            this.inbox = data.inbox || [];
+            if (data.triggeredIds) {
+                this.triggeredIds = new Set(data.triggeredIds);
+            }
+            this.updateUnreadStatus();
+        }
+    }
+
     updateUnreadStatus() {
         this.hasUnread = this.inbox.some(m => !m.read);
     }

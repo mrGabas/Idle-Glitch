@@ -16,12 +16,38 @@ export class ThemeManager {
         this.loadThemeUpgrades();
     }
 
-    loadThemeUpgrades() {
+    loadThemeUpgrades(savedData = null) {
         if (this.currentTheme && this.currentTheme.upgrades) {
             this.upgrades = this.currentTheme.upgrades.map(u => ({ ...u, count: 0, cost: u.baseCost }));
+
+            // If we have saved data, restore counts and costs
+            if (savedData && savedData.upgrades) {
+                savedData.upgrades.forEach(savedUpgrade => {
+                    const upgrade = this.upgrades.find(u => u.id === savedUpgrade.id);
+                    if (upgrade) {
+                        upgrade.count = savedUpgrade.count;
+                        // Recalculate cost: base * (1.4 ^ count)
+                        // Or iteratively to match EconomySystem exactly if needed, but power works if formula is consistent
+                        // EconomySystem uses Math.floor(prev * 1.4).
+                        // Let's re-simulate the cost increase to be safe and exact.
+                        for (let i = 0; i < upgrade.count; i++) {
+                            upgrade.cost = Math.floor(upgrade.cost * 1.4);
+                        }
+                    }
+                });
+            }
         } else {
             this.upgrades = [];
         }
+    }
+
+    getSaveData() {
+        return {
+            upgrades: this.upgrades.map(u => ({
+                id: u.id,
+                count: u.count
+            }))
+        };
     }
 
     setTheme(id) {

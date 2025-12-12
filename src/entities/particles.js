@@ -13,7 +13,7 @@ export class Particle {
         this.life = 1.0;
         this.size = size;
     }
-    update(dt) {
+    update(dt, game) {
         this.x += this.vx * (dt * 60); // approximate based on 60fps expectation
         this.y += this.vy * (dt * 60);
         this.life -= dt;
@@ -82,5 +82,31 @@ export class Debris extends Particle {
         }
 
         this.life -= 0.005; // Fade very slowly
+    }
+}
+
+export class FloatingText extends Particle {
+    constructor(x, y, text, color) {
+        super(x, y, color);
+        this.text = text;
+        this.vx = 0;
+        this.vy = -2; // Moves up
+        this.life = 1.0;
+        // Text specific
+        this.font = "bold 16px Arial";
+    }
+
+    /* 
+       Optional: Override update if we need specific text physics not covered by Particle.
+       Particle.update does: x += vx*dt*60, y += vy*dt*60, life -= dt.
+       This works for floating text.
+    */
+
+    draw(ctx) {
+        ctx.globalAlpha = this.life;
+        ctx.font = this.font;
+        ctx.fillStyle = this.color;
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.globalAlpha = 1;
     }
 }
