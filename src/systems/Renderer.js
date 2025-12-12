@@ -131,10 +131,7 @@ export class Renderer {
         if (entities.popups) {
             entities.popups.forEach(p => p.draw(this.ctx));
         }
-        if (entities.enemies) {
-            entities.enemies.forEach(e => e.draw(this.ctx));
-        }
-
+        if (entities.captchas) entities.captchas.forEach(c => c.draw(this.ctx));
         if (entities.loreFiles) entities.loreFiles.forEach(f => f.draw(this.ctx));
 
         // PostFX
@@ -436,22 +433,42 @@ export class Renderer {
     }
 
     drawBSOD() {
-        this.ctx.fillStyle = '#0000aa';
+        // Modern Windows 10/11 Style (Matching index.html #bsod-overlay)
+        this.ctx.fillStyle = '#0078d7'; // Modern Blue
         this.ctx.fillRect(0, 0, this.w, this.h);
+
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = "20px 'Courier New', monospace";
         this.ctx.textAlign = 'left';
 
-        const lines = [
-            "A problem has been detected and Windows has been shut down to prevent damage",
-            "to your computer.", "", "THE_GLITCH_HAS_CONSUMED_ALL.", "",
-            "Technical Information:", "",
-            "*** STOP: 0x00000666 (0xDEADDEAD, 0xC0000221, 0x00000000, 0x00000000)",
-            "*** GLITCH.SYS - Address FFFFFFFF base at FFFFFFFF, DateStamp 666666"
-        ];
+        // 1. Sad Face
+        this.ctx.font = "100px 'Segoe UI', Arial, sans-serif";
+        this.ctx.fillText(":(", 100, 150);
 
-        let y = 100;
-        lines.forEach(l => { this.ctx.fillText(l, 50, y); y += 28; });
+        // 2. Main Message
+        this.ctx.font = "24px 'Segoe UI', Arial, sans-serif";
+        this.ctx.fillText("Your game ran into a problem and needs to restart.", 100, 240);
+        this.ctx.fillText("We're just collecting some error info, and then you can restart.", 100, 280);
+
+        // 3. Progress (Fake)
+        this.ctx.fillText("100% complete", 100, 320);
+
+        // 4. QR Code Placeholder (White Square)
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillRect(100, 380, 80, 80);
+
+        // 5. Technical Info
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = "14px 'Segoe UI', Arial, sans-serif";
+        let y = 395;
+        const x = 200;
+
+        this.ctx.fillText("For more information about this issue and possible fixes, visit https://www.windows.com/stopcode", x, y);
+        y += 25;
+        this.ctx.fillText("If you call a support person, give them this info:", x, y);
+        y += 25;
+        this.ctx.fillText("Stop Code: GLITCH_GOD_INITIATED", x, y);
+        y += 20;
+        this.ctx.fillText("What failed: Reality.sys", x, y);
     }
 
     drawBIOS(state, input, metaUpgrades, metaList) {

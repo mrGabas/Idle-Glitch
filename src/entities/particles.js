@@ -96,11 +96,11 @@ export class FloatingText extends Particle {
         this.font = "bold 16px Arial";
     }
 
-    /* 
-       Optional: Override update if we need specific text physics not covered by Particle.
-       Particle.update does: x += vx*dt*60, y += vy*dt*60, life -= dt.
-       This works for floating text.
-    */
+    update(dt) {
+        // Gentle float upwards (independent of Particle physics)
+        this.y -= 30 * dt;
+        this.life -= dt;
+    }
 
     draw(ctx) {
         ctx.globalAlpha = this.life;
