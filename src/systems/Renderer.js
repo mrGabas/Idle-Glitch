@@ -136,7 +136,12 @@ export class Renderer {
         if (entities.popups) {
             entities.popups.forEach(p => p.draw(this.ctx));
         }
-        if (entities.captchas) entities.captchas.forEach(c => c.draw(this.ctx));
+
+        // Draw Enemies (Captchas, Hunters, etc.)
+        if (entities.enemies) {
+            entities.enemies.forEach(e => e.draw(this.ctx));
+        }
+
         if (entities.loreFiles) entities.loreFiles.forEach(f => f.draw(this.ctx));
 
         // PostFX

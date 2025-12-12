@@ -874,6 +874,7 @@ export class Game {
             popups: this.entities.getAll('ui'),
             captchas: [], // Captchas and hunter are now in generic 'enemies' list
             hunter: null,
+            loreFiles: this.entities.getAll('items'),
             enemies: this.entities.getAll('enemies'),
             fakeCursor: this.glitchSystem.fakeCursor,
             clippy: this.clippy
