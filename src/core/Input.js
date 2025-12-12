@@ -119,27 +119,13 @@ export class InputHandler {
     }
 
     getPressedKeys() {
-        const pressed = [];
+        const pressed = new Set();
         for (const code in this.keys) {
             if (this.keys[code] && !this.prevKeys[code]) {
-                // Return validity key (prefer e.key from storage?)
-                // keys stored by both 'key' and 'code'.
-                // If we iterate all, we get duplicates.
-                // We should store them differently or just filter.
-                // Let's rely on the fact we stored e.key primarily for text.
-                // But e.code is also stored.
-                // Let's filter: if length is 1 (char) or starts with 'Enter' etc.
-                // Actually, accessing `this.keys` keys directly iterates all properties.
-                // We stored: keys[e.key] = true AND keys[e.code] = true.
-                // This is messy for iteration.
-                // Let's fix storage or filter here.
-                // If we want typed characters, we want 'a', 'A', '1'. These are e.key.
-                // e.code is 'KeyA', 'Digit1'.
-                // Let's return only keys that don't look like codes? Or return all?
-                pressed.push(code);
+                pressed.add(code);
             }
         }
-        return pressed;
+        return Array.from(pressed);
     }
 
     _onMouseMove(e) {

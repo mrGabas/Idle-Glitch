@@ -31,6 +31,7 @@ export class Renderer {
         this.w = this.canvas.width = w;
         this.h = this.canvas.height = h;
         this.mainButtonGrad = null; // Invalidate cache
+        this.vignetteGrad = null; // Invalidate vignette cache
         this.matrixDrops = []; // Reset matrix
     }
 
@@ -113,12 +114,16 @@ export class Renderer {
         if (entities.fakeUI) entities.fakeUI.draw(this.ctx);
 
         // Game Center Vignette
-        const cx = this.w / 2;
-        const cy = this.h / 2;
-        const grad = this.ctx.createRadialGradient(cx, cy, 100, cx, cy, 500);
-        grad.addColorStop(0, currentTheme.colors.bg);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        this.ctx.fillStyle = grad;
+        if (!this.vignetteGrad || this.vignetteGradTheme !== currentTheme.id) {
+            const cx = this.w / 2;
+            const cy = this.h / 2;
+            const grad = this.ctx.createRadialGradient(cx, cy, 100, cx, cy, 500);
+            grad.addColorStop(0, currentTheme.colors.bg);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            this.vignetteGrad = grad;
+            this.vignetteGradTheme = currentTheme.id;
+        }
+        this.ctx.fillStyle = this.vignetteGrad;
         this.ctx.fillRect(0, 0, this.w, this.h);
 
         this.drawGameUI(state, currentTheme, entities.upgrades, mouse);
@@ -655,7 +660,8 @@ export class Renderer {
 
         theme.parallax.layers.forEach(layer => {
             const img = assetLoader.getImage(layer.src);
-            if (img && img.complete) {
+            // Strict check: must be loaded and have dimensions (not broken)
+            if (img && img.complete && img.naturalWidth > 0) {
                 // Scroll logic
                 const x = -(time * layer.speed) % this.w;
 

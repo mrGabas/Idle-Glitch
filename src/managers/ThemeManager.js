@@ -30,6 +30,7 @@ export class ThemeManager {
                         // Or iteratively to match EconomySystem exactly if needed, but power works if formula is consistent
                         // EconomySystem uses Math.floor(prev * 1.4).
                         // Let's re-simulate the cost increase to be safe and exact.
+                        upgrade.cost = upgrade.baseCost;
                         for (let i = 0; i < upgrade.count; i++) {
                             upgrade.cost = Math.floor(upgrade.cost * 1.4);
                         }
