@@ -77,6 +77,14 @@ export class EconomySystem {
             isCrit = true;
         }
 
+        // Overheat Throttling
+        if (this.game.state.throttled) {
+            gain *= 0.5;
+            // Visual feedback handled in Game or Renderer?
+            // Maybe emit a 'throttled' event or small text?
+            if (Math.random() < 0.2) this.game.createFloatingText(this.game.w / 2, this.game.h / 2 - 50, "THROTTLED", "#f00");
+        }
+
         this.game.state.addScore(gain);
 
         if (isCrit) {

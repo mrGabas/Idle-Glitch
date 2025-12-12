@@ -610,7 +610,28 @@ export class Game {
 
         // Mouse updated above
 
+        // --- THEME MECHANICS: INPUT ---
+        const theme = this.themeManager.currentTheme;
+        const mechanics = theme.mechanics || {};
 
+        // 1. Beta Build: Input Lag (Failure)
+        if (mechanics.inputLag) {
+            // 20% chance to ignore click
+            if (Math.random() < 0.2) {
+                // Visual feedback for missed click?
+                this.createFloatingText(mx, my, "MISS", "#888");
+                return;
+            }
+        }
+
+        // 2. Server Farm: Overheating
+        if (mechanics.overheat) {
+            this.state.temperature = Math.min(100, this.state.temperature + 5);
+            if (this.state.temperature >= 100) {
+                this.state.throttled = true;
+                this.throttleTimer = 3.0; // 3 seconds penalty
+            }
+        }
 
         // 0.1 Handle Entity/Glitch Clicks
         if (this.glitchSystem.handleClick(mx, my)) return;
@@ -791,6 +812,23 @@ export class Game {
         this.achievementSystem.update(dt);
         // 5. Update Timer
         this.state.timer += dt;
+
+        this.state.timer += dt;
+
+        // --- THEME MECHANICS: UPDATE ---
+        const mechanics = this.themeManager.currentTheme.mechanics || {};
+
+        if (mechanics.overheat && this.state.temperature > 0) {
+            this.state.temperature = Math.max(0, this.state.temperature - dt * 15); // Decay
+        }
+
+        if (this.state.throttled) {
+            this.throttleTimer -= dt;
+            if (this.throttleTimer <= 0) {
+                this.state.throttled = false;
+                this.state.temperature = 50; // Cool down to half
+            }
+        }
 
         // Mail Notification Logic (e.g. flashing icon) can go here if needed
         // For now, mail checks are interval-based in MailSystem constructor

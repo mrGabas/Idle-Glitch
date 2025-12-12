@@ -35,6 +35,12 @@ export class GameState {
         this.falseCrash = false;
         /** @type {number} Timer for the crash effect */
         this.crashTimer = 0;
+
+        // Mechanics State
+        /** @type {number} System temperature (0-100) for Server Farm */
+        this.temperature = 0;
+        /** @type {boolean} Whether click power is currently throttled */
+        this.throttled = false;
     }
 
     /**
@@ -109,7 +115,10 @@ export class GameState {
         this.crashed = false;
         this.rebooting = false;
         this.falseCrash = false;
+        this.falseCrash = false;
         this.crashTimer = 0;
+        this.temperature = 0;
+        this.throttled = false;
         events.emit('state_reset', this);
     }
 }

@@ -373,6 +373,37 @@ export class Renderer {
 
         this.ctx.globalAlpha = 1;
 
+        // OVERHEAT GAUGE (Server Farm)
+        if (theme.mechanics && theme.mechanics.overheat) {
+            const hbx = bx;
+            const hby = by - 30; // Above corruption bar
+            const hbW = barW;
+            const hbH = 10;
+
+            // BG
+            this.ctx.fillStyle = '#220000';
+            this.ctx.fillRect(hbx, hby, hbW, hbH);
+
+            // Bar
+            const tPct = state.temperature;
+            // Color from Green to Red
+            const r = Math.floor(255 * (tPct / 100));
+            const g = Math.floor(255 * (1 - tPct / 100));
+            this.ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+            if (state.throttled) this.ctx.fillStyle = '#f00'; // Flash red if throttled
+
+            this.ctx.fillRect(hbx, hby, hbW * (tPct / 100), hbH);
+
+            // Border
+            this.ctx.strokeStyle = '#ff0000';
+            this.ctx.strokeRect(hbx, hby, hbW, hbH);
+
+            // Text
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.font = '10px monospace';
+            this.ctx.fillText(state.throttled ? "THROTTLED" : `TEMP: ${Math.floor(state.temperature)}°C`, cx, hby - 5);
+        }
+
         // Upgrades Shop
         // Grid 2x4
         if (upgrades) {

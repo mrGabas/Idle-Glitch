@@ -4,6 +4,19 @@
  * @module data/themes
  */
 
+export const THEME_ORDER = [
+    'rainbow_paradise',
+    'ad_purgatory',
+    'firewall',
+    'corporate_network',
+    'server_farm',
+    'dev_desktop',
+    'beta_build',
+    'digital_decay',
+    'legacy_system',
+    'null_void'
+];
+
 export const THEMES = {
     // Theme 1: Rainbow Paradise - Bright, cheerful, innocent
     rainbow_paradise: {
@@ -93,7 +106,9 @@ export const THEMES = {
         particles: {
             emoji: ['✨', '⭐', '💫', '🌟', '💖', '🦄', '🌈'],
             useEmoji: true
-        }
+        },
+
+        mechanics: {}
     },
 
 
@@ -179,6 +194,215 @@ export const THEMES = {
         particles: {
             emoji: ['💲', '💸', '🤑', '💾', '💿'],
             useEmoji: true
+        },
+
+        mechanics: {}
+    },
+
+    // Theme 1.6: The Firewall
+    firewall: {
+        id: 'firewall',
+        name: 'The Firewall',
+        colors: {
+            bg: '#1a0505',              // Deep Red
+            ui: '#2d0a0a',              // Darker Red
+            uiBorder: '#ff4400',        // Bright Orange/Red
+            text: '#ffcc00',            // Amber
+            accent: '#ff0000',          // Pure Red
+            accent2: '#ff8800',         // Orange
+            accent3: '#ffff00',         // Yellow
+            warn: '#ff0000',
+            err: '#000000',
+            particle: ['#ff0000', '#ff8800', '#440000']
+        },
+        fonts: {
+            s: "14px 'Consolas', 'Monaco', monospace",
+            m: "18px 'Consolas', 'Monaco', monospace",
+            l: "24px 'Consolas', 'Monaco', monospace",
+            xl: "36px 'Consolas', 'Monaco', monospace"
+        },
+        currency: {
+            name: 'Packets',
+            symbol: '♦',
+            clickName: 'Inject'
+        },
+        button: {
+            text: 'BREACH',
+            emoji: '🛡️',
+            gradient: ['#660000', '#ff0000']
+        },
+        upgrades: [
+            { id: 'f1', name: 'Port Scanner', baseCost: 15, type: 'auto', val: 1, desc: '+1 ♦/sec' },
+            { id: 'f2', name: 'Brute Force', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
+            { id: 'f3', name: 'Proxy Chain', baseCost: 250, type: 'auto', val: 10, desc: '+10 ♦/sec' },
+            { id: 'f4', name: 'Packet Sniffer', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
+            { id: 'f5', name: 'DDOS Bot', baseCost: 5000, type: 'auto', val: 80, desc: '+80 ♦/sec' },
+            { id: 'f6', name: 'Rootkit', baseCost: 20000, type: 'auto', val: 300, desc: '+300 ♦/sec' },
+            { id: 'f7', name: 'Backdoor', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5K ♦/sec' },
+            { id: 'f8', name: 'Zero Day Exploit', baseCost: 1000000, type: 'auto', val: 10000, desc: 'CRITICAL HIT' },
+        ],
+        fakeUI: [
+            { text: 'ACCESS DENIED', color: '#ff0000' },
+            { text: 'FIREWALL ACTIVE', color: '#ff4400' },
+            { text: 'PORT 80 BLOCKED', color: '#ff0000' },
+            { text: 'INTRUSION DETECTED', color: '#ff0000' }
+        ],
+        progressBar: {
+            label: 'SECURITY INTEGRITY',
+            color: '#ff0000',
+            bgColor: '#2d0a0a'
+        },
+        startText: 'BYPASSING SECURITY...',
+        parallax: {
+            layers: [
+                { src: 'assets/Firewall/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Firewall/parallax/layer 2.png', speed: 20 }
+            ]
+        },
+        particles: {
+            emoji: ['🛡️', '🔒', '🚫', '🔥'],
+            useEmoji: true
+        },
+        mechanics: {
+            healingBots: true
+        }
+    },
+
+    // Theme 1.7: Corporate Network
+    corporate_network: {
+        id: 'corporate_network',
+        name: 'Corp. Network',
+        colors: {
+            bg: '#d4d0c8',              // Win98 Beige
+            ui: '#c0c0c0',              // Grey
+            uiBorder: '#808080',        // Dark Grey border
+            text: '#000080',            // Navy Blue
+            accent: '#008080',          // Teal
+            accent2: '#000000',         // Black
+            accent3: '#ffffff',         // White
+            warn: '#ff0000',
+            err: '#000080',
+            particle: ['#c0c0c0', '#000080', '#008080']
+        },
+        fonts: {
+            s: "14px 'Arial', sans-serif",
+            m: "18px 'Arial', sans-serif",
+            l: "24px 'Arial', sans-serif",
+            xl: "32px 'Arial', sans-serif"
+        },
+        currency: {
+            name: 'Reports',
+            symbol: '📄',
+            clickName: 'File'
+        },
+        button: {
+            text: 'SUBMIT',
+            emoji: '📊',
+            gradient: ['#c0c0c0', '#ffffff']
+        },
+        upgrades: [
+            { id: 'c1', name: 'Outlook Email', baseCost: 15, type: 'auto', val: 1, desc: '+1 📄/sec' },
+            { id: 'c2', name: 'Paperclip', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
+            { id: 'c3', name: 'Excel Sheet', baseCost: 250, type: 'auto', val: 10, desc: '+10 📄/sec' },
+            { id: 'c4', name: 'Highlighter', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
+            { id: 'c5', name: 'Coffee Machine', baseCost: 5000, type: 'auto', val: 80, desc: '+80 📄/sec' },
+            { id: 'c6', name: 'Middle Manager', baseCost: 20000, type: 'auto', val: 300, desc: '+300 📄/sec' },
+            { id: 'c7', name: 'Synergy Meeting', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5K 📄/sec' },
+            { id: 'c8', name: 'Paradigm Shift', baseCost: 1000000, type: 'auto', val: 10000, desc: 'CIRCLE BACK' },
+        ],
+        fakeUI: [
+            { text: 'Meeting Timer', color: '#000080' },
+            { text: 'Inbox (999)', color: '#000080' },
+            { text: 'TPS Report', color: '#000080' },
+            { text: 'Budget.xls', color: '#000080' }
+        ],
+        progressBar: {
+            label: 'WORKDAY REMAINING',
+            color: '#000080',
+            bgColor: '#c0c0c0'
+        },
+        startText: 'CLOCKING IN...',
+        parallax: {
+            layers: [
+                { src: 'assets/Corporate/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Corporate/parallax/layer 2.png', speed: 10 }
+            ]
+        },
+        particles: {
+            emoji: ['📄', '📎', '☕', '📊', '📅'],
+            useEmoji: true
+        },
+        mechanics: {
+            boringPopups: true
+        }
+    },
+
+    // Theme 1.75: Server Farm (Insert before Dev Desktop)
+    server_farm: {
+        id: 'server_farm',
+        name: 'Server Farm',
+        colors: {
+            bg: '#0a0a0a',              // Very Dark
+            ui: '#111111',              // Dark
+            uiBorder: '#333333',        // Grey
+            text: '#00ff00',            // LED Green
+            accent: '#ff9900',          // LED Orange
+            accent2: '#00cc00',         // Darker Green
+            accent3: '#003300',         // PCB Green
+            warn: '#ff0000',
+            err: '#ff0000',
+            particle: ['#00ff00', '#ff9900', '#0a0a0a']
+        },
+        fonts: {
+            s: "14px 'Consolas', monospace",
+            m: "18px 'Consolas', monospace",
+            l: "24px 'Consolas', monospace",
+            xl: "36px 'Consolas', monospace"
+        },
+        currency: {
+            name: 'Heat',
+            symbol: '°C',
+            clickName: 'Cycle'
+        },
+        button: {
+            text: 'POWER',
+            emoji: '🔌',
+            gradient: ['#111111', '#333333']
+        },
+        upgrades: [
+            { id: 's1', name: 'Case Fan', baseCost: 15, type: 'auto', val: 1, desc: '+1 °C/sec' },
+            { id: 's2', name: 'Thermal Paste', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
+            { id: 's3', name: 'A/C Unit', baseCost: 250, type: 'auto', val: 10, desc: '+10 °C/sec' },
+            { id: 's4', name: 'Liquid Cooling', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
+            { id: 's5', name: 'Blade Server', baseCost: 5000, type: 'auto', val: 80, desc: '+80 °C/sec' },
+            { id: 's6', name: 'Mainframe', baseCost: 20000, type: 'auto', val: 300, desc: '+300 °C/sec' },
+            { id: 's7', name: 'Quantum Core', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5K °C/sec' },
+            { id: 's8', name: 'Meltdown', baseCost: 1000000, type: 'auto', val: 10000, desc: 'CRITICAL TEMP' },
+        ],
+        fakeUI: [
+            { text: 'Temp: 80°C', color: '#ff9900' },
+            { text: 'Fan RPM: 5000', color: '#00ff00' },
+            { text: 'Uptime: 99.9%', color: '#00ff00' },
+            { text: 'RAID 0 OK', color: '#00ff00' }
+        ],
+        progressBar: {
+            label: 'SYSTEM LOAD',
+            color: '#ff9900',
+            bgColor: '#111111'
+        },
+        startText: 'BOOTING RACK...',
+        parallax: {
+            layers: [
+                { src: 'assets/Server Farm/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Server Farm/parallax/layer 2.png', speed: 15 }
+            ]
+        },
+        particles: {
+            emoji: ['❄️', '🔥', '⚡', '💾'],
+            useEmoji: true
+        },
+        mechanics: {
+            overheat: true
         }
     },
 
@@ -261,6 +485,77 @@ export const THEMES = {
         particles: {
             emoji: ['📁', '💻', '🖱️', '💿'],
             useEmoji: true
+        },
+
+        mechanics: {}
+    },
+
+    // Theme 1.9: Beta Build (Insert before legacy)
+    beta_build: {
+        id: 'beta_build',
+        name: 'Beta_v0.9',
+        colors: {
+            bg: '#220022',              // Dark Purple
+            ui: '#440044',              // Purple
+            uiBorder: '#ff00ff',        // Missing Texture Pink
+            text: '#ffffff',            // White
+            accent: '#000000',          // Black (Checkerboard style usually)
+            accent2: '#ff00ff',         // Magenta
+            accent3: '#888888',         // Grey
+            warn: '#ffff00',
+            err: '#ff00ff',
+            particle: ['#ff00ff', '#000000']
+        },
+        fonts: {
+            s: "14px 'Courier', monospace",
+            m: "18px 'Courier', monospace",
+            l: "24px 'Courier', monospace",
+            xl: "36px 'Courier', monospace"
+        },
+        currency: {
+            name: 'Bugs',
+            symbol: '🐛',
+            clickName: 'Squash'
+        },
+        button: {
+            text: 'TODO',
+            emoji: '🛠️',
+            gradient: ['#ff00ff', '#000000']
+        },
+        upgrades: [
+            { id: 'b1', name: 'Placeholder Asset', baseCost: 15, type: 'auto', val: 1, desc: '+1 🐛/sec' },
+            { id: 'b2', name: 'Debug Tool', baseCost: 50, type: 'click', val: 2, desc: '+2 Click Power' },
+            { id: 'b3', name: 'Todo Comment', baseCost: 250, type: 'auto', val: 10, desc: '+10 🐛/sec' },
+            { id: 'b4', name: 'Hotfix', baseCost: 1000, type: 'click', val: 15, desc: '+15 Click Power' },
+            { id: 'b5', name: 'Patch Notes', baseCost: 5000, type: 'auto', val: 80, desc: '+80 🐛/sec' },
+            { id: 'b6', name: 'Early Access', baseCost: 20000, type: 'auto', val: 300, desc: '+300 🐛/sec' },
+            { id: 'b7', name: 'Kickstarter', baseCost: 100000, type: 'auto', val: 1500, desc: '+1.5K 🐛/sec' },
+            { id: 'b8', name: 'Feature Creep', baseCost: 1000000, type: 'auto', val: 10000, desc: 'DELAY LAUNCH' },
+        ],
+        fakeUI: [
+            { text: 'TEXTURE MISSING', color: '#ff00ff' },
+            { text: 'TODO: Fix UI', color: '#ffffff' },
+            { text: 'Lorem Ipsum', color: '#888888' },
+            { text: 'Button_Final_v2', color: '#ff00ff' }
+        ],
+        progressBar: {
+            label: 'COMPILING SHADERS',
+            color: '#ff00ff',
+            bgColor: '#000000'
+        },
+        startText: 'LOADING ASSETS...',
+        parallax: {
+            layers: [
+                { src: 'assets/Beta Build/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Beta Build/parallax/layer 2.png', speed: 20 }
+            ]
+        },
+        particles: {
+            emoji: ['🐛', '🟪', '⬛', '🛠️'],
+            useEmoji: true
+        },
+        mechanics: {
+            inputLag: true
         }
     },
 
@@ -332,7 +627,9 @@ export const THEMES = {
         particles: {
             emoji: [],
             useEmoji: false
-        }
+        },
+
+        mechanics: {}
     },
 
     // Theme 3: Legacy System - Retro / BIOS / DOS
@@ -412,7 +709,9 @@ export const THEMES = {
         particles: {
             emoji: ['█', '▓', '▒', '░'],
             useEmoji: true
-        }
+        },
+
+        mechanics: {}
     },
 
     // Theme 4: The Null Void - White, Empty, Invisible

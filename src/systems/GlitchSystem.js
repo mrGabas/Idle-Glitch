@@ -1,6 +1,5 @@
-
 import { CFG, UTILS } from '../core/config.js';
-import { GlitchHunter, CursedCaptcha } from '../entities/enemies.js';
+import { GlitchHunter, CursedCaptcha, AntiVirusBot, SuddenMeeting } from '../entities/enemies.js';
 import { LoreFile, ExecutableFile } from '../entities/items.js';
 import { FakeCursor } from '../entities/FakeCursor.js';
 import { Popup } from '../ui/windows.js';
@@ -16,6 +15,8 @@ export class GlitchSystem {
 
     update(dt) {
         const state = this.game.state;
+        const currentTheme = this.game.themeManager.currentTheme;
+        const mechanics = currentTheme.mechanics || {};
 
         // --- INPUT DECAY LOGIC (Lag) ---
         let lagAmount = 0;
@@ -88,6 +89,33 @@ export class GlitchSystem {
         if (Math.random() < 0.001 + (state.glitchIntensity * 0.02)) {
             if (this.game.entities.getAll('ui').length < 5) {
                 this.game.entities.add('ui', new Popup(this.game.w, this.game.h, this.game.themeManager.currentTheme));
+            }
+        }
+
+        // --- NEW MECHANICS SPAWNING ---
+
+        // 1. Anti-Virus Bots (Firewall)
+        if (mechanics.healingBots && state.corruption > 10) {
+            const enemies = this.game.entities.getAll('enemies');
+            const avBot = enemies.find(e => e instanceof AntiVirusBot);
+
+            // Spawn aggressively if high corruption
+            const spawnChance = 0.005 + (state.corruption * 0.0001);
+            if (!avBot && Math.random() < spawnChance) {
+                this.game.entities.add('enemies', new AntiVirusBot(this.game.w, this.game.h));
+                this.game.uiManager.chat.addMessage('SYSTEM', 'ANTIVIRUS PROTOCOL INITIATED');
+            }
+        }
+
+        // 2. Boring Popups / Sudden Meeting (Corporate)
+        if (mechanics.boringPopups) {
+            if (Math.random() < 0.0005) { // Occasional
+                const enemies = this.game.entities.getAll('enemies');
+                const hasMeeting = enemies.some(e => e instanceof SuddenMeeting);
+                if (!hasMeeting) {
+                    this.game.entities.add('enemies', new SuddenMeeting(this.game.w, this.game.h));
+                    this.game.events.emit('play_sound', 'error');
+                }
             }
         }
 
@@ -201,43 +229,58 @@ export class GlitchSystem {
     }
 
     handleClick(mx, my) {
-        // 1. Enemies (Hunter & Captchas)
+        // 1. Enemies (Hunter & Captchas & AntiVirus & Meeting)
         const enemies = this.game.entities.getAll('enemies');
         for (let i = 0; i < enemies.length; i++) {
             const e = enemies[i];
 
-            // Hunter
-            if (e instanceof GlitchHunter && e.active) {
-                const hit = e.checkClick(mx, my);
-                if (hit) {
+            // Standard Enemies checkClick
+            // AntiVirusBot, GlitchHunter, CursedCaptcha, SuddenMeeting all implement checkClick
+            // We can unify this block
+
+            const hit = e.checkClick(mx, my);
+            if (hit) {
+                if (e instanceof SuddenMeeting) {
+                    this.game.events.emit('play_sound', 'click');
+                    if (hit === true) {
+                        enemies.splice(i, 1);
+                        this.game.uiManager.chat.addMessage('SYSTEM', 'MEETING ADJOURNED.');
+                    }
+                    return true;
+                }
+
+                if (e instanceof AntiVirusBot) {
+                    this.game.events.emit('play_sound', 'click');
+                    this.game.createParticles(mx, my, '#00ffff');
+                    if (hit === true) {
+                        this.game.state.addScore(2000 * this.game.state.multiplier);
+                        enemies.splice(i, 1);
+                        this.game.uiManager.chat.addMessage('SYSTEM', 'THREAT NEUTRALIZED.');
+                    }
+                    return true;
+                }
+
+                // ... rest of existing logic for Hunter/Captcha ...
+                if (e instanceof GlitchHunter) {
                     this.game.events.emit('play_sound', 'click');
                     this.game.createParticles(mx, my, '#f00');
                     if (hit === true) {
                         this.game.state.addScore(1000 * this.game.state.multiplier);
-                        // Entity is removed by EntityManager if active=false or manually?
-                        // EntityManager doesn't auto-remove unless we have a cleanup phase or we splice here.
-                        // Wait, check EntityManager implementation?
-                        // Assuming EntityManager clears or we need to remove it.
-                        // Standard practice with this manager was it has an update loop but maybe not auto-culling?
-                        // GlitchHunter sets active=false.
-                        // Does EntityManager cull inactive?
-                        // If not, I should splice.
                         enemies.splice(i, 1);
                         this.game.uiManager.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
                     }
                     return true;
                 }
-            }
 
-            // Captcha
-            if (e instanceof CursedCaptcha && e.checkClick(mx, my)) {
-                this.game.events.emit('play_sound', 'buy');
-                this.game.addScore(this.game.state.autoRate * 120 + 1000);
-                this.game.state.addCorruption(-5);
-                this.game.createParticles(mx, my, '#0f0');
-                this.game.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
-                enemies.splice(i, 1);
-                return true;
+                if (e instanceof CursedCaptcha) {
+                    this.game.events.emit('play_sound', 'buy');
+                    this.game.addScore(this.game.state.autoRate * 120 + 1000);
+                    this.game.state.addCorruption(-5);
+                    this.game.createParticles(mx, my, '#0f0');
+                    this.game.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
+                    enemies.splice(i, 1);
+                    return true;
+                }
             }
         }
 

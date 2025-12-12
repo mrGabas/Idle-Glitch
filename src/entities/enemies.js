@@ -247,3 +247,148 @@ export class CursedCaptcha {
         // Cleanup
     }
 }
+
+export class AntiVirusBot extends GlitchHunter {
+    constructor(w, h) {
+        super(w, h);
+        this.color = '#00ffff'; // Cyan
+        this.auraColor = 'rgba(0, 255, 255, 0.3)';
+    }
+
+    // Override draw to look different
+    draw(ctx) {
+        if (!this.active) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        const scale = 1 + Math.sin(this.pulse) * 0.1;
+        ctx.scale(scale, scale);
+
+        // Aura
+        ctx.fillStyle = this.auraColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size + 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core - Cross / Plus shape for Health/Antivirus
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(-15, -5, 30, 10);
+        ctx.fillRect(-5, -15, 10, 30);
+
+        ctx.restore();
+    }
+
+    // Override update to heal (reduce corruption) on hit
+    update(dt, context) {
+        if (!this.active) return;
+
+        const mx = context.mouse.x;
+        const my = context.mouse.y;
+
+        // 1. Move to cursor
+        const dx = mx - this.x;
+        const dy = my - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > 0) {
+            this.x += (dx / dist) * this.speed;
+            this.y += (dy / dist) * this.speed;
+        }
+
+        this.pulse += dt * 5;
+
+        // 2. Attack (Heal System)
+        if (dist < this.size + 10) {
+            // "Heal" the system -> Reduce corruption
+            context.state.addCorruption(-5); // Penalize progress
+            context.createFloatingText(this.x, this.y, "PATCHED!", "#00ffff");
+            context.events.emit('play_sound', 'error'); // Bad sound
+            this.active = false; // Die after patching
+        }
+    }
+
+    // Override Click (Kill)
+    checkClick(mx, my) {
+        const dist = Math.hypot(mx - this.x, my - this.y);
+        if (dist < this.size + 15) {
+            this.hp--;
+            this.x += (this.x - mx) * 2; // Knockback
+            this.y += (this.y - my) * 2;
+
+            if (this.hp <= 0) {
+                this.active = false;
+                return true; // Killed
+            }
+            return 'hit';
+        }
+        return false;
+    }
+}
+
+export class SuddenMeeting {
+    constructor(w, h) {
+        this.w = w;
+        this.h = h;
+        this.life = 10.0; // Lasts 10 seconds
+        this.hp = 20;     // Clicks to dismiss early
+        this.active = true;
+        this.texts = [
+            "SYNERGY ALIGNMENT",
+            "Q3 STRATEGY REVIEW",
+            "MANDATORY HR TRAINING",
+            "BLOCKCHAIN SYMPOSIUM",
+            "PIVOT TO VIDEO"
+        ];
+        this.text = this.texts[Math.floor(Math.random() * this.texts.length)];
+    }
+
+    update(dt, context) {
+        if (!this.active) return;
+        this.life -= dt;
+        if (this.life <= 0) {
+            this.active = false;
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        ctx.save();
+        // Overlay
+        ctx.fillStyle = 'rgba(200, 200, 190, 0.95)'; // Boring Beige
+        ctx.fillRect(0, 0, this.w, this.h);
+
+        // Box
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(50, 50, this.w - 100, this.h - 100);
+
+        // Text
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 36px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("ATTENTION!", this.w / 2, this.h / 2 - 50);
+
+        ctx.font = '24px Arial';
+        ctx.fillText(this.text, this.w / 2, this.h / 2);
+
+        ctx.fillStyle = '#555';
+        ctx.font = '16px Arial';
+        ctx.fillText(`CLICK TO END MEETING (${Math.ceil(this.hp)})`, this.w / 2, this.h / 2 + 50);
+
+        ctx.restore();
+    }
+
+    checkClick(mx, my) {
+        // Any click counts
+        this.hp--;
+        if (this.hp <= 0) {
+            this.active = false;
+            return true;
+        }
+        return 'hit'; // Absorb click
+    }
+}
+
+
