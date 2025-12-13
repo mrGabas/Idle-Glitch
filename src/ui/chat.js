@@ -7,6 +7,54 @@ import { CursedCaptcha } from '../entities/enemies.js';
 import { MinigameWindow } from './MinigameWindow.js';
 import { SnakeGame } from '../minigames/SnakeGame.js';
 
+const THEME_AMBIENT_MESSAGES = {
+    firewall: [
+        { author: 'SYSTEM', text: 'Intrusion detected. Deploying Healer Bots.' },
+        { author: 'SYSTEM', text: 'Packet loss at 99%.' },
+        { author: 'SYSTEM', text: 'Unauthorized port access attempts blocked.' }
+    ],
+    corporate_network: [
+        { author: 'Boss', text: 'Meeting in 5 minutes.' },
+        { author: 'HR', text: 'Please stop clicking so loud.' },
+        { author: 'IT_Desk', text: 'Did you try turning it off and on again?' }
+    ],
+    beta_build: [
+        { author: 'Dev', text: 'TODO - Fix physics engine.' },
+        { author: 'Error', text: "Texture 'skybox' not found." },
+        { author: 'Console', text: 'Uncaught ReferenceError: fun is not defined.' }
+    ],
+    server_farm: [
+        { author: 'Monitoring', text: 'Fan speed: 120% (CRITICAL)' },
+        { author: 'Alert', text: 'Temperature threshold exceeded.' },
+        { author: 'SysAdmin', text: 'Who turned off the AC?!' }
+    ],
+    dev_desktop: [
+        { author: 'Clippy', text: 'It looks like you are trying to destroy the universe. Need help?' },
+        { author: 'WinXP', text: 'Updates are ready to install.' },
+        { author: 'Nortan', text: 'Virus definition updated.' }
+    ],
+    digital_decay: [
+        { author: 'DarkWeb', text: 'New package arrived.' },
+        { author: 'Anon', text: 'They are watching.' },
+        { author: 'Proxy', text: 'Rerouting connection...' }
+    ],
+    legacy_system: [
+        { author: 'BIOS', text: 'Keyboard error or no keyboard present.' },
+        { author: 'DOS', text: 'Abort, Retry, Fail?' },
+        { author: 'Himem', text: 'Memory test passed.' }
+    ],
+    null_void: [
+        { author: 'VOID', text: '...' },
+        { author: 'VOID', text: 'Nothing happens.' },
+        { author: 'VOID', text: 'It stops.' }
+    ],
+    ad_purgatory: [
+        { author: 'SpamBot', text: 'CONGRATULATIONS! YOU WON!' },
+        { author: 'SpamBot', text: 'Single electrons in your area!' },
+        { author: 'System', text: 'Popup blocked (or was it?)' }
+    ]
+};
+
 export class ChatSystem {
     constructor(game) {
         this.game = game; // Store game ref for commands
@@ -17,6 +65,7 @@ export class ChatSystem {
         this.inputBuffer = "";
         this.isFocused = false;
         this.cursorBlink = 0;
+        this.ambientTimer = 10; // First message after 10s
 
         // Welcome message
         this.addMessage('SYSTEM', 'Connecting to secure server...');
@@ -32,7 +81,15 @@ export class ChatSystem {
             }
         });
 
-        // 2. Update timers
+        // 2. Ambient Messages
+        if (this.ambientTimer > 0) {
+            this.ambientTimer -= dt;
+        } else {
+            this.triggerAmbientMessage();
+            this.ambientTimer = 20 + Math.random() * 20; // 20-40 seconds
+        }
+
+        // 3. Update timers
         this.messages.forEach((msg) => {
             msg.life -= dt;
         });
@@ -42,6 +99,18 @@ export class ChatSystem {
         // Remove old messages
         if (this.messages.length > 8) {
             this.messages.shift();
+        }
+    }
+
+    triggerAmbientMessage() {
+        if (!this.game || !this.game.themeManager) return;
+
+        const currentTheme = this.game.themeManager.currentTheme.id;
+        const messages = THEME_AMBIENT_MESSAGES[currentTheme];
+
+        if (messages && messages.length > 0) {
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            this.addMessage(msg.author, msg.text);
         }
     }
 
