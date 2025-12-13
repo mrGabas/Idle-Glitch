@@ -168,7 +168,6 @@ export class GlitchSystem {
             }
         }
 
-        // Snake Game Spawn (Desktop Themes or Random)
         const currentThemeId = this.game.themeManager.currentTheme.id;
         if ((currentThemeId === 'dev_desktop' || currentThemeId === 'legacy_system') || Math.random() < 0.0005) {
             const items = this.game.entities.getAll('items');
@@ -176,7 +175,8 @@ export class GlitchSystem {
             const chance = (currentThemeId === 'dev_desktop' || currentThemeId === 'legacy_system') ? 0.002 : 0.0005;
 
             if (!hasSnake && Math.random() < chance) {
-                this.game.entities.add('items', new ExecutableFile(this.game.w, this.game.h, 'Snake'));
+                // Pass 'this.game' as first arg
+                this.game.entities.add('items', new ExecutableFile(this.game, this.game.w, this.game.h, 'Snake'));
             }
         }
 

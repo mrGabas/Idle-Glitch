@@ -318,10 +318,10 @@ export class ArchiveWindow extends Window {
     }
 
     handleFileClick(file) {
-        if (this.game.state.isFileUnlocked(file.id)) {
+        if (this.game.loreSystem.isFileUnlocked(file.id)) {
             this.selectedFileId = file.id;
             // Open it
-            this.game.uiManager.openNotepad(file.content, { title: file.name, password: null }); // Unlocked files don't need pass re-entry?
+            this.game.uiManager.openNotepad(file.content, { title: file.name, password: null });
         } else {
             this.game.events.emit('play_sound', 'error');
             this.game.uiManager.chat.addMessage('SYSTEM', 'FILE ENCRYPTED OR MISSING.');

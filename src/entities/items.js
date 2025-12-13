@@ -103,7 +103,8 @@ export class LoreFile {
 }
 
 export class ExecutableFile {
-    constructor(w, h, programName) {
+    constructor(game, w, h, programName) {
+        this.game = game;
         this.w = 50;
         this.h = 60;
         this.programName = programName || "Snake";
@@ -113,6 +114,8 @@ export class ExecutableFile {
         while (!safe) {
             this.x = UTILS.rand(50, w - 100);
             this.y = UTILS.rand(50, h - 100);
+
+            // Safety check for center (gameplay area)
             const cx = w / 2;
             const cy = h / 2;
             if (Math.hypot(this.x - cx, this.y - cy) > 200) safe = true;
@@ -154,6 +157,18 @@ export class ExecutableFile {
         if (!this.active) return false;
         if (mx >= this.x && mx <= this.x + 50 && my >= this.y && my <= this.y + 60) {
             this.active = false;
+
+            // Launch Minigame
+            if (this.programName === 'Snake') {
+                // Ensure we pass 'game' if SnakeGame needs it, or just new SnakeGame()
+                // SnakeGame usually needs game for events/score
+                // User requested: uiManager.openMinigame(new SnakeGame(window.game))
+                // Since we have this.game, we use that.
+                import('../minigames/SnakeGame.js').then(({ SnakeGame }) => {
+                    this.game.uiManager.openMinigame(new SnakeGame(this.game));
+                });
+                this.game.events.emit('play_sound', 'startup');
+            }
             return true;
         }
         return false;
