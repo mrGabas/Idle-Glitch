@@ -4,6 +4,11 @@
  */
 import { UTILS } from './config.js';
 import { events } from './events.js';
+import { assetLoader } from './AssetLoader.js';
+
+const ASSET_SOUNDS = {
+    'purr': 'assets/Audios/felix/purr.mp3'
+};
 
 export class SoundEngine {
     constructor() {
@@ -64,6 +69,24 @@ export class SoundEngine {
         // Guard: Context must be ready (initialized in resume())
         if (!this.ctx) return;
         if (!this.enabled) return;
+
+        // Check for file-based sound
+        if (ASSET_SOUNDS[type]) {
+            const audio = assetLoader.getAudio(ASSET_SOUNDS[type]);
+            if (audio) {
+                // Clone node for overlapping playback not possible with HTMLAudioElement easily without multiple loads
+                // But for simple SFX we can just reset currentTime
+                // Better: Use Web Audio API decodeAudioData but that requires XHR load not Audio tag.
+                // AssetLoader uses Audio tag.
+                // Simple fallback: just play. 
+                try {
+                    audio.currentTime = 0;
+                    audio.volume = this.sfxGain ? this.sfxGain.gain.value : 0.5; // Sync volume roughly
+                    audio.play().catch(e => console.warn("Autoplay blocked/failed", e));
+                } catch (e) { console.warn("File audio error", e); }
+            }
+            return;
+        }
 
         try {
             const t = this.ctx.currentTime;

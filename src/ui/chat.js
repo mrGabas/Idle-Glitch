@@ -335,7 +335,7 @@ export class ChatSystem {
                 }
                 // Bonus
                 this.game.state.addScore(this.game.state.autoRate * 60 + 100); // 1 minute of production
-                this.game.events.emit('play_sound', 'buy'); // Positive feedback
+                this.game.events.emit('play_sound', 'purr'); // Positive feedback
                 break;
 
             case '/sarcophagus':

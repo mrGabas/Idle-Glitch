@@ -102,9 +102,9 @@ export const THEMES = {
         // Parallax Settings
         parallax: {
             layers: [
-                { src: 'assets/Rainbow Paradise/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Rainbow Paradise/parallax/layer 2.png', speed: 30 },
-                { src: 'assets/Rainbow Paradise/parallax/layer 3.png', speed: 60 }
+                { src: 'assets/Levels/Rainbow Paradise/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Rainbow Paradise/parallax/layer 2.png', speed: 30 },
+                { src: 'assets/Levels/Rainbow Paradise/parallax/layer 3.png', speed: 60 }
             ]
         },
 
@@ -198,8 +198,8 @@ export const THEMES = {
         // Parallax Settings
         parallax: {
             layers: [
-                { src: 'assets/Ad Purgatory/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Ad Purgatory/parallax/layer 2.png', speed: 20 }
+                { src: 'assets/Levels/Ad Purgatory/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Ad Purgatory/parallax/layer 2.png', speed: 20 }
             ]
         },
 
@@ -273,8 +273,8 @@ export const THEMES = {
         startText: 'BYPASSING SECURITY...',
         parallax: {
             layers: [
-                { src: 'assets/Firewall/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Firewall/parallax/layer 2.png', speed: 20 }
+                { src: 'assets/Levels/Firewall/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Firewall/parallax/layer 2.png', speed: 20 }
             ]
         },
         particles: {
@@ -348,8 +348,8 @@ export const THEMES = {
         startText: 'CLOCKING IN...',
         parallax: {
             layers: [
-                { src: 'assets/Corporate/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Corporate/parallax/layer 2.png', speed: 10 }
+                { src: 'assets/Levels/Corporate/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Corporate/parallax/layer 2.png', speed: 10 }
             ]
         },
         particles: {
@@ -423,8 +423,8 @@ export const THEMES = {
         startText: 'BOOTING RACK...',
         parallax: {
             layers: [
-                { src: 'assets/Server Farm/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Server Farm/parallax/layer 2.png', speed: 15 }
+                { src: 'assets/Levels/Server Farm/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Server Farm/parallax/layer 2.png', speed: 15 }
             ]
         },
         particles: {
@@ -512,9 +512,9 @@ export const THEMES = {
         // Parallax Settings
         parallax: {
             layers: [
-                { src: 'assets/Dev Desktop/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Dev Desktop/parallax/layer 2.png', speed: 20 },
-                { src: 'assets/Dev Desktop/parallax/layer 3.png', speed: 40 }
+                { src: 'assets/Levels/Dev Desktop/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Dev Desktop/parallax/layer 2.png', speed: 20 },
+                { src: 'assets/Levels/Dev Desktop/parallax/layer 3.png', speed: 40 }
             ]
         },
 
@@ -588,8 +588,8 @@ export const THEMES = {
         startText: 'LOADING ASSETS...',
         parallax: {
             layers: [
-                { src: 'assets/Beta Build/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Beta Build/parallax/layer 2.png', speed: 20 }
+                { src: 'assets/Levels/Beta Build/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Beta Build/parallax/layer 2.png', speed: 20 }
             ]
         },
         particles: {
@@ -755,8 +755,8 @@ export const THEMES = {
         // Parallax Settings
         parallax: {
             layers: [
-                { src: 'assets/Legacy System/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Legacy System/parallax/layer 2.png', speed: 20 }
+                { src: 'assets/Levels/Legacy System/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Legacy System/parallax/layer 2.png', speed: 20 }
             ]
         },
 
@@ -836,9 +836,9 @@ export const THEMES = {
         // Parallax Settings
         parallax: {
             layers: [
-                { src: 'assets/Null Void/parallax/layer 1.png', speed: 0 },
-                { src: 'assets/Null Void/parallax/layer 2.png', speed: 20 },
-                { src: 'assets/Null Void/parallax/layer 3.png', speed: 40 }
+                { src: 'assets/Levels/Null Void/parallax/layer 1.png', speed: 0 },
+                { src: 'assets/Levels/Null Void/parallax/layer 2.png', speed: 20 },
+                { src: 'assets/Levels/Null Void/parallax/layer 3.png', speed: 40 }
             ]
         },
 
