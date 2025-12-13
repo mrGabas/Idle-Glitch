@@ -271,6 +271,16 @@ export class ArchiveWindow extends Window {
 
         // Проверяем пароль
         if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
+            // Check if PasswordWindow for this folder is already open
+            const existingWindow = this.game.uiManager.windowManager.windows.find(w =>
+                w instanceof PasswordWindow && w.folderName === folder.name
+            );
+
+            if (existingWindow) {
+                this.game.uiManager.windowManager.focus(existingWindow);
+                return;
+            }
+
             // Instantiate custom PasswordWindow
             const passwordWindow = new PasswordWindow(this.game, folder.name, folder.hint || 'No hint', folder.password, () => {
                 this.game.loreSystem.unlockFolder(key);
@@ -293,6 +303,19 @@ export class ArchiveWindow extends Window {
 
     handleFileClick(file) {
         if (this.game.loreSystem.isFileUnlocked(file.id)) {
+            // Check if Notepad for this file is already open
+            // We use Title matching since NotepadWindow doesn't store file ID explicitly usually, 
+            // but we pass title: file.name
+            const existingWindow = this.game.uiManager.windowManager.windows.find(w =>
+                w.constructor.name === 'NotepadWindow' && w.title === file.name
+            );
+
+            if (existingWindow) {
+                this.selectedFileId = file.id;
+                this.game.uiManager.windowManager.focus(existingWindow);
+                return;
+            }
+
             this.selectedFileId = file.id;
             this.game.uiManager.openNotepad(file.content, { title: file.name, password: null });
         } else {
