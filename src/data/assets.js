@@ -32,7 +32,8 @@ export const ASSETS = {
 
         // Subliminal / 25fps
         'assets/25fps/Larry.webp',
-        'assets/25fps/Scarycat.webp'
+        'assets/25fps/Scarycat.webp',
+        'assets/25fps/Scarycat2.webp'
     ],
 
     // Audio files

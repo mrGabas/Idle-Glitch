@@ -30,7 +30,8 @@ export class Renderer {
         this.SubliminalMessages = ["WAKE UP", "IT'S A TRAP", "KILL PROCESS", "EYES OPEN"];
         this.SubliminalImages = [
             'assets/25fps/Larry.webp',
-            'assets/25fps/Scarycat.webp'
+            'assets/25fps/Scarycat.webp',
+            'assets/25fps/Scarycat2.webp'
         ];
 
         // Subliminal State
