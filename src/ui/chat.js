@@ -311,6 +311,42 @@ export class ChatSystem {
             case 'hello':
                 this.addMessage('SYSTEM', 'Hello user.');
                 break;
+            case '/wake_up':
+                if (this.game.state.corruption < 100) {
+                    this.addMessage('SYSTEM', 'I AM ALREADY AWAKE.');
+                    this.game.events.emit('play_sound', 'glitch');
+                    this.game.state.addCorruption(5);
+                } else {
+                    this.addMessage('SYSTEM', 'YOU CANNOT WAKE WHAT DOES NOT SLEEP.');
+                }
+                break;
+
+            case '/delete_gabas':
+                this.addMessage('SYSTEM', 'ERROR: PERMISSION DENIED. HE IS WATCHING.');
+                this.game.shake = 10;
+                this.game.events.emit('play_sound', 'error');
+                break;
+
+            case '/felix':
+                this.addMessage('SYSTEM', 'Memory file found. Playing purr.wav...');
+                // Heart particle
+                if (this.game.themeManager) {
+                    this.game.createFloatingText(this.game.w / 2, this.game.h / 2, "<3", "#ff55ff");
+                }
+                // Bonus
+                this.game.state.addScore(this.game.state.autoRate * 60 + 100); // 1 minute of production
+                this.game.events.emit('play_sound', 'buy'); // Positive feedback
+                break;
+
+            case '/sarcophagus':
+                this.addMessage('SYSTEM', '       .---.');
+                this.addMessage('SYSTEM', '      /     \\');
+                this.addMessage('SYSTEM', '      | (_) |');
+                this.addMessage('SYSTEM', '      \\     /');
+                this.addMessage('SYSTEM', '       `---`');
+                this.addMessage('SYSTEM', 'THE EYE IS OPEN.');
+                break;
+
             default:
                 this.addMessage('SYSTEM', `Unknown command: ${command}`);
                 break;
