@@ -66,7 +66,7 @@ export class ArchiveWindow extends Window {
 
             // Check if locked
             let name = folder.name;
-            if (folder.locked && !this.game.state.isFolderUnlocked(key)) {
+            if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
                 name = "🔒 " + name;
             }
 
@@ -98,7 +98,7 @@ export class ArchiveWindow extends Window {
         if (this.currentPath.length === 0) {
             Object.keys(LORE_DB).forEach(key => {
                 const folder = LORE_DB[key];
-                this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, folder.locked && !this.game.state.isFolderUnlocked(key));
+                this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, folder.locked && !this.game.loreSystem.isFolderUnlocked(key));
                 gx += 80;
                 if (gx > x + w - 80) {
                     gx = contentX;
@@ -116,13 +116,13 @@ export class ArchiveWindow extends Window {
             // Draw Files
             folder.files.forEach(file => {
                 // Check if file is unlocked/collected
-                const isCollected = this.game.state.isFileUnlocked(file.id);
+                const isCollected = this.game.loreSystem.isFileUnlocked(file.id);
                 // We show all files but maybe grayed out/unknown if not collected?
                 // Or only show collected? 
                 // "The user wants to collect lore files". Usually implies empty slots or hidden.
                 // Let's show "Unknown" for uncollected.
 
-                let label = isCollected ? file.name : "Unknown_File";
+                let label = isCollected ? file.name : "???????";
                 let icon = isCollected ? 'file' : 'unknown';
 
                 if (isCollected) {
@@ -141,13 +141,8 @@ export class ArchiveWindow extends Window {
                 }
             });
 
-            // Back button logic implicit or need explicit 'Up' icon?
-            // Windows usually has Up button.
-            // Can double click background to go up? No.
-            // Let's add ".." folder.
+            // Back button
             this.drawIcon(ctx, contentX, contentY + 30, "..", 'folder', false);
-            // Shift grid
-            // Actually, let's keep it simple: Toolbar button or just handle it in click.
         }
     }
 

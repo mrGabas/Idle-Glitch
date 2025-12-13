@@ -41,12 +41,6 @@ export class GameState {
         this.temperature = 0;
         /** @type {boolean} Whether click power is currently throttled */
         this.throttled = false;
-
-        // Archive State
-        this.archive = {
-            unlockedFiles: [],   // Array of file IDs
-            unlockedFolders: []  // Array of folder IDs
-        };
     }
 
     /**
@@ -130,31 +124,5 @@ export class GameState {
 
     // --- ARCHIVE METHODS ---
 
-    unlockFile(fileId) {
-        if (!this.archive.unlockedFiles.includes(fileId)) {
-            this.archive.unlockedFiles.push(fileId);
-            events.emit('archive_updated', this.archive);
-            events.emit('state_updated', this); // Trigger save eventually
-            return true;
-        }
-        return false;
-    }
 
-    unlockFolder(folderId) {
-        if (!this.archive.unlockedFolders.includes(folderId)) {
-            this.archive.unlockedFolders.push(folderId);
-            events.emit('archive_updated', this.archive);
-            events.emit('state_updated', this);
-            return true;
-        }
-        return false;
-    }
-
-    isFileUnlocked(fileId) {
-        return this.archive.unlockedFiles.includes(fileId);
-    }
-
-    isFolderUnlocked(folderId) {
-        return this.archive.unlockedFolders.includes(folderId);
-    }
 }

@@ -24,6 +24,7 @@ import { META_UPGRADES } from '../data/metaUpgrades.js';
 import { ThemeManager } from '../managers/ThemeManager.js';
 import { UIManager } from '../managers/UIManager.js';
 import { AchievementSystem } from '../systems/AchievementSystem.js';
+import { LoreSystem } from '../systems/LoreSystem.js';
 import { AchievementPopup } from '../ui/notifications.js';
 import { VirtualControls } from '../ui/VirtualControls.js';
 
@@ -63,6 +64,7 @@ export class Game {
         this.economySystem = new EconomySystem(this);
         this.glitchSystem = new GlitchSystem(this);
         this.achievementSystem = new AchievementSystem(this);
+        this.loreSystem = new LoreSystem(this);
 
         this.events.on('achievement_unlocked', (ach) => {
             this.entities.add('ui', new AchievementPopup(this, ach));
@@ -72,6 +74,9 @@ export class Game {
         this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
         this.lifetimeGlitchData = this.saveSystem.loadNumber('lifetime_glitch_data', 0);
         this.metaUpgrades = this.saveSystem.load('meta_upgrades', {});
+
+        // Load Lore Data
+        this.loreSystem.load(this.saveSystem.load('lore_data', null));
 
         // Recalculate multiplier based on generic prestige + meta upgrades (if we implement that)
         // For now, prestigeMult is legacy. Let's keep it but maybe add to it.
@@ -169,8 +174,8 @@ export class Game {
             this.saveSystem.save('mail_data', this.uiManager.mail.exportData());
         }
 
-        // NEW: Save Archive Data
-        this.saveSystem.save('archive_data', this.state.archive);
+        // Save Lore Data
+        this.saveSystem.save('lore_data', this.loreSystem.getSaveData());
     }
 
 

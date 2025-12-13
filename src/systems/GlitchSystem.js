@@ -158,15 +158,13 @@ export class GlitchSystem {
         // Lore Files
         if (state.corruption > 10 && Math.random() < 0.001 && !this.game.uiManager.activeNotepad) {
             if (this.game.entities.getAll('items').length < 2) {
-                // Pick random folder/file
-                const folders = Object.keys(LORE_DB);
-                const folderKey = UTILS.randArr(folders);
-                const folder = LORE_DB[folderKey];
-                const fileData = UTILS.randArr(folder.files);
-
-                // Only spawn if not already in scene? (Optional, duplicates are okay for glitchiness)
-                // But let's pass ID and Data
-                this.game.entities.add('items', new LoreFile(this.game.w, this.game.h, fileData.id, fileData));
+                // Get Uncollected ID
+                const fileId = this.game.loreSystem.getUncollectedFileId();
+                if (fileId) {
+                    const fileData = this.game.loreSystem.getFile(fileId);
+                    // Pass game instance first
+                    this.game.entities.add('items', new LoreFile(this.game, undefined, undefined, fileId, fileData));
+                }
             }
         }
 
@@ -297,20 +295,11 @@ export class GlitchSystem {
         const loreFiles = this.game.entities.getAll('items');
         for (let i = 0; i < loreFiles.length; i++) {
             if (loreFiles[i].checkClick(mx, my)) {
-                const file = loreFiles[i];
-                if (file instanceof ExecutableFile) {
-                    if (file.programName === 'Snake') {
-                        this.game.uiManager.openMinigame(new SnakeGame());
-                        this.game.events.emit('play_sound', 'startup');
-                    }
-                } else {
-                    // Unlock in Archive
-                    if (file.id && this.game.state.unlockFile(file.id)) {
-                        this.game.uiManager.chat.addMessage('SYSTEM', `ARCHIVED: ${file.label}`);
-                    }
-                    this.game.uiManager.openNotepad(file.content, { password: file.password, title: file.label });
-                }
-                loreFiles.splice(i, 1); // remove
+                // Specific logic handled inside checkClick now (unlocking/opening)
+                // Just remove from array if handled?
+                // checkClick returns true if handled and should be removed?
+                // LoreFile.checkClick sets active=false.
+                loreFiles.splice(i, 1);
                 this.game.events.emit('play_sound', 'click');
                 return true;
             }
