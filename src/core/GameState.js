@@ -41,6 +41,12 @@ export class GameState {
         this.temperature = 0;
         /** @type {boolean} Whether click power is currently throttled */
         this.throttled = false;
+
+        // System Purge State
+        /** @type {boolean} Whether the system is currently purged (debuffed) */
+        this.isPurged = false;
+        /** @type {number} Timer for the purge debuff */
+        this.purgeTimer = 0;
     }
 
     /**
@@ -119,6 +125,8 @@ export class GameState {
         this.crashTimer = 0;
         this.temperature = 0;
         this.throttled = false;
+        this.isPurged = false;
+        this.purgeTimer = 0;
         events.emit('state_reset', this);
     }
 

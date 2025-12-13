@@ -68,6 +68,12 @@ export class EconomySystem {
      */
     handleMainClick() {
         let gain = this.game.state.clickPower;
+
+        // System Purge penalty
+        if (this.game.state.isPurged) {
+            gain = 1;
+        }
+
         let isCrit = false;
 
         // Critical Click Check

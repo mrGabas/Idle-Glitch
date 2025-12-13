@@ -19,6 +19,21 @@ export class GlitchSystem {
         const currentTheme = this.game.themeManager.currentTheme;
         const mechanics = currentTheme.mechanics || {};
 
+        // --- SYSTEM PURGE LOGIC ---
+        if (state.isPurged) {
+            state.purgeTimer -= dt;
+            if (state.purgeTimer <= 0) {
+                state.isPurged = false;
+                this.game.uiManager.chat.addMessage('SYSTEM', 'SYSTEM INTEGRITY RESTORED.');
+                this.game.events.emit('play_sound', 'startup');
+            }
+        } else if (state.corruption > 30 && !state.crashed && !state.rebooting && !state.falseCrash) {
+            // Avg once every 4 minutes (240s) => Probability = dt / 240
+            if (Math.random() < (dt / 240)) {
+                this.triggerPurgeEvent();
+            }
+        }
+
         // --- INPUT DECAY LOGIC (Lag) ---
         let lagAmount = 0;
         if (state.corruption > 60) {
@@ -274,7 +289,6 @@ export class GlitchSystem {
                     if (hit === true) {
                         this.game.state.addScore(1000 * this.game.state.multiplier);
                         enemies.splice(i, 1);
-                        this.game.uiManager.chat.addMessage('Admin_Alex', 'Фух... пронесло.');
                     }
                     return true;
                 }
@@ -342,5 +356,43 @@ export class GlitchSystem {
     // Resize handler for fake cursor
     resize(w, h) {
         if (this.fakeCursor) this.fakeCursor.resize(w, h);
+    }
+
+    triggerPurgeEvent() {
+        this.game.state.isPurged = true;
+        this.game.state.purgeTimer = 10.0;
+
+        // Remove 10% score
+        const loss = Math.floor(this.game.state.score * 0.1);
+        if (loss > 0) {
+            this.game.state.addScore(-loss);
+        }
+
+        this.game.uiManager.chat.addMessage('SYSTEM', 'SECURITY SWEEP INITIATED. UNSTABLE ASSETS DELETED.');
+        this.game.events.emit('play_sound', 'error');
+
+        this.triggerRedFlash();
+    }
+
+    triggerRedFlash() {
+        const flash = document.createElement('div');
+        flash.style.position = 'fixed';
+        flash.style.top = '0';
+        flash.style.left = '0';
+        flash.style.width = '100%';
+        flash.style.height = '100%';
+        flash.style.backgroundColor = 'rgba(255, 0, 0, 0.4)'; // Semi-transparent red
+        flash.style.zIndex = '9999';
+        flash.style.pointerEvents = 'none';
+        document.body.appendChild(flash);
+
+        // Flash effect
+        setTimeout(() => {
+            flash.style.transition = 'opacity 0.5s ease-out';
+            flash.style.opacity = '0';
+            setTimeout(() => {
+                if (flash.parentNode) flash.parentNode.removeChild(flash);
+            }, 500);
+        }, 100);
     }
 }
