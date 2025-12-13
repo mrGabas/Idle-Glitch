@@ -27,6 +27,17 @@ export class Renderer {
         this.mainButtonGrad = null;
 
         this.CREEPY_TEXTS = ["HELP ME", "IT HURTS", "STOP CLICKING", "I SEE YOU", "NO ESCAPE", "LET ME OUT", "SYSTEM FAILURE", "NULL", "DIE", "RUN"];
+        this.SubliminalMessages = ["WAKE UP", "IT'S A TRAP", "KILL PROCESS", "EYES OPEN"];
+        this.SubliminalImages = [
+            'assets/25fps/Larry.webp',
+            'assets/25fps/Scarycat.webp'
+        ];
+
+        // Subliminal State
+        this.subliminalActive = false;
+        this.subliminalTimer = 0;
+        this.subliminalType = null; // 'image', 'text', 'invert'
+        this.subliminalContent = null;
     }
 
     setSize(w, h) {
@@ -206,6 +217,58 @@ export class Renderer {
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
         this.drawCursor(state, currentTheme, mouse);
+
+        // SUBLIMINAL GLITCHES
+        if (state.corruption > 40) {
+
+            // Check if we should trigger a new flash
+            if (!this.subliminalActive) {
+                if (Math.random() < 0.005) { // 0.5% chance per frame
+                    this.subliminalActive = true;
+                    this.subliminalTimer = 6; // Lasts 6 frames (approx 100ms at 60fps)
+
+                    const rand = Math.random();
+                    // Distribution: 10% Image, 5% Text, 5% Invert
+                    if (rand < 0.1) {
+                        this.subliminalType = 'image';
+                        this.subliminalContent = UTILS.randArr(this.SubliminalImages);
+                    } else if (rand < 0.05) {
+                        this.subliminalType = 'text';
+                        this.subliminalContent = UTILS.randArr(this.SubliminalMessages);
+                    } else {
+                        this.subliminalType = 'invert';
+                    }
+                }
+            }
+
+            // Draw Active Flash
+            if (this.subliminalActive) {
+                this.ctx.save();
+                if (this.subliminalType === 'image') {
+                    const img = assetLoader.getImage(this.subliminalContent);
+                    if (img && img.complete) {
+                        this.ctx.drawImage(img, 0, 0, this.w, this.h);
+                    }
+                } else if (this.subliminalType === 'text') {
+                    this.ctx.fillStyle = Math.random() < 0.5 ? '#f00' : '#fff'; // Flicker color still
+                    this.ctx.font = "bold 100px Arial";
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(this.subliminalContent, this.w / 2, this.h / 2);
+                } else if (this.subliminalType === 'invert') {
+                    this.ctx.globalCompositeOperation = 'difference';
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.fillRect(0, 0, this.w, this.h);
+                }
+                this.ctx.restore();
+
+                this.subliminalTimer--;
+                if (this.subliminalTimer <= 0) {
+                    this.subliminalActive = false;
+                }
+            }
+        }
+
         this.ctx.restore();
     }
 

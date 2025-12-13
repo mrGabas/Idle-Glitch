@@ -28,7 +28,11 @@ export const ASSETS = {
         // Null Void
         'assets/Levels/Null Void/parallax/layer 1.png',
         'assets/Levels/Null Void/parallax/layer 2.png',
-        'assets/Levels/Null Void/parallax/layer 3.png'
+        'assets/Levels/Null Void/parallax/layer 3.png',
+
+        // Subliminal / 25fps
+        'assets/25fps/Larry.webp',
+        'assets/25fps/Scarycat.webp'
     ],
 
     // Audio files
