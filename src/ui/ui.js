@@ -1,10 +1,10 @@
 /**
- * FAKE SITE UI (CRAZYFACES)
+ * FAKE SITE UI (CRAZYFAKES)
  * @module ui/ui
  */
 import { UTILS } from '../core/config.js';
 
-export class CrazyFaces {
+export class CrazyFakes {
     constructor(game) {
         this.game = game; // Reference to main game for config/theme access
         this.elements = [];
@@ -15,7 +15,7 @@ export class CrazyFaces {
         const theme = this.game.themeManager.currentTheme;
         const isGlitchTheme = theme.id === 'digital_decay';
 
-        // CrazyFaces Colors
+        // CrazyFakes Colors
         const cardColor = isGlitchTheme ? '#222' : '#2b2b2b';
 
         // 1. Sidebar (Left)
@@ -78,7 +78,7 @@ export class CrazyFaces {
         // Logo Area
         ctx.fillStyle = uiColor;
         ctx.font = "bold 24px Arial";
-        ctx.fillText("CrazyFaces", 20, 40);
+        ctx.fillText("CrazyFakes", 20, 40);
 
         this.elements.forEach(el => {
             if (!el.active) return;

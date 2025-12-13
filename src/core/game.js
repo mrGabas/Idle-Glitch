@@ -10,7 +10,7 @@ import { events } from './events.js';
 import { SaveSystem } from './SaveSystem.js';
 import { Renderer } from '../systems/Renderer.js';
 import { EconomySystem } from '../systems/EconomySystem.js';
-import { CrazyFaces } from '../ui/ui.js';
+import { CrazyFakes } from '../ui/ui.js';
 import { Particle, Debris, FloatingText } from '../entities/particles.js';
 import { CursedCaptcha } from '../entities/enemies.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
@@ -107,7 +107,7 @@ export class Game {
         // We can keep references locally if we need direct access or just use getters.
         // For simplicity and to follow requirements, we should use the manager.
 
-        this.fakeUI = new CrazyFaces(this);
+        this.fakeUI = new CrazyFakes(this);
 
         this.mouse = { x: 0, y: 0, down: false };
         this.realMouse = { x: 0, y: 0 }; // Track physical mouse
@@ -685,7 +685,7 @@ export class Game {
         this.fakeUI.elements.forEach(el => {
             if (el.active && mx > el.x && mx < el.x + el.w && my > el.y && my < el.y + el.h) {
                 hitUI = true;
-                // Damage UI logic moved to CrazyFaces class partly, but effect logic here
+                // Damage UI logic moved to CrazyFakes class partly, but effect logic here
                 const destroyed = this.fakeUI.damage(el);
 
                 // Spawn debris

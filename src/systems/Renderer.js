@@ -123,7 +123,7 @@ export class Renderer {
             this.drawParallax(currentTheme);
         }
 
-        // CrazyFaces Layer
+        // CrazyFakes Layer
         if (entities.fakeUI) entities.fakeUI.draw(this.ctx);
 
         // Game Center Vignette
