@@ -25,6 +25,8 @@ export class Renderer {
         this.timeString = "";
         this.lastTimeUpdate = 0;
         this.mainButtonGrad = null;
+
+        this.CREEPY_TEXTS = ["HELP ME", "IT HURTS", "STOP CLICKING", "I SEE YOU", "NO ESCAPE", "LET ME OUT", "SYSTEM FAILURE", "NULL", "DIE", "RUN"];
     }
 
     setSize(w, h) {
@@ -325,11 +327,16 @@ export class Renderer {
         this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
         this.ctx.stroke();
 
-        // Button text
         this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
         this.ctx.font = "bold 24px Arial";
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(theme.button.text, cx, cy - 110);
+
+        // UI GASLIGHTING: Main Button
+        let btnText = theme.button.text;
+        if (state.corruption > 50) {
+            btnText = this.getGlitchText(btnText, state.corruption);
+        }
+        this.ctx.fillText(btnText, cx, cy - 110);
         this.ctx.font = "40px Arial";
         this.ctx.fillText(theme.button.emoji, cx, cy - 70);
 
@@ -443,7 +450,13 @@ export class Renderer {
                 this.ctx.fillStyle = colors.text;
                 this.ctx.textAlign = 'left';
                 this.ctx.font = "bold 16px Arial";
-                this.ctx.fillText(u.name, ux + 10, uy + 25);
+
+                // UI GASLIGHTING: Upgrades
+                let uName = u.name;
+                if (state.corruption > 50) {
+                    uName = this.getGlitchText(uName, state.corruption);
+                }
+                this.ctx.fillText(uName, ux + 10, uy + 25);
 
                 // Digital Decay Redaction
                 if (theme.id === 'digital_decay' && (u.name.includes('[REDACTED]') || Math.random() < 0.01)) {
@@ -725,8 +738,6 @@ export class Renderer {
 
         // 3. Text settings
         this.ctx.fillStyle = '#0F0';
-        // 3. Text settings
-        this.ctx.fillStyle = '#0F0';
         this.ctx.font = fontSize + 'px monospace';
 
         // 4. Draw drops
@@ -752,4 +763,20 @@ export class Renderer {
             this.matrixDrops[i]++;
         }
     }
+
+    /**
+     * Helper to get glitch text based on corruption
+     */
+    getGlitchText(original, corruption) {
+        // Chance increases with corruption
+        // At 50 corruption: 0% chance (handled by caller check > 50)
+        // At 100 corruption: 5% chance per frame (flicker)
+        const chance = (corruption - 50) / 1000;
+
+        if (Math.random() < chance) {
+            return UTILS.randArr(this.CREEPY_TEXTS);
+        }
+        return original;
+    }
 }
+

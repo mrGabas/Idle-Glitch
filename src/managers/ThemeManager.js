@@ -62,6 +62,15 @@ export class ThemeManager {
         // Reset corruption for the new theme
         this.game.state.corruption = 0;
 
+        // Boot Sequence Lore
+        if (this.currentTheme.bootSequence && this.game.uiManager && this.game.uiManager.chat) {
+            this.currentTheme.bootSequence.forEach((msg, index) => {
+                setTimeout(() => {
+                    this.game.uiManager.chat.addMessage('SYS_CORE', msg);
+                }, index * 1200 + 500); // Slight initial delay + stagged lines
+            });
+        }
+
         // Flash effect
         const flash = document.createElement('div');
         flash.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:999;transition:opacity 2s;';

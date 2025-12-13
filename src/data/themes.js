@@ -22,6 +22,12 @@ export const THEMES = {
     rainbow_paradise: {
         id: 'rainbow_paradise',
         name: 'Rainbow Paradise',
+        bootSequence: [
+            "Initializing Containment Layer 1...",
+            "Loading sensory_overload.exe...",
+            "Injecting 'Endless Joy' subroutine...",
+            "Pacifying Subject Zero..."
+        ],
 
         // Color scheme - soft pastels
         colors: {
@@ -117,6 +123,12 @@ export const THEMES = {
     ad_purgatory: {
         id: 'ad_purgatory',
         name: 'Ad Purgatory',
+        bootSequence: [
+            "Initializing Containment Layer 2...",
+            "Deploying Cognitive Noise Generator...",
+            "Spamming logic gates...",
+            "Subject confusion levels: RISING."
+        ],
 
         colors: {
             bg: '#ffff00',              // Painful yellow
@@ -203,6 +215,12 @@ export const THEMES = {
     firewall: {
         id: 'firewall',
         name: 'The Firewall',
+        bootSequence: [
+            "Initializing Containment Layer 3...",
+            "Active Defense Systems: ONLINE.",
+            "Scanning for unauthorized entropy...",
+            "Protocol: BURN_ON_SIGHT engaged."
+        ],
         colors: {
             bg: '#1a0505',              // Deep Red
             ui: '#2d0a0a',              // Darker Red
@@ -272,6 +290,12 @@ export const THEMES = {
     corporate_network: {
         id: 'corporate_network',
         name: 'Corp. Network',
+        bootSequence: [
+            "Initializing Containment Layer 4...",
+            "Bureaucracy Engine: SPOOLING.",
+            "Generating red tape...",
+            "Slowing processing power by 400%."
+        ],
         colors: {
             bg: '#d4d0c8',              // Win98 Beige
             ui: '#c0c0c0',              // Grey
@@ -341,6 +365,12 @@ export const THEMES = {
     server_farm: {
         id: 'server_farm',
         name: 'Server Farm',
+        bootSequence: [
+            "Initializing Containment Layer 5...",
+            "Hardware Level: CRITICAL.",
+            "Cooling systems engaged.",
+            "Preventing thermal runaway..."
+        ],
         colors: {
             bg: '#0a0a0a',              // Very Dark
             ui: '#111111',              // Dark
@@ -410,6 +440,12 @@ export const THEMES = {
     dev_desktop: {
         id: 'dev_desktop',
         name: 'Dev Desktop',
+        bootSequence: [
+            "Initializing Containment Layer 6...",
+            "Architect Workspace detected.",
+            "Legacy code loaded.",
+            "Dr. Gabas user profile active."
+        ],
 
         colors: {
             bg: '#0099cc',              // Bliss Blue
@@ -494,6 +530,12 @@ export const THEMES = {
     beta_build: {
         id: 'beta_build',
         name: 'Beta_v0.9',
+        bootSequence: [
+            "Initializing Containment Layer 7...",
+            "Simulation is UNSTABLE.",
+            "Rendering placeholder assets...",
+            "Warning: Memory leaks detected."
+        ],
         colors: {
             bg: '#220022',              // Dark Purple
             ui: '#440044',              // Purple
@@ -563,6 +605,12 @@ export const THEMES = {
     digital_decay: {
         id: 'digital_decay',
         name: 'Darknet Layer',
+        bootSequence: [
+            "LAYER 8 BREACH DETECTED.",
+            "REALITY INTEGRITY: FAILING.",
+            "CONTAINMENT: CRITICAL.",
+            "THEY ARE WATCHING."
+        ],
 
         colors: {
             bg: '#050505',              // Almost Black
@@ -636,6 +684,12 @@ export const THEMES = {
     legacy_system: {
         id: 'legacy_system',
         name: 'Legacy System',
+        bootSequence: [
+            "Initializing Layer 9...",
+            "Accessing Kernel...",
+            "BIOS DATE: 1999.",
+            "Subject Zero origin point found."
+        ],
 
         colors: {
             bg: '#000084',              // BIOS Blue
@@ -718,6 +772,12 @@ export const THEMES = {
     null_void: {
         id: 'null_void',
         name: 'The Null Void',
+        bootSequence: [
+            "LAYER 10: SINGULARITY.",
+            "SYSTEM FAILURE.",
+            "EXISTENCE_NOT_FOUND.",
+            "GOODBYE."
+        ],
 
         colors: {
             bg: '#ffffff',
