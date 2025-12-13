@@ -67,35 +67,86 @@ export class SoundEngine {
 
         try {
             const t = this.ctx.currentTime;
+
+            // Glitch Audio Logic
+            let corruption = 0;
+            if (window.game && window.game.state) {
+                corruption = window.game.state.corruption || 0;
+            }
+
+            // Calculate audio degradation
+            const chaosFactor = corruption / 100; // 0.0 to 1.0
+            const detuneAmount = (Math.random() - 0.5) * (corruption * 25); // Pitch wobble
+            const isVeryGlitchy = corruption > 80;
+            const useHarshWaveform = Math.random() < chaosFactor;
+
             const osc = this.ctx.createOscillator();
             const g = this.ctx.createGain();
 
-            // Connect to SFX channel
+            // Apply general detune based on corruption
+            osc.detune.value = detuneAmount;
+
+            // Audio routing
             osc.connect(g);
             g.connect(this.sfxGain);
 
             if (type === 'click') {
-                // Pleasant click
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, t);
-                osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
+                // Pleasant click -> Harsh mechanical clank
+                osc.type = useHarshWaveform ? 'sawtooth' : 'sine';
+
+                let freqStart = 600;
+                let freqEnd = 100;
+                let duration = 0.1;
+
+                if (isVeryGlitchy) {
+                    // Dying machine sound
+                    freqStart = 300;
+                    freqEnd = 50;
+                    duration = 0.3; // Slower
+                    osc.type = 'sawtooth'; // Always harsh
+                    // Add some noise to frequency if possible, or just extreme drops
+                    osc.frequency.setValueAtTime(freqStart, t);
+                    osc.frequency.linearRampToValueAtTime(freqEnd, t + duration); // Linear sounds more mechanical/falling
+                } else {
+                    osc.frequency.setValueAtTime(freqStart, t);
+                    osc.frequency.exponentialRampToValueAtTime(freqEnd, t + duration);
+                }
+
                 g.gain.setValueAtTime(0.5, t);
-                g.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-                osc.start(t); osc.stop(t + 0.1);
+                g.gain.exponentialRampToValueAtTime(0.01, t + duration);
+
+                osc.start(t); osc.stop(t + duration);
             }
             else if (type === 'buy') {
-                // Success (8-bit coin)
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(440, t);
-                osc.frequency.setValueAtTime(880, t + 0.1);
+                // Success (8-bit coin) -> Distorted confirm
+                osc.type = useHarshWaveform ? 'sawtooth' : 'square';
+
+                let freq1 = 440;
+                let freq2 = 880;
+                let duration = 0.2;
+
+                if (isVeryGlitchy) {
+                    freq1 = 220; // Lower pitch
+                    freq2 = 110; // Drop pitch instead of rise
+                    duration = 0.4;
+                }
+
+                osc.frequency.setValueAtTime(freq1, t);
+                // If glitchy, maybe slide down instead of up
+                if (isVeryGlitchy) {
+                    osc.frequency.linearRampToValueAtTime(freq2, t + duration);
+                } else {
+                    osc.frequency.setValueAtTime(freq2, t + 0.1);
+                }
+
                 g.gain.setValueAtTime(0.1, t);
-                g.gain.linearRampToValueAtTime(0, t + 0.2);
-                osc.start(t); osc.stop(t + 0.2);
+                g.gain.linearRampToValueAtTime(0, t + duration);
+                osc.start(t); osc.stop(t + duration);
             }
             else if (type === 'error') {
                 // Windows error style
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, t);
+                osc.frequency.setValueAtTime(150 - (corruption), t); // Lower pitch with corruption
                 g.gain.setValueAtTime(0.5, t);
                 g.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
                 osc.start(t); osc.stop(t + 0.3);
