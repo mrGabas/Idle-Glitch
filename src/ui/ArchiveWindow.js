@@ -14,23 +14,6 @@ export class ArchiveWindow extends Window {
         this.currentPath = []; // Stack of folder keys. Empty = Root
         this.selectedFileId = null;
         this.selectedFolderKey = null;
-
-        // View State
-        this.iconSize = 64;
-    }
-
-    get currentFolder() {
-        if (this.currentPath.length === 0) return LORE_DB;
-        // Traverse
-        let folder = LORE_DB;
-        for (const key of this.currentPath) {
-            // In our structure, LORE_DB keys are folders.
-            // But LORE_DB is flat list of folders at root?
-            // "personal": { ... }, "system": { ... }
-            // Yes, shallow depth for now based on loreData.js structure.
-            folder = folder[key];
-        }
-        return folder;
     }
 
     drawContent(ctx, x, y, w, h) {
@@ -110,25 +93,15 @@ export class ArchiveWindow extends Window {
             const folderKey = this.currentPath[0];
             const folder = LORE_DB[folderKey];
 
-            // If locked and not unlocked, show lock wall? (Should catch before entering)
-            // Assuming checks done on enter.
-
             // Draw Files
             folder.files.forEach(file => {
-                // Check if file is unlocked/collected
                 const isCollected = this.game.loreSystem.isFileUnlocked(file.id);
-                // We show all files but maybe grayed out/unknown if not collected?
-                // Or only show collected? 
-                // "The user wants to collect lore files". Usually implies empty slots or hidden.
-                // Let's show "Unknown" for uncollected.
-
                 let label = isCollected ? file.name : "???????";
                 let icon = isCollected ? 'file' : 'unknown';
 
                 if (isCollected) {
                     this.drawIcon(ctx, gx, gy, label, icon, file.id === this.selectedFileId);
                 } else {
-                    // Render ghost/placeholder
                     ctx.globalAlpha = 0.5;
                     this.drawIcon(ctx, gx, gy, label, icon, false);
                     ctx.globalAlpha = 1.0;
@@ -142,7 +115,7 @@ export class ArchiveWindow extends Window {
             });
 
             // Back button
-            this.drawIcon(ctx, contentX, contentY + 30, "..", 'folder', false);
+            this.drawIcon(ctx, gx, gy, "..", 'folder', false);
         }
     }
 
@@ -156,7 +129,7 @@ export class ArchiveWindow extends Window {
 
         // Icon Art
         ctx.strokeStyle = '#000';
-        ctx.fillStyle = type === 'folder' ? '#ebb434' : '#fff'; // Folder yellow or File white
+        ctx.fillStyle = type === 'folder' ? '#ebb434' : '#fff';
 
         if (type === 'folder') {
             ctx.beginPath();
@@ -170,7 +143,6 @@ export class ArchiveWindow extends Window {
             ctx.fill();
             ctx.stroke();
             if (locked) {
-                // Lock overlay
                 ctx.fillStyle = '#000';
                 ctx.fillText("🔒", x + 25, y + 40);
             }
@@ -178,7 +150,7 @@ export class ArchiveWindow extends Window {
             ctx.fillStyle = '#fff';
             ctx.beginPath();
             ctx.moveTo(x + 15, y + 10);
-            ctx.lineTo(x + 40, y + 10); // Fold corner logic omitted for simplicity
+            ctx.lineTo(x + 40, y + 10);
             ctx.lineTo(x + 49, y + 19);
             ctx.lineTo(x + 49, y + 54);
             ctx.lineTo(x + 15, y + 54);
@@ -208,38 +180,31 @@ export class ArchiveWindow extends Window {
 
         ctx.font = '10px Arial';
         ctx.textAlign = 'center';
-        // Truncate
         let dLabel = label;
         if (dLabel.length > 10) dLabel = dLabel.substring(0, 8) + '...';
-
         ctx.fillText(dLabel, x + 32, y + 66);
     }
 
     checkClick(mx, my) {
         const res = super.checkClick(mx, my);
-        if (res) return res;
 
-        // Content Area Click
+        // 1. Если кликнули на кнопку закрытия или начали перетаскивать — возвращаем результат сразу
+        if (res === 'close' || res === 'drag') return res;
+
+        // 2. Если клик был мимо окна — возвращаем null (чтобы игра знала, что клик не обработан)
+        if (res === null) return null;
+
+        // 3. Если res === 'consumed', значит клик был внутри тела окна.
+        // Мы продолжаем проверку, чтобы узнать, нажали ли на папку/файл.
+
         const sidebarW = 150;
         const contentX = this.x + sidebarW + 10;
         const contentY = this.y + 40; // Including address bar
 
-        // Calc Grid
-        let gx = contentX;
-        let gy = contentY;
-
-        // UP Navigation
-        // Hardcoded hit area for ".." which we sort of implicitly drew or didn't.
-        // I didn't actually draw ".." in the loop correctly if I want it to be interactable.
-        // Let's assume Backspace key or creating a dedicated button later. 
-        // For now, if currentPath > 0, we can click the "Up" button or breadcrumb?
-        // Let's implement double click on background to go up? No, confusing.
-        // Let's implement clicking Sidebar items to navigate.
-
-        // Sidebar Clicks
+        // --- ПРОВЕРКА САЙДБАРА ---
         if (mx > this.x && mx < this.x + sidebarW && my > this.y + 10 && my < this.y + this.h) {
             let sy = this.y + 30; // Start after "My Computer"
-            const diff = my - sy + 10; // offset
+            const diff = my - sy + 10;
             const index = Math.floor(diff / 20);
             const keys = Object.keys(LORE_DB);
             if (index >= 0 && index < keys.length) {
@@ -249,38 +214,42 @@ export class ArchiveWindow extends Window {
             }
         }
 
-        // Grid Clicks (Files)
+        // --- ПРОВЕРКА СЕТКИ ФАЙЛОВ ---
         if (mx > contentX && my > contentY) {
+            // Рассчитываем клик по сетке
+            const relX = mx - contentX;
+            const relY = my - contentY;
+            const col = Math.floor(relX / 80);
+            const row = Math.floor(relY / 80);
+            // Ширина контента (должна совпадать с той, что в draw)
+            const contentW = this.w - sidebarW - 20;
+            const cols = Math.floor(contentW / 80);
+
+            const targetIdx = row * cols + col;
+
+            // Если мы внутри папки
             if (this.currentPath.length > 0) {
                 const folderKey = this.currentPath[0];
                 const folder = LORE_DB[folderKey];
 
-                let idx = 0;
-                // Loop same as draw to find hit
-                // Simplified grid hit test
-                const relX = mx - contentX;
-                const relY = my - contentY;
-
-                const col = Math.floor(relX / 80);
-                const row = Math.floor(relY / 80);
-                // Width is dynamic in draw loop... 
-                const cols = Math.floor((this.w - sidebarW - 20) / 80);
-
-                const targetIdx = row * cols + col;
+                // Кнопка "Назад" (..) всегда рисуется последней в drawContent,
+                // но в массиве files её нет. 
+                // Давай упростим: если клик по последней ячейке сетки — это "Назад"?
+                // Нет, лучше проверить индекс.
 
                 if (targetIdx >= 0 && targetIdx < folder.files.length) {
                     const file = folder.files[targetIdx];
                     this.handleFileClick(file);
                     return 'consumed';
+                } else if (targetIdx === folder.files.length) {
+                    // Это кнопка ".." (она рисуется сразу после файлов)
+                    this.currentPath = []; // Go to root
+                    this.selectedFileId = null;
+                    return 'consumed';
                 }
+
             } else {
-                // Root grid (Folders)
-                const relX = mx - contentX;
-                const relY = my - contentY;
-                const cols = Math.floor((this.w - sidebarW - 20) / 80);
-                const col = Math.floor(relX / 80);
-                const row = Math.floor(relY / 80);
-                const targetIdx = row * cols + col;
+                // Мы в корне (Root) - клики по папкам
                 const keys = Object.keys(LORE_DB);
                 if (targetIdx >= 0 && targetIdx < keys.length) {
                     const key = keys[targetIdx];
@@ -290,25 +259,28 @@ export class ArchiveWindow extends Window {
             }
         }
 
-        return null;
+        // Если кликнули внутри окна, но не по папке/файлу — все равно "поглощаем" клик
+        return 'consumed';
     }
 
     selectFolder(key) {
-        if (this.currentPath[0] === key) return; // Already there
+        if (this.currentPath[0] === key) return;
 
         const folder = LORE_DB[key];
-        // Check Lock
-        if (folder.locked && !this.game.state.isFolderUnlocked(key)) {
-            // Prompt Password
-            const password = prompt("ENTER PASSWORD FOR " + folder.name);
+
+        // Проверяем пароль
+        if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
+            // Используем нативный prompt для простоты (можно заменить на внутриигровое окно позже)
+            const password = prompt(`ENTER PASSWORD FOR ${folder.name}\nHint: ${folder.hint || 'No hint'}`);
+
             if (password === folder.password) {
-                this.game.state.unlockFolder(key);
+                this.game.loreSystem.unlockFolder(key);
                 this.game.uiManager.chat.addMessage('SYSTEM', 'ACCESS GRANTED.');
                 this.game.events.emit('play_sound', 'startup');
             } else {
                 this.game.uiManager.chat.addMessage('SYSTEM', 'ACCESS DENIED.');
                 this.game.events.emit('play_sound', 'error');
-                return;
+                return; // Не открываем папку
             }
         }
 
@@ -320,11 +292,10 @@ export class ArchiveWindow extends Window {
     handleFileClick(file) {
         if (this.game.loreSystem.isFileUnlocked(file.id)) {
             this.selectedFileId = file.id;
-            // Open it
             this.game.uiManager.openNotepad(file.content, { title: file.name, password: null });
         } else {
             this.game.events.emit('play_sound', 'error');
-            this.game.uiManager.chat.addMessage('SYSTEM', 'FILE ENCRYPTED OR MISSING.');
+            this.game.uiManager.chat.addMessage('SYSTEM', 'FILE NOT DOWNLOADED OR CORRUPTED.');
         }
     }
 }
