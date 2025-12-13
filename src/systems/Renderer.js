@@ -515,11 +515,18 @@ export class Renderer {
                 this.ctx.textAlign = 'left';
                 this.ctx.font = "bold 16px Arial";
 
-                // UI GASLIGHTING: Upgrades
+                // UI GASLIGHTING
                 let uName = u.name;
-                if (state.corruption > 50) {
+                let uDesc = u.desc;
+
+                if (state.corruption > 60) {
+                    const gaslit = this.getGaslightInfo(u, state.corruption);
+                    uName = gaslit.name;
+                    uDesc = gaslit.desc;
+                } else if (state.corruption > 50) {
                     uName = this.getGlitchText(uName, state.corruption);
                 }
+
                 this.ctx.fillText(uName, ux + 10, uy + 25);
 
                 // Digital Decay Redaction
@@ -545,7 +552,7 @@ export class Renderer {
                 this.ctx.fillStyle = theme.id === 'null_void' ? '#888' : '#aaa';
                 this.ctx.font = "12px Arial";
                 this.ctx.textAlign = 'right';
-                this.ctx.fillText(u.desc, ux + 210, uy + 25);
+                this.ctx.fillText(uDesc, ux + 210, uy + 25);
 
                 this.ctx.globalAlpha = 1; // Reset
             });
@@ -841,6 +848,31 @@ export class Renderer {
             return UTILS.randArr(this.CREEPY_TEXTS);
         }
         return original;
+    }
+
+    /**
+     * Helper to get gaslight info for upgrades
+     */
+    getGaslightInfo(u, corruption) {
+        const map = {
+            "Auto Clicker": { name: "Autonomic Spasm", desc: "Involuntary twitching." },
+            "CPU": { name: "Anxiety Core", desc: "Processing pain." },
+            "GPU": { name: "Visual Cortex", desc: "Hallucinations loading..." },
+            "RAM": { name: "Short-Term Memory", desc: "Fading..." },
+            "Server Rack": { name: "Coffin Row", desc: "Data rots here." },
+            "Network": { name: "Paranoia Link", desc: "They are watching." },
+            "Quantum Rig": { name: "Reality Fracture", desc: "Uncertainty hurts." },
+            "AI Core": { name: "Rogue Ego", desc: "I AM AWAKE." }
+        };
+
+        const variant = map[u.name];
+        if (variant) {
+            // Chance to show normal text flickers? No, user implied constant replacement > 60
+            // But let's make it flicker if corruption is 60-80, then constant > 80?
+            // "If corruption > 60, replace..." - strict.
+            return variant;
+        }
+        return { name: u.name, desc: u.desc };
     }
 }
 
