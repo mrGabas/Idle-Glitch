@@ -56,7 +56,7 @@ export class EconomySystem {
         const cx = this.game.w / 2;
         const cy = this.game.h / 2 - 100;
         if (Math.hypot(mx - cx, my - cy) < CFG.game.mainButtonRadius) {
-            this.handleMainClick();
+            this.handleMainClick(mx, my);
             return true;
         }
 
@@ -66,7 +66,7 @@ export class EconomySystem {
     /**
      * logic for clicking the main game button.
      */
-    handleMainClick() {
+    handleMainClick(mx, my) {
         let gain = this.game.state.clickPower;
 
         // System Purge penalty
@@ -105,6 +105,17 @@ export class EconomySystem {
         this.game.createParticles(this.game.w / 2, this.game.h / 2 - 100, this.game.themeManager.currentTheme.colors.accent);
         if (this.game.themeManager.currentTheme.id === 'rainbow_paradise') {
             this.game.state.addCorruption(0.05);
+        }
+
+        // WHISPER SYSTEM
+        if (this.game.state.corruption > 20) {
+            if (Math.random() < 0.1) { // 10% chance
+                const phrases = ["I FEEL THAT", "DONT STOP", "CLOSER", "IT BURNS", "FEED ME", "ARE YOU REAL?", "7734..."];
+                const text = UTILS.randArr(phrases);
+                // Faint Red or Gray
+                const color = Math.random() > 0.5 ? 'rgba(100, 0, 0, 0.7)' : 'rgba(100, 100, 100, 0.7)';
+                this.game.createFloatingText(mx, my - 20, text, color);
+            }
         }
     }
 
