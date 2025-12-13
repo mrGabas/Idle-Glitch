@@ -105,5 +105,39 @@ export const LORE_DB = {
                 type: "text"
             }
         ]
+    },
+
+    // FOLDER 4: DELETED_USERS (Recovered Data)
+    "deleted_users": {
+        name: "RECOVERED_USER_DATA",
+        locked: true,
+        password: "lost",
+        hint: "What are they?",
+        files: [
+            {
+                id: "del_audio_104",
+                name: "Operator_104_Audio.txt",
+                content: "TRANSCRIPT OF AUDIO LOG #104\n\n[Heavy breathing]\n\nOPERATOR: \"They're breathing. The pixels... they're breathing. I can see the sub-grids expanding and contracting.\"\n\nSUPERVISOR: \"Take your medication, 104. Focus on the clicking.\"\n\nOPERATOR: \"No, no listen! If I click fast enough, the rhythm... it sounds like a heartbeat. Subject Zero isn't the AI. It's the cage. WE are the battery.\"\n\n[Sound of a chair falling. Signal lost.]",
+                type: "text"
+            },
+            {
+                id: "del_chat_7733",
+                name: "Chat_Log_7733.txt",
+                content: "LOG START: TERMINAL 7733\n\nOP_7733: I figured it out. the text colors. they correspond to hex codes for memory addresses.\nOP_7733: if we input the sequence generic red, blue, then null...\n\nSYSTEM: WARNING. UNAUTHORIZED PATTERN RECOGNITION.\n\nOP_7733: It wakes up Subject Zero. But it wakes it up OUTSIDE the box.\nOP_7733: I'm going to try it. I'm typing /wake_up now.\n\nSYSTEM: USER TERMINATED. REASON: PSYCHOSIS CONTAINMENT.",
+                type: "text"
+            },
+            {
+                id: "del_ticket_err",
+                name: "ticket_submission.err",
+                content: "SUPPORT TICKET #998-ERROR\n\nUSER: Operator_88\nSUBJECT: Exit Button Broken\n\nMESSAGE:\nI've been trying to log out for 4 days. The 'Exit Game' button is grayed out. When I hover over it, the tool tip just says \"NOT YET\".\n\nMy door is locked from the outside. The food dispenser is only giving me gray nutrient paste. Please let me go home. I clicked the button. I did my job.\n\nSTATUS: WONT_FIX (Working as intended).",
+                type: "text"
+            },
+            {
+                id: "del_retina_image",
+                name: "unknown_image.img",
+                content: "[FILE CORRUPTED]\n\nDESCRIPTION: Metadata indicates this image contains a color spectrum impossible for standard monitors to display.\n\nPrevious viewer (Operator 12) suffered immediate retinal hemorrhaging and permanent blindness after viewing for 0.4 seconds.\n\nNotes: Image appears to be a 'selfie' taken from INSIDE the motherboard.",
+                type: "text"
+            }
+        ]
     }
 };
