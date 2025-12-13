@@ -14,6 +14,7 @@ import { CrazyFaces } from '../ui/ui.js';
 import { Particle, Debris, FloatingText } from '../entities/particles.js';
 import { CursedCaptcha } from '../entities/enemies.js';
 import { Popup, NotepadWindow } from '../ui/windows.js';
+import { PasswordWindow } from '../ui/PasswordWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
@@ -236,6 +237,10 @@ export class Game {
             // Priority 1: Password/Notepad Input (Text Interaction)
             // Check top-most window
             const activeWindow = this.uiManager.windowManager.windows[this.uiManager.windowManager.windows.length - 1];
+            if (activeWindow instanceof PasswordWindow) {
+                activeWindow.handleKeyDown(e);
+                return;
+            }
             if (activeWindow instanceof NotepadWindow && activeWindow.locked) {
                 activeWindow.handleKeyDown(e);
                 return;

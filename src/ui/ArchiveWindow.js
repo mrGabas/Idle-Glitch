@@ -1,4 +1,5 @@
 import { Window } from './Window.js';
+import { PasswordWindow } from './PasswordWindow.js';
 import { LORE_DB } from '../data/loreData.js';
 import { UTILS } from '../core/config.js';
 
@@ -270,18 +271,19 @@ export class ArchiveWindow extends Window {
 
         // Проверяем пароль
         if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
-            // Используем нативный prompt для простоты (можно заменить на внутриигровое окно позже)
-            const password = prompt(`ENTER PASSWORD FOR ${folder.name}\nHint: ${folder.hint || 'No hint'}`);
-
-            if (password === folder.password) {
+            // Instantiate custom PasswordWindow
+            const passwordWindow = new PasswordWindow(this.game, folder.name, folder.hint || 'No hint', folder.password, () => {
                 this.game.loreSystem.unlockFolder(key);
                 this.game.uiManager.chat.addMessage('SYSTEM', 'ACCESS GRANTED.');
                 this.game.events.emit('play_sound', 'startup');
-            } else {
-                this.game.uiManager.chat.addMessage('SYSTEM', 'ACCESS DENIED.');
-                this.game.events.emit('play_sound', 'error');
-                return; // Не открываем папку
-            }
+                // Refresh to show unlocked state (update current path/selection if needed)
+                // Actually, selectFolder sets currentPath. We need to call selectFolder again or manually set it?
+                // If we are here, we returned early. So we need to call selectFolder(key) again OR do the logic here.
+                // Simpler: Just recursively call selectFolder(key) which will now pass the check!
+                this.selectFolder(key);
+            });
+            this.game.uiManager.windowManager.add(passwordWindow);
+            return; // Stop processing, wait for unlock callback
         }
 
         this.currentPath = [key];
