@@ -5,6 +5,7 @@
 import { ChatSystem } from '../ui/chat.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { MailWindow, NotepadWindow } from '../ui/windows.js';
+import { ArchiveWindow } from '../ui/ArchiveWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { AchievementsWindow } from '../ui/achievementsWindow.js';
 
@@ -28,11 +29,14 @@ export class UIManager {
         // Actually, let's keep it managed by us and add/remove when toggled.
         this.mailWindow = new MailWindow(game.w, game.h, this.mail);
 
+        this.archiveWindow = new ArchiveWindow(game);
+
         this.achievementsWindow = new AchievementsWindow(game);
     }
 
     resize(w, h) {
         if (this.mailWindow) this.mailWindow.resize(w, h);
+        if (this.archiveWindow) this.archiveWindow.update(0); // Basic recheck if needed, usually window handles itself
         if (this.reviewsTab) this.reviewsTab.resize();
         if (this.achievementsWindow) this.achievementsWindow.resize();
         // WindowManager windows might need resize too?
@@ -171,6 +175,17 @@ export class UIManager {
         // Priority 6: HUD Icons (Achievements)
         if (this.achievementsWindow && Math.hypot(mx - (this.game.w - 50), my - 170) < 25) {
             this.achievementsWindow.toggle();
+            return true;
+        }
+
+        // Priority 6.5: HUD Icons (Archive)
+        // Only if unlocked? Or always visible? Let's make it always visible for now or check lore unlocked count?
+        if (Math.hypot(mx - (this.game.w - 50), my - 230) < 25) {
+            if (this.archiveWindow.manager) {
+                this.archiveWindow.close();
+            } else {
+                this.windowManager.add(this.archiveWindow);
+            }
             return true;
         }
 

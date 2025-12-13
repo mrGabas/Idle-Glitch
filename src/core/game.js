@@ -126,6 +126,12 @@ export class Game {
             this.uiManager.mail.importData(mailData);
         }
 
+        // NEW: Load Archive Data
+        const archiveData = this.saveSystem.load('archive_data', null);
+        if (archiveData) {
+            this.state.archive = archiveData;
+        }
+
         // Auto-save loop
         setInterval(() => this.saveGame(), 30000);
 
@@ -162,6 +168,9 @@ export class Game {
         if (this.uiManager && this.uiManager.mail) {
             this.saveSystem.save('mail_data', this.uiManager.mail.exportData());
         }
+
+        // NEW: Save Archive Data
+        this.saveSystem.save('archive_data', this.state.archive);
     }
 
 

@@ -198,6 +198,8 @@ export class Renderer {
         this.drawFeedbackIcon(this.w - 50, 110, '#6d2af7', '💬'); // Chat bubble emoji or draw custom
         // Achievements Button
         this.drawFeedbackIcon(this.w - 50, 170, '#FFD700', '🏆');
+        // Archive Button
+        this.drawFeedbackIcon(this.w - 50, 230, '#ebb434', '📁');
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
