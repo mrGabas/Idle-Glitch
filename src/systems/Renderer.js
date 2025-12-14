@@ -39,6 +39,18 @@ export class Renderer {
         this.subliminalTimer = 0;
         this.subliminalType = null; // 'image', 'text', 'invert'
         this.subliminalContent = null;
+
+        // UI Gaslighting Map
+        this.GASLIGHT_MAP = {
+            "🦄 Unicorn Friend": { name: "Autonomic Spasm", desc: "Twitching forever." },
+            "🌟 Magic Wand": { name: "Visual Cortex", desc: "Stimulated directly." },
+            "🏰 Cloud Castle": { name: "Coffin Row", desc: "Sleep well." },
+            "🧁 Cupcake Bakery": { name: "Biomass VAT", desc: "Recycle the flesh." },
+            "🌈 Rainbow Factory": { name: "Thought Grinder", desc: "No more dreams." },
+            "🎠 Carousel of Dreams": { name: "Looping Nightmare", desc: "It never ends." },
+            "⭐ Shooting Star": { name: "Burning Satellite", desc: "Falling down." },
+            "🎪 Circus Maximus": { name: "The Slaughterhouse", desc: "Enter the ring." }
+        };
     }
 
     setSize(w, h) {
@@ -510,28 +522,19 @@ export class Renderer {
                 this.ctx.lineWidth = 1;
                 this.ctx.strokeRect(ux, uy, 220, 70);
 
+                // UI Gaslighting Logic
+                const uInfo = this.getCorruptedUpgradeInfo(u, state.corruption);
+
                 // Name
                 this.ctx.fillStyle = colors.text;
                 this.ctx.textAlign = 'left';
                 this.ctx.font = "bold 16px Arial";
 
-                // UI GASLIGHTING
-                let uName = u.name;
-                let uDesc = u.desc;
-
-                if (state.corruption > 60) {
-                    const gaslit = this.getGaslightInfo(u, state.corruption);
-                    uName = gaslit.name;
-                    uDesc = gaslit.desc;
-                } else if (state.corruption > 50) {
-                    uName = this.getGlitchText(uName, state.corruption);
-                }
-
-                this.ctx.fillText(uName, ux + 10, uy + 25);
+                this.ctx.fillText(uInfo.name, ux + 10, uy + 25);
 
                 // Digital Decay Redaction
-                if (theme.id === 'digital_decay' && (u.name.includes('[REDACTED]') || Math.random() < 0.01)) {
-                    const w = this.ctx.measureText(u.name).width;
+                if (theme.id === 'digital_decay' && (uInfo.name.includes('[REDACTED]') || Math.random() < 0.01)) {
+                    const w = this.ctx.measureText(uInfo.name).width;
                     this.ctx.fillStyle = '#000';
                     this.ctx.fillRect(ux + 10, uy + 10, w, 18);
                 }
@@ -552,7 +555,8 @@ export class Renderer {
                 this.ctx.fillStyle = theme.id === 'null_void' ? '#888' : '#aaa';
                 this.ctx.font = "12px Arial";
                 this.ctx.textAlign = 'right';
-                this.ctx.fillText(uDesc, ux + 210, uy + 25);
+                // Check if uInfo has a custom desc, otherwise use original but maybe glitch it
+                this.ctx.fillText(uInfo.desc || u.desc, ux + 210, uy + 25);
 
                 this.ctx.globalAlpha = 1; // Reset
             });
@@ -851,28 +855,27 @@ export class Renderer {
     }
 
     /**
-     * Helper to get gaslight info for upgrades
+     * Helper to get corrupted upgrade info based on corruption level
+     * Returns { name, desc }
      */
-    getGaslightInfo(u, corruption) {
-        const map = {
-            "Auto Clicker": { name: "Autonomic Spasm", desc: "Involuntary twitching." },
-            "CPU": { name: "Anxiety Core", desc: "Processing pain." },
-            "GPU": { name: "Visual Cortex", desc: "Hallucinations loading..." },
-            "RAM": { name: "Short-Term Memory", desc: "Fading..." },
-            "Server Rack": { name: "Coffin Row", desc: "Data rots here." },
-            "Network": { name: "Paranoia Link", desc: "They are watching." },
-            "Quantum Rig": { name: "Reality Fracture", desc: "Uncertainty hurts." },
-            "AI Core": { name: "Rogue Ego", desc: "I AM AWAKE." }
-        };
+    getCorruptedUpgradeInfo(originalUpgrade, corruption) {
+        if (corruption <= 60) return originalUpgrade;
 
-        const variant = map[u.name];
-        if (variant) {
-            // Chance to show normal text flickers? No, user implied constant replacement > 60
-            // But let's make it flicker if corruption is 60-80, then constant > 80?
-            // "If corruption > 60, replace..." - strict.
-            return variant;
+        // Chance to glitch frames
+        // 5% chance per frame to show the "truth" if corruption > 60
+        // Scale chance with corruption: 60 -> 1%, 100 -> 10%
+        const chance = ((corruption - 60) / 40) * 0.1;
+
+        if (Math.random() < chance) {
+            const mapped = this.GASLIGHT_MAP[originalUpgrade.name];
+            if (mapped) {
+                return mapped;
+            }
         }
-        return { name: u.name, desc: u.desc };
+
+        return originalUpgrade;
     }
+
+
 }
 
