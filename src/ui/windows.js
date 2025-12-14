@@ -95,7 +95,7 @@ export class Popup extends Window {
     }
 }
 
-export class NotepadWindow extends Window {
+export class NotepadWindowOld extends Window {
     constructor(gameW, gameH, content, options) {
         const w = 400;
         const h = 300;
@@ -214,22 +214,77 @@ export class NotepadWindow extends Window {
         }
     }
 
-    getLines(ctx, text, maxWidth) {
-        var words = text.split(" ");
-        var lines = [];
-        var currentLine = words[0];
+    tokenize(text) {
+        const tokens = [];
+        const parts = text.split(/({[^|]+\|[^}]+})/g);
 
-        for (var i = 1; i < words.length; i++) {
-            var word = words[i];
-            var width = ctx.measureText(currentLine + " " + word).width;
-            if (width < maxWidth) {
-                currentLine += " " + word;
-            } else {
+        parts.forEach(part => {
+            if (!part) return;
+
+            let partText = part;
+            let partColor = '#000';
+
+            if (part.startsWith('{') && part.includes('|') && part.endsWith('}')) {
+                const content = part.slice(1, -1);
+                const pipeIndex = content.indexOf('|');
+                if (pipeIndex !== -1) {
+                    partColor = content.substring(0, pipeIndex);
+                    partText = content.substring(pipeIndex + 1);
+                }
+            }
+
+            const subParts = partText.split(/(\s+)/);
+
+            subParts.forEach(sub => {
+                if (sub.length > 0) {
+                    tokens.push({
+                        text: sub,
+                        color: partColor
+                    });
+                }
+            });
+        });
+
+        return tokens;
+    }
+
+    getLines(ctx, tokens, maxWidth) {
+        const lines = [];
+        let currentLine = [];
+        let currentLineWidth = 0;
+
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+
+            if (token.text.includes('\n')) {
                 lines.push(currentLine);
-                currentLine = word;
+                currentLine = [];
+                currentLineWidth = 0;
+                continue;
+            }
+
+            const tokenWidth = ctx.measureText(token.text).width;
+
+            if (currentLineWidth + tokenWidth > maxWidth && currentLineWidth > 0) {
+                lines.push(currentLine);
+
+                if (!/^\s+$/.test(token.text)) {
+                    currentLine = [token];
+                    currentLineWidth = tokenWidth;
+                } else {
+                    currentLine = [];
+                    currentLineWidth = 0;
+                }
+            } else {
+                currentLine.push(token);
+                currentLineWidth += tokenWidth;
             }
         }
-        lines.push(currentLine);
+
+        if (currentLine.length > 0) {
+            lines.push(currentLine);
+        }
+
         return lines;
     }
 
@@ -401,6 +456,206 @@ export class MailWindow extends Window {
             return 'consumed';
         }
         return null;
+    }
+}
+
+export class NotepadWindow extends Window {
+    constructor(gameW, gameH, content, options) {
+        const w = 400;
+        const h = 300;
+        const x = (gameW - w) / 2;
+        const y = (gameH - h) / 2;
+
+        super(x, y, w, h, options?.title || "Notepad.exe");
+
+        this.content = content || "Error: Corrupted File";
+        this.password = options?.password || null;
+        this.locked = !!this.password;
+        this.inputBuffer = "";
+
+        // Locked title handling
+        if (this.locked) {
+            this.title = "ENCRYPTED FILE";
+        }
+
+        this.shake = 0;
+    }
+
+    tokenize(text) {
+        const tokens = [];
+        // Pattern: {color|text}
+        // Splits into: [pre, tag, post, tag, ...]
+        const parts = text.split(/({[^|]+\|[^}]+})/g);
+
+        parts.forEach(part => {
+            if (!part) return;
+
+            // Default state
+            let partText = part;
+            let partColor = '#000';
+
+            // Check if this segment is a tag
+            if (part.startsWith('{') && part.includes('|') && part.endsWith('}')) {
+                // Remove wrappers
+                const content = part.slice(1, -1);
+                // Split on first pipe only
+                const pipeIndex = content.indexOf('|');
+                if (pipeIndex !== -1) {
+                    partColor = content.substring(0, pipeIndex);
+                    partText = content.substring(pipeIndex + 1);
+                }
+            }
+
+            // Split into sub-tokens by whitespace (keeping delimiters)
+            // This handles wrapping even inside colored text
+            const subParts = partText.split(/(\s+)/);
+
+            subParts.forEach(sub => {
+                if (sub.length > 0) {
+                    tokens.push({
+                        text: sub,
+                        color: partColor
+                    });
+                }
+            });
+        });
+
+        return tokens;
+    }
+
+    getLines(ctx, tokens, maxWidth) {
+        const lines = [];
+        let currentLine = [];
+        let currentLineWidth = 0;
+
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+
+            // Handle explicit newlines
+            if (token.text.includes('\n')) {
+                lines.push(currentLine);
+                currentLine = [];
+                currentLineWidth = 0;
+                continue;
+            }
+
+            const tokenWidth = ctx.measureText(token.text).width;
+
+            // Check Wrap
+            if (currentLineWidth + tokenWidth > maxWidth && currentLineWidth > 0) {
+                lines.push(currentLine);
+
+                // Start new line with this token
+                if (!/^\s+$/.test(token.text)) {
+                    currentLine = [token];
+                    currentLineWidth = tokenWidth;
+                } else {
+                    currentLine = [];
+                    currentLineWidth = 0;
+                }
+            } else {
+                currentLine.push(token);
+                currentLineWidth += tokenWidth;
+            }
+        }
+
+        if (currentLine.length > 0) {
+            lines.push(currentLine);
+        }
+
+        return lines;
+    }
+
+    drawContent(ctx, x, y, w, h) {
+        let sx = 0;
+        if (this.shake > 0) {
+            sx = (Math.random() - 0.5) * this.shake;
+            this.shake *= 0.9;
+            if (this.shake < 0.5) this.shake = 0;
+        }
+
+        // Menu Bar
+        ctx.fillStyle = '#000';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText("File   Edit   Format   View   Help", x + 2 + sx, y + 12);
+        ctx.strokeStyle = '#ccc';
+        ctx.beginPath(); ctx.moveTo(x, y + 18); ctx.lineTo(x + w, y + 18); ctx.stroke();
+
+        // Text Area
+        const ty = y + 25;
+        const th = h - 30;
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x, ty, w, th);
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(x, ty, w, th);
+
+        // Content
+        ctx.font = "16px 'Courier New', monospace";
+
+        if (this.locked) {
+            // Password Prompt
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'center';
+            ctx.fillText("ENTER PASSWORD:", x + w / 2 + sx, ty + 40);
+
+            // Input Box
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(x + 50 + sx, ty + 60, w - 100, 30);
+
+            // Masked Password
+            const masked = "*".repeat(this.inputBuffer.length);
+            ctx.fillText(masked + (Math.floor(Date.now() / 500) % 2 === 0 ? "_" : ""), x + w / 2 + sx, ty + 80);
+
+            ctx.fillStyle = '#f00';
+            ctx.font = '12px Arial';
+            ctx.fillText("ACCESS DENIED - ENCRYPTED CONTENT", x + w / 2 + sx, ty + 150);
+        } else {
+            // Rich Text Content
+            ctx.textAlign = 'left';
+
+            // 1. Tokenize
+            const tokens = this.tokenize(this.content);
+            // 2. Wrap
+            const lines = this.getLines(ctx, tokens, w - 20);
+
+            let ly = ty + 20;
+
+            lines.forEach(line => {
+                let currentX = x + 10 + sx;
+
+                line.forEach(token => {
+                    ctx.fillStyle = token.color;
+                    ctx.fillText(token.text, currentX, ly);
+                    currentX += ctx.measureText(token.text).width;
+                });
+
+                ly += 20;
+            });
+        }
+    }
+
+    handleKeyDown(e) {
+        if (!this.active || !this.locked) return;
+
+        if (e.key === 'Enter') {
+            if (this.inputBuffer === this.password) {
+                this.locked = false;
+                this.title = "Notepad.exe [DECRYPTED]";
+                // Play unlock sound?
+            } else {
+                this.shake = 10;
+                this.inputBuffer = "";
+                // Play error sound?
+            }
+        } else if (e.key === 'Backspace') {
+            this.inputBuffer = this.inputBuffer.slice(0, -1);
+        } else if (e.key.length === 1) {
+            if (this.inputBuffer.length < 20) {
+                this.inputBuffer += e.key;
+            }
+        }
     }
 }
 
