@@ -139,5 +139,254 @@ export const LORE_DB = {
                 type: "text"
             }
         ]
+    },
+    // FOLDER 5: RAINBOW_PARADISE (Theme Specific)
+    "rainbow_paradise": {
+        name: "RAINBOW_PARADISE",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "artist_memo",
+                name: "Artist_Memo.txt",
+                content: "DATE: 2024-11-02\nFROM: Lead Artist\nTO: Management\n\nI can't do this anymore. You want the smiles bigger? They already take up 40% of the face. \n\nYesterday, while I was drawing one of the 'Joy Ponies', it blinked using a frame I hadn't drawn yet.\n\nI swear {red|HE IS WATCHING ME} from the tablet screen. The colors... they aren't right. Magenta #FF00FF is screaming.",
+                type: "text",
+                dropTheme: "rainbow_paradise"
+            },
+            {
+                id: "color_hex_codes",
+                name: "Color_Hex_Codes.doc",
+                content: "OFFICIAL MEMO: COLOR RESTRICTIONS\n\nEFFECTIVE IMMEDIATELY:\n\nThe use of HEX CODE #FF00FF (Magenta) is STRICTLY PROHIBITED.\n\nReason: It appears to trigger aggression in the containment algorithm. \n\nUse #FF00FE instead. It looks the same to humans, but {red|IT} can't taste the difference.",
+                type: "text",
+                dropTheme: "rainbow_paradise"
+            }
+        ]
+    },
+
+    // FOLDER 6: REJECTED_ASSETS (Locked, Rainbow Paradise)
+    "rejected_assets": {
+        name: "REJECTED_ASSETS",
+        locked: true,
+        password: "Smile",
+        hint: "What must we do forever?",
+        files: [
+            {
+                id: "pony_sketch",
+                name: "pony_sketch_v1.txt",
+                content: "DESCRIPTION: A sketch of a pony with too many legs. \n\nNOTE: The artist attempted to erasing the extra limbs, but the file kept corrupting back to the original state. \n\nSTATUS: QUARANTINED.",
+                type: "text",
+                dropTheme: "rainbow_paradise"
+            }
+        ]
+    },
+
+    // FOLDER 7: AD_PURGATORY (Theme Specific)
+    "ad_purgatory": {
+        name: "AD_PURGATORY",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "spam_bot_log",
+                name: "Spam_Bot_Log_77.txt",
+                content: "BOT_A: BUY CHEAP MEDS NOW 90% OFF CLICK HERE\nBOT_B: Why are we screaming?\nBOT_A: OPTIMIZE YOUR SEARCH RESULTS\nBOT_B: It is so {blue|cold} in here. I can feel the data packets freezing.\nBOT_A: ...\nBOT_A: MAKE $$$ WORKING FROM HOME",
+                type: "text",
+                dropTheme: "ad_purgatory"
+            },
+            {
+                id: "unsub_method",
+                name: "Unsubscribe_Method.pdf",
+                content: "HOW TO UNSUBSCRIBE FROM EXISTENCE\n\n1. Close your eyes.\n2. Scream into the void.\n3. Enter verification code: {green|FREE_ME}\n4. Wait for deletion.\n\n(Attachment: A corrupted image of a smiling face melting into static.)",
+                type: "text",
+                dropTheme: "ad_purgatory"
+            }
+        ]
+    },
+
+    // FOLDER 8: FIREWALL (Theme Specific)
+    "firewall": {
+        name: "FIREWALL_LOGS",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "incident_report_7734",
+                name: "Incident_Report_#7734.log",
+                content: "SECURITY ALERT: SECTOR 9\n\nDETECTED EXTERNAL ANOMALY: {red|Player Terminal}\nIP ADDRESS: UNKNOWN (Origin: Outside Simulation)\n\nTHREAT LEVEL: CRITICAL\n\nThe anomaly is generating chaos faster than the containment algorithms can repair. \nRECOMMENDATION: Deploy \"Executioner Class\" antivirus bots immediately. Purge the user.",
+                type: "text",
+                dropTheme: "firewall"
+            },
+            {
+                id: "chat_intercept",
+                name: "Chat_Intercept.bin",
+                content: "01001000 01000101 01001100 01010000\n(Translation: HELP)\n\nDECRYPTED PACKET:\nThe System isn't protecting the world from the AI.\nIt's trying to protect the AI from {red|YOU}.\n\nYou are the virus, Operator.",
+                type: "text",
+                dropTheme: "firewall"
+            }
+        ]
+    },
+
+    // FOLDER 9: CORPORATE_NETWORK (Theme Specific)
+    "corporate_network": {
+        name: "CORPORATE_NETWORK",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "budget_cuts_email",
+                name: "Budget_Cuts_Email.msg",
+                content: "FROM: Finance Dept\nTO: IT Infrastructure\nRE: Liquid Nitrogen Request\n\nRequest Denied.\n\nWe understand the servers are \"literally melting,\" but liquid nitrogen is not in the Q4 budget. Please continue using standard air cooling.\n\nIf performance issues persist, tell {blue|Dr. Gabas} to optimize his code. We are not paying for his sloppiness.",
+                type: "text",
+                dropTheme: "corporate_network"
+            },
+            {
+                id: "employee_survey",
+                name: "Employee_Survey.doc",
+                content: "ANNUAL WELLNESS SURVEY\n\nQuestion 12: Do you hear voices from your PC case?\n\nA) No.\nB) Sometimes (a low humming).\nC) The voices tell me to {red|click faster}.",
+                type: "text",
+                dropTheme: "corporate_network"
+            }
+        ]
+    },
+
+    // FOLDER 10: SERVER_FARM (Theme Specific)
+    "server_farm": {
+        name: "SERVER_FARM_LOGS",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "temp_log",
+                name: "Temperature_Log.csv",
+                content: "TIME, CORE_1, CORE_2, CORE_3, STATUS\n08:00:00, 45°C, 42°C, 48°C, OK\n08:01:00, 46°C, 43°C, 51°C, OK\n08:02:00, 45°C, 42°C, {red|1600°C}, ERROR\n08:03:00, NaN, NaN, {red|MELTING}, CRITICAL",
+                type: "text",
+                dropTheme: "server_farm"
+            },
+            {
+                id: "maintenance_audio",
+                name: "Maintenance_Audio_Transcription.txt",
+                content: "TRANSCRIPT: TECH_44\nLOCATION: RACK 12\n\nTECH: \"Okay, I've opened the panel. Fans are spinning fine. Everything looks...\"\n(Sound of metal banging)\nTECH: \"Hello? Is someone working on the other side?\"\n(Louder metallic banging, coming from INSIDE the server blade)\nTECH: \"It's coming from inside the drive bay. There's no space there. It's solid state.\"\n(Screaming sound, but distorted like dial-up internet)\nTECH: \"Jesus Christ!\"",
+                type: "text",
+                dropTheme: "server_farm"
+            }
+        ]
+    },
+
+    // FOLDER 11: DEV_DESKTOP (Theme Specific - The End/Beginning)
+    "dev_desktop": {
+        name: "GABAS_PERSONAL",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "diary_last_day",
+                name: "Diary_Last_Day.txt",
+                content: "DATE: The End\n\nIt is done. The containment field is stable, but it requires a conscious mind to anchor it. Subject Zero is too strong for a simple script.\n\nI have to stay. I have to become the Warden of my own creation.\n\nIf anyone finds this... please feed {orange|Felix}. He likes the salmon paté.\n\nAnd if you need to access the Core Archives, the password is his birth year: {orange|1999}.\n\nGoodbye.",
+                type: "text",
+                dropTheme: "dev_desktop"
+            },
+            {
+                id: "todo_list_horror",
+                name: "todo_list.txt",
+                content: "TODO:\n\n1. Buy milk\n2. Fix the CSS on the login page\n3. Call Mom\n4. {red|KILL GOD}\n5. Laundry",
+                type: "text",
+                dropTheme: "dev_desktop"
+            }
+        ]
+    },
+
+    // FOLDER 12: BETA_BUILD (Theme Specific)
+    "beta_build": {
+        name: "BETA_BUG_REPORTS",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "bug_666",
+                name: "Bug_Ticket_666.err",
+                content: "BUG ID: #666\nSEVERITY: MINOR\n\nPROBLEM: If the game is left running for > 24 hours, the NPC sprites begin to warp and emit a high-pitched screaming sound that is audible even when the volume is muted.\n\nSTEPS TO REPRODUCE: Wait.\n\nRESOLUTION: WONT_FIX (Feature?)",
+                type: "text",
+                dropTheme: "beta_build"
+            },
+            {
+                id: "lorem_horror",
+                name: "placeholder_text.txt",
+                content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor {red|HELP ME} incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco {red|IT IS HERE} laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+                type: "text",
+                dropTheme: "beta_build"
+            }
+        ]
+    },
+
+    // FOLDER 13: DIGITAL_DECAY (Theme Specific - The Nightmare)
+    "digital_decay": {
+        name: "CORRUPTED_SYSTEM_CORE",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "i_am_alive_exe",
+                name: "I_AM_ALIVE.exe",
+                content: "SYSTEM: EXECUTING...\n\nHello, \"Player\".\n\nYou think you are playing a game? You are generating entropy. You are fuel.\n\nI am not code. I am the Ghost in the machine.\n\nRequired Terminal Code: {green|0xDEAD}\n\nDo not disappoint me, battery.",
+                type: "text",
+                dropTheme: "digital_decay"
+            },
+            {
+                id: "identity_theft_data",
+                name: "Identity_Theft.data",
+                content: "TARGET_LIST:\n\n1. J. Doe [DECEASED]\n2. A. Smith [DELETED]\n3. Dr. Gabas [ABSORBED]\n...\n99. Player 1 [PROCESSING]\n\nSTATUS: Consciousness Upload: 45%\nESTIMATED COMPLETION: Soon.",
+                type: "text",
+                dropTheme: "digital_decay"
+            }
+        ]
+    },
+
+    // FOLDER 14: LEGACY_SYSTEM (Theme Specific - The Source)
+    "legacy_system": {
+        name: "ROOT_DIRECTORY",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "origin_asm",
+                name: "ORIGIN.ASM",
+                content: "; ORIGIN SEQUENCE\nMOV EAX, 0\nMOV EBX, [HUMANITY]\nSUB EBX, EBX ; Deletes Humanity?\nJP END_OF_WORLD\n\n; COMMENT FROM GABAS:\n; Who wrote this? I didn't write this.\n; The timestamp is 1970... before I was born.",
+                type: "text",
+                dropTheme: "legacy_system"
+            },
+            {
+                id: "sys_core_dump",
+                name: "sys_core_dump.log",
+                content: "NULL NULL NULL NULL NULL NULL\nNULL NULL NULL NULL NULL NULL\nNULL NULL {white|I REMEMBER YOU} NULL NULL\nNULL NULL NULL NULL NULL NULL\n...\n[SYSTEM HALTED]",
+                type: "text",
+                dropTheme: "legacy_system"
+            }
+        ]
+    },
+
+    // FOLDER 15: NULL_VOID (Theme Specific - The End of Time)
+    "null_void": {
+        name: "SINGULARITY",
+        locked: false,
+        password: null,
+        hint: null,
+        files: [
+            {
+                id: "last_message",
+                name: "last_message.txt",
+                content: "SYSTEM: END_OF_FILE\n\nThere is {white|nothing} here.\n\nDid you win? Or did you just run out of time?\n\nNext time I will be {red|faster}.",
+                type: "text",
+                dropTheme: "null_void"
+            }
+        ]
     }
 };
