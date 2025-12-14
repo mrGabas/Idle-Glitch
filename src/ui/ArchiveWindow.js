@@ -376,10 +376,21 @@ export class ArchiveWindow extends Window {
                 }
 
             } else {
-                // Мы в корне (Root) - клики по папкам
+                // We are in Root (Root + Media)
+
+                // Check MEDIA (Index 0 now, because we draw it first)
+                if (targetIdx === 0) {
+                    this.currentPath = [];
+                    this.selectedFolderKey = 'MEDIA';
+                    return 'consumed';
+                }
+
+                // Check other folders (Index 1+)
                 const keys = Object.keys(LORE_DB);
-                if (targetIdx >= 0 && targetIdx < keys.length) {
-                    const key = keys[targetIdx];
+                const folderIdx = targetIdx - 1;
+
+                if (folderIdx >= 0 && folderIdx < keys.length) {
+                    const key = keys[folderIdx];
                     this.selectFolder(key);
                     return 'consumed';
                 }
