@@ -175,8 +175,40 @@ export class NotepadWindow extends Window {
             ctx.textAlign = 'left';
             const lines = this.getLines(ctx, this.content, w - 20);
             let ly = ty + 20;
+
             lines.forEach(line => {
-                ctx.fillText(line, x + 10 + sx, ly);
+                let currentX = x + 10 + sx;
+                const words = line.split(" ");
+
+                words.forEach((word, index) => {
+                    // Add space after word if it's not the last word in line
+                    // Note: getLines joins by " ", so we need to account for that space in measurement?
+                    // Actually, we should draw the word, then add space width. 
+                    // But wait, if we assume single space separation:
+
+                    let drawText = word;
+                    let drawColor = '#000';
+
+                    // Parse Custom Color Tags: {color|text}
+                    if (word.startsWith('{') && word.includes('|') && word.endsWith('}')) {
+                        const parts = word.slice(1, -1).split('|');
+                        if (parts.length === 2) {
+                            drawColor = parts[0];
+                            drawText = parts[1];
+                        }
+                    }
+
+                    ctx.fillStyle = drawColor;
+                    ctx.fillText(drawText, currentX, ly);
+
+                    // Update cursor position
+                    // We need to add the width of the word + a space
+                    // But we don't want to add a space after the very last word of the line effectively if we want to be perfect, 
+                    // though for simple left align it matters less visually if there is trailing transparent space.
+                    const metric = ctx.measureText(drawText + " ");
+                    currentX += metric.width;
+                });
+
                 ly += 20;
             });
         }
