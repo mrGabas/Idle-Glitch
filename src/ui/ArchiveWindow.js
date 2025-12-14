@@ -2,6 +2,45 @@ import { Window } from './Window.js';
 import { PasswordWindow } from './PasswordWindow.js';
 import { LORE_DB } from '../data/loreData.js';
 import { UTILS } from '../core/config.js';
+import { assetLoader } from '../core/AssetLoader.js';
+
+export class ImageViewerWindow extends Window {
+    constructor(gameW, gameH, src, name) {
+        const w = 600;
+        const h = 500;
+        const x = (gameW - w) / 2;
+        const y = (gameH - h) / 2;
+        super(x, y, w, h, name || "Image Viewer");
+        this.src = src;
+        this.image = assetLoader.getImage(src);
+    }
+
+    drawContent(ctx, x, y, w, h) {
+        // Draw Black BG
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x, y, w, h);
+
+        if (this.image && this.image.complete) {
+            // Fit logic
+            const imgW = this.image.naturalWidth;
+            const imgH = this.image.naturalHeight;
+
+            if (imgW > 0 && imgH > 0) {
+                const scale = Math.min(w / imgW, h / imgH);
+                const drawW = imgW * scale;
+                const drawH = imgH * scale;
+                const dx = x + (w - drawW) / 2;
+                const dy = y + (h - drawH) / 2;
+
+                ctx.drawImage(this.image, dx, dy, drawW, drawH);
+            }
+        } else {
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.fillText("Loading Image...", x + w / 2, y + h / 2);
+        }
+    }
+}
 
 export class ArchiveWindow extends Window {
     constructor(game) {
@@ -34,6 +73,18 @@ export class ArchiveWindow extends Window {
         ctx.fillStyle = '#000';
         ctx.font = '12px Arial';
         ctx.fillText("My Computer", x + 10, sy);
+        sy += 20;
+
+        // "MEDIA" Folder
+        const isMediaSelected = this.selectedFolderKey === 'MEDIA';
+        if (isMediaSelected) {
+            ctx.fillStyle = '#000080';
+            ctx.fillRect(x + 5, sy - 12, sidebarW - 10, 16);
+            ctx.fillStyle = '#fff';
+        } else {
+            ctx.fillStyle = '#000';
+        }
+        ctx.fillText("MEDIA", x + 10, sy);
         sy += 20;
 
         Object.keys(LORE_DB).forEach(key => {
@@ -69,7 +120,9 @@ export class ArchiveWindow extends Window {
         ctx.strokeRect(contentX, contentY - 5, contentW, 20);
         ctx.fillStyle = '#000';
         let pathStr = "C:\\Archive";
-        if (this.currentPath.length > 0) {
+        if (this.selectedFolderKey === 'MEDIA') {
+            pathStr += "\\MEDIA";
+        } else if (this.currentPath.length > 0) {
             pathStr += "\\" + LORE_DB[this.currentPath[0]].name;
         }
         ctx.fillText(pathStr, contentX + 5, contentY + 10);
@@ -79,7 +132,15 @@ export class ArchiveWindow extends Window {
         let gy = contentY + 30;
 
         // If at root, show folders as icons
-        if (this.currentPath.length === 0) {
+        if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA') {
+            // Draw MEDIA folder first
+            this.drawIcon(ctx, gx, gy, "MEDIA", 'folder', false, false); // Never locked
+            gx += 80;
+            if (gx > x + w - 80) {
+                gx = contentX;
+                gy += 80;
+            }
+
             Object.keys(LORE_DB).forEach(key => {
                 const folder = LORE_DB[key];
                 this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, folder.locked && !this.game.loreSystem.isFolderUnlocked(key));
@@ -87,6 +148,34 @@ export class ArchiveWindow extends Window {
                 if (gx > x + w - 80) {
                     gx = contentX;
                     gy += 80;
+                }
+            });
+        } else if (this.selectedFolderKey === 'MEDIA') {
+            // Collect all audio/image files from all folders
+            const allMedia = [];
+            Object.values(LORE_DB).forEach(folder => {
+                if (folder.files) {
+                    folder.files.forEach(f => {
+                        if (f.type === 'audio' || f.type === 'image') {
+                            allMedia.push(f);
+                        }
+                    });
+                }
+            });
+
+            allMedia.forEach(file => {
+                const isCollected = this.game.loreSystem.isFileUnlocked(file.id);
+                // Only show collected media? Or all? Usually archives show gathered stuff.
+                // Let's show collected ones.
+                if (isCollected) {
+                    let icon = file.type === 'image' ? 'image' : 'audio';
+                    this.drawIcon(ctx, gx, gy, file.name, icon, file.id === this.selectedFileId);
+
+                    gx += 80;
+                    if (gx > x + w - 80) {
+                        gx = contentX;
+                        gy += 80;
+                    }
                 }
             });
         } else {
@@ -205,7 +294,24 @@ export class ArchiveWindow extends Window {
         // --- ПРОВЕРКА САЙДБАРА ---
         if (mx > this.x && mx < this.x + sidebarW && my > this.y + 10 && my < this.y + this.h) {
             let sy = this.y + 30; // Start after "My Computer"
-            const diff = my - sy + 10;
+
+            // Check My Computer (Root)
+            if (my >= sy - 15 && my < sy + 5) {
+                this.currentPath = [];
+                this.selectedFolderKey = null;
+                return 'consumed';
+            }
+            sy += 20;
+
+            // Check MEDIA
+            if (my >= sy - 15 && my < sy + 5) {
+                this.currentPath = [];
+                this.selectedFolderKey = 'MEDIA';
+                return 'consumed';
+            }
+            sy += 20;
+
+            const diff = my - sy + 15; // Adjusted offset
             const index = Math.floor(diff / 20);
             const keys = Object.keys(LORE_DB);
             if (index >= 0 && index < keys.length) {
@@ -246,6 +352,26 @@ export class ArchiveWindow extends Window {
                     // Это кнопка ".." (она рисуется сразу после файлов)
                     this.currentPath = []; // Go to root
                     this.selectedFileId = null;
+                    return 'consumed';
+                }
+
+            } else if (this.selectedFolderKey === 'MEDIA') {
+                // Click on media files
+                const allMedia = [];
+                Object.values(LORE_DB).forEach(folder => {
+                    if (folder.files) {
+                        folder.files.forEach(f => {
+                            if (f.type === 'audio' || f.type === 'image') {
+                                allMedia.push(f);
+                            }
+                        });
+                    }
+                });
+                // Filter collected
+                const collected = allMedia.filter(f => this.game.loreSystem.isFileUnlocked(f.id));
+
+                if (targetIdx >= 0 && targetIdx < collected.length) {
+                    this.handleFileClick(collected[targetIdx]);
                     return 'consumed';
                 }
 
@@ -303,6 +429,16 @@ export class ArchiveWindow extends Window {
 
     handleFileClick(file) {
         if (this.game.loreSystem.isFileUnlocked(file.id)) {
+            // Check for Audio/Image types
+            if (file.type === 'audio' || file.type === 'image') {
+                this.game.uiManager.showMedia({
+                    mediaType: file.type,
+                    src: file.src || file.content, // Fallback if src not set but content is path
+                    name: file.name
+                });
+                return;
+            }
+
             // Check if Notepad for this file is already open
             // We use Title matching since NotepadWindow doesn't store file ID explicitly usually, 
             // but we pass title: file.name

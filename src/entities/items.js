@@ -174,3 +174,87 @@ export class ExecutableFile {
         return false;
     }
 }
+
+export class MediaFile extends LoreFile {
+    constructor(game, x, y, id, data) {
+        super(game, x, y, id, data);
+        this.mediaType = data.mediaType || 'audio'; // 'audio' or 'image'
+        this.src = data.src;
+        this.label = data.name || "Media File";
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Icon Config
+        let iconChar = '🎵';
+        let color = '#34ebde'; // Cyan for media
+        if (this.mediaType === 'image') {
+            iconChar = '🖼️';
+            color = '#ff69b4'; // Pink for images
+        }
+
+        // Background
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(40, 0);
+        ctx.lineTo(50, 10);
+        ctx.lineTo(50, 60);
+        ctx.lineTo(0, 60);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+
+        // Fold
+        ctx.beginPath();
+        ctx.moveTo(40, 0);
+        ctx.lineTo(40, 10);
+        ctx.lineTo(50, 10);
+        ctx.stroke();
+
+        // Icon
+        ctx.fillStyle = '#000';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(iconChar, 25, 30);
+
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(this.label, 25, 75);
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+    }
+
+    checkClick(mx, my) {
+        if (!this.active) return false;
+        if (mx >= this.x && mx <= this.x + 50 && my >= this.y && my <= this.y + 60) {
+
+            // Unlock immediately
+            if (this.id) {
+                this.game.loreSystem.unlockFile(this.id);
+            }
+
+            // Trigger Media Show
+            this.game.uiManager.showMedia({
+                mediaType: this.mediaType,
+                src: this.src,
+                name: this.label
+            });
+
+            this.active = false;
+            return true;
+        }
+        return false;
+    }
+}

@@ -5,12 +5,13 @@
 import { ChatSystem } from '../ui/chat.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { MailWindow, NotepadWindow } from '../ui/windows.js';
-import { ArchiveWindow } from '../ui/ArchiveWindow.js';
+import { ArchiveWindow, ImageViewerWindow } from '../ui/ArchiveWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { AchievementsWindow } from '../ui/achievementsWindow.js';
 
 import { MailSystem } from '../systems/MailSystem.js';
 import { WindowManager } from './WindowManager.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 export class UIManager {
     constructor(game) {
@@ -103,6 +104,31 @@ export class UIManager {
     openMinigame(minigame) {
         const win = new MinigameWindow(this.game.w, this.game.h, minigame);
         this.windowManager.add(win);
+    }
+
+    showMedia(data) {
+        if (data.mediaType === 'audio') {
+            // Play Audio
+            // Use AssetLoader to get Audio object
+            // Just assume it acts like play_sound but for specific file
+            const audio = assetLoader.getAudio(data.src);
+            if (audio) {
+                try {
+                    audio.currentTime = 0;
+                    audio.volume = this.game.audio.sfxGain ? this.game.audio.sfxGain.gain.value : 0.5;
+                    audio.play().catch(e => console.warn("Audio play failed", e));
+
+                    // Show Notification
+                    this.game.createFloatingText(this.game.w / 2, this.game.h - 100, "PLAYING: " + data.name, '#0ff');
+                } catch (e) { console.warn(e); }
+            } else {
+                this.game.uiManager.chat.addMessage('SYSTEM', 'AUDIO NOT FOUND: ' + data.src);
+            }
+        } else if (data.mediaType === 'image') {
+            // Open Image Viewer
+            const win = new ImageViewerWindow(this.game.w, this.game.h, data.src, data.name);
+            this.windowManager.add(win);
+        }
     }
 
     // Toggle Mail
