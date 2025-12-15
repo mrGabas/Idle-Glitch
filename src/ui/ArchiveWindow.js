@@ -132,24 +132,26 @@ export class ArchiveWindow extends Window {
         // File/Folder Grid
         let gx = contentX;
         let gy = contentY + 30;
+        const cellW = 80;
+        const cellH = 110; // Increased height for wrapped text
 
         // If at root, show folders as icons
         if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA') {
             // Draw MEDIA folder first
             this.drawIcon(ctx, gx, gy, "MEDIA", 'folder', false, false); // Never locked
-            gx += 80;
-            if (gx > x + w - 80) {
+            gx += cellW;
+            if (gx > x + w - cellW) {
                 gx = contentX;
-                gy += 80;
+                gy += cellH;
             }
 
             visibleKeys.forEach(key => {
                 const folder = LORE_DB[key];
                 this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, folder.locked && !this.game.loreSystem.isFolderUnlocked(key));
-                gx += 80;
-                if (gx > x + w - 80) {
+                gx += cellW;
+                if (gx > x + w - cellW) {
                     gx = contentX;
-                    gy += 80;
+                    gy += cellH;
                 }
             });
         } else if (this.selectedFolderKey === 'MEDIA') {
@@ -175,10 +177,10 @@ export class ArchiveWindow extends Window {
                     let icon = file.type === 'image' ? 'image' : 'audio';
                     this.drawIcon(ctx, gx, gy, file.name, icon, file.id === this.selectedFileId);
 
-                    gx += 80;
-                    if (gx > x + w - 80) {
+                    gx += cellW;
+                    if (gx > x + w - cellW) {
                         gx = contentX;
-                        gy += 80;
+                        gy += cellH;
                     }
                 }
             });
@@ -201,10 +203,10 @@ export class ArchiveWindow extends Window {
                     ctx.globalAlpha = 1.0;
                 }
 
-                gx += 80;
-                if (gx > x + w - 80) {
+                gx += cellW;
+                if (gx > x + w - cellW) {
                     gx = contentX;
-                    gy += 80;
+                    gy += cellH;
                 }
             });
 
@@ -214,10 +216,81 @@ export class ArchiveWindow extends Window {
     }
 
     drawIcon(ctx, x, y, label, type, selected, locked) {
+        // Icon drawing (same size as before)
+        const iconW = 64;
+        const iconH = 64; // Visual icon height approx
+
+        // Calculate text wrapping first to determine selection box size
+        ctx.font = '10px Arial';
+        const maxWidth = 70;
+        const words = label.split(/(?=[_])|(?<=[_])|\s+/); // specific split for file names with underscores if needed, or just space?
+        // Let's stick to spaces and maybe aggressive breaking if too long. 
+        // Simple word wrap by space:
+        const lines = [];
+        let currentLine = words[0] || "";
+
+        const allWords = label.split(/\s+|(?=[_-])/); // split by space or before _-
+
+        // Re-implementing a simpler word wrap logic
+        let line = "";
+        const wList = label.match(/[\w\d\.\-]+|\s+/g) || [label]; // simplified tokenizer
+
+        // Let's just do character check or space check. Many files are "file_name.txt" -> one word.
+        // We need to force break if a word is too long.
+
+        // Better approach for filenames:
+        // Try to break on special chars or just length
+        const maxChars = 11;
+        let pending = label;
+
+        // Helper to measure
+        const fit = (text) => ctx.measureText(text).width <= maxWidth;
+
+        if (fit(label)) {
+            lines.push(label);
+        } else {
+            // Tokenize by special chars to nice break points?
+            // "incident_report_7734" -> "incident_", "report_", "7734"
+            const parts = label.split(/([_\-\s\.])/);
+            let buf = "";
+            parts.forEach(p => {
+                if (fit(buf + p)) {
+                    buf += p;
+                } else {
+                    if (buf) lines.push(buf);
+                    buf = p;
+                }
+            });
+            if (buf) lines.push(buf);
+        }
+
+        // Fallback: if a line is still too huge (e.g. no separators), hard break
+        for (let i = 0; i < lines.length; i++) {
+            if (!fit(lines[i])) {
+                // Hard chop
+                let sub = lines[i];
+                lines.splice(i, 1);
+                while (sub.length > 0) {
+                    // Find how many chars fit
+                    let c = sub.length;
+                    while (c > 0 && !fit(sub.substring(0, c))) c--;
+                    if (c === 0) c = 1; // force at least 1
+                    lines.splice(i, 0, sub.substring(0, c));
+                    sub = sub.substring(c);
+                    i++;
+                }
+                i--; // backtrack to check next
+            }
+        }
+
+
+        // Selection Box
         if (selected) {
             ctx.fillStyle = '#000080'; // Selection Blue
             ctx.globalAlpha = 0.3;
-            ctx.fillRect(x, y, 64, 64);
+            // Height covers icon + text lines
+            const textH = lines.length * 12;
+            ctx.fillRect(x, y, 64, 54 + textH + 4);
             ctx.globalAlpha = 1.0;
         }
 
@@ -265,18 +338,26 @@ export class ArchiveWindow extends Window {
             ctx.fillText("?", x + 28, y + 35);
         }
 
-        // Label
-        ctx.fillStyle = selected ? '#000080' : '#000';
-        if (selected) {
-            ctx.fillRect(x, y + 56, 64, 14);
-            ctx.fillStyle = '#fff';
-        }
+        // Label Rendering
 
-        ctx.font = '10px Arial';
+        // Draw selection highlight for text specifically? 
+        // Classic windows has dark blue bg for text when selected.
+
+        let ty = y + 66;
         ctx.textAlign = 'center';
-        let dLabel = label;
-        if (dLabel.length > 10) dLabel = dLabel.substring(0, 8) + '...';
-        ctx.fillText(dLabel, x + 32, y + 66);
+
+        lines.forEach(line => {
+            if (selected) {
+                const tw = ctx.measureText(line).width;
+                ctx.fillStyle = '#000080';
+                ctx.fillRect((x + 32) - (tw / 2) - 1, ty - 9, tw + 2, 11);
+                ctx.fillStyle = '#fff';
+            } else {
+                ctx.fillStyle = '#000';
+            }
+            ctx.fillText(line, x + 32, ty);
+            ty += 11;
+        });
     }
 
     checkClick(mx, my) {
@@ -330,11 +411,14 @@ export class ArchiveWindow extends Window {
             // Рассчитываем клик по сетке
             const relX = mx - contentX;
             const relY = my - contentY;
-            const col = Math.floor(relX / 80);
-            const row = Math.floor(relY / 80);
+            const cellW = 80;
+            const cellH = 110;
+
+            const col = Math.floor(relX / cellW);
+            const row = Math.floor(relY / cellH);
             // Ширина контента (должна совпадать с той, что в draw)
             const contentW = this.w - sidebarW - 20;
-            const cols = Math.floor(contentW / 80);
+            const cols = Math.floor(contentW / cellW);
 
             const targetIdx = row * cols + col;
 
@@ -343,17 +427,12 @@ export class ArchiveWindow extends Window {
                 const folderKey = this.currentPath[0];
                 const folder = LORE_DB[folderKey];
 
-                // Кнопка "Назад" (..) всегда рисуется последней в drawContent,
-                // но в массиве files её нет. 
-                // Давай упростим: если клик по последней ячейке сетки — это "Назад"?
-                // Нет, лучше проверить индекс.
-
                 if (targetIdx >= 0 && targetIdx < folder.files.length) {
                     const file = folder.files[targetIdx];
                     this.handleFileClick(file);
                     return 'consumed';
                 } else if (targetIdx === folder.files.length) {
-                    // Это кнопка ".." (она рисуется сразу после файлов)
+                    // Это кнопка ".."
                     this.currentPath = []; // Go to root
                     this.selectedFileId = null;
                     return 'consumed';

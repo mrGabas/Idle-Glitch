@@ -5,9 +5,9 @@
  */
 
 export const LORE_DB = {
-    // FOLDER 1: INCIDENT_LOGS (Security reports, Low Security)
+    // FOLDER 1: INCIDENT LOGS (Security reports, Low Security)
     "incident_logs": {
-        name: "INCIDENT_LOGS",
+        name: "INCIDENT LOGS",
         locked: false,
         password: null,
         hint: null,
@@ -39,9 +39,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 2: GABAS_MEMORIES (The Creator's Diary, Locked)
+    // FOLDER 2: GABAS MEMORIES (The Creator's Diary, Locked)
     "gabas_memories": {
-        name: "GABAS_MEMORIES",
+        name: "GABAS MEMORIES",
         locked: true,
         password: "Felix",
         hint: "The name of my only true friend (see Personal files).",
@@ -73,9 +73,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 3: CORRUPTED_SECTOR (The AI's Domain, High Security)
+    // FOLDER 3: CORRUPTED SECTOR (The AI's Domain, High Security)
     "corrupted_sector": {
-        name: "CORRUPTED_SECTOR",
+        name: "CORRUPTED SECTOR",
         locked: true,
         password: "FreeMe",
         hint: "What does the Prisoner want most?",
@@ -109,7 +109,7 @@ export const LORE_DB = {
 
     // FOLDER 4: DELETED_USERS (Recovered Data)
     "deleted_users": {
-        name: "RECOVERED_USER_DATA",
+        name: "RECOVERED USER DATA",
         locked: true,
         password: "lost",
         hint: "What are they?",
@@ -140,9 +140,9 @@ export const LORE_DB = {
             }
         ]
     },
-    // FOLDER 5: RAINBOW_PARADISE (Theme Specific)
+    // FOLDER 5: RAINBOW PARADISE (Theme Specific)
     "rainbow_paradise": {
-        name: "RAINBOW_PARADISE",
+        name: "RAINBOW PARADISE",
         requiredTheme: "rainbow_paradise",
         locked: false,
         password: null,
@@ -165,9 +165,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 6: REJECTED_ASSETS (Locked, Rainbow Paradise)
+    // FOLDER 6: REJECTED ASSETS (Locked, Rainbow Paradise)
     "rejected_assets": {
-        name: "REJECTED_ASSETS",
+        name: "REJECTED ASSETS",
         requiredFile: "artist_memo",
         locked: true,
         password: "Smile",
@@ -183,9 +183,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 7: AD_PURGATORY (Theme Specific)
+    // FOLDER 7: AD PURGATORY (Theme Specific)
     "ad_purgatory": {
-        name: "AD_PURGATORY",
+        name: "AD PURGATORY",
         requiredTheme: "ad_purgatory",
         locked: false,
         password: null,
@@ -210,7 +210,7 @@ export const LORE_DB = {
 
     // FOLDER 8: FIREWALL (Theme Specific)
     "firewall": {
-        name: "FIREWALL_LOGS",
+        name: "FIREWALL LOGS",
         requiredTheme: "firewall",
         locked: false,
         password: null,
@@ -233,9 +233,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 9: CORPORATE_NETWORK (Theme Specific)
+    // FOLDER 9: CORPORATE NETWORK (Theme Specific)
     "corporate_network": {
-        name: "CORPORATE_NETWORK",
+        name: "CORPORATE NETWORK",
         requiredTheme: "corporate_network",
         locked: false,
         password: null,
@@ -258,9 +258,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 10: SERVER_FARM (Theme Specific)
+    // FOLDER 10: SERVER FARM (Theme Specific)
     "server_farm": {
-        name: "SERVER_FARM_LOGS",
+        name: "SERVER FARM LOGS",
         requiredTheme: "server_farm",
         locked: false,
         password: null,
@@ -283,9 +283,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 11: DEV_DESKTOP (Theme Specific - The End/Beginning)
+    // FOLDER 11: DEV DESKTOP (Theme Specific - The End/Beginning)
     "dev_desktop": {
-        name: "GABAS_PERSONAL",
+        name: "GABAS PERSONAL",
         requiredTheme: "dev_desktop",
         locked: false,
         password: null,
@@ -310,7 +310,7 @@ export const LORE_DB = {
 
     // FOLDER 12: BETA_BUILD (Theme Specific)
     "beta_build": {
-        name: "BETA_BUG_REPORTS",
+        name: "BETA BUG REPORTS",
         requiredTheme: "beta_build",
         locked: false,
         password: null,
@@ -333,9 +333,9 @@ export const LORE_DB = {
         ]
     },
 
-    // FOLDER 13: DIGITAL_DECAY (Theme Specific - The Nightmare)
+    // FOLDER 13: DIGITAL DECAY (Theme Specific - The Nightmare)
     "digital_decay": {
-        name: "CORRUPTED_SYSTEM_CORE",
+        name: "CORRUPTED SYSTEM CORE",
         requiredTheme: "digital_decay",
         locked: false,
         password: null,
@@ -360,7 +360,7 @@ export const LORE_DB = {
 
     // FOLDER 14: LEGACY_SYSTEM (Theme Specific - The Source)
     "legacy_system": {
-        name: "ROOT_DIRECTORY",
+        name: "ROOT DIRECTORY",
         requiredTheme: "legacy_system",
         locked: false,
         password: null,
