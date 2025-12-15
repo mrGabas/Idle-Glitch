@@ -4,6 +4,7 @@
  * @module systems/LoreSystem
  */
 import { LORE_DB } from '../data/loreData.js';
+import { THEME_ORDER } from '../data/themes.js';
 import { UTILS } from '../core/config.js';
 
 export class LoreSystem {
@@ -71,6 +72,37 @@ export class LoreSystem {
      */
     isFileUnlocked(id) {
         return this.unlockedFiles.includes(id);
+    }
+
+    /**
+     * Checks if a folder is unlocked.
+     * @param {string} key 
+     * @returns {boolean}
+     */
+    /**
+     * Checks if a folder is visible (discovered).
+     * @param {string} key 
+     * @returns {boolean}
+     */
+    isFolderVisible(key) {
+        const folder = LORE_DB[key];
+        if (!folder) return false;
+
+        // Check Theme Requirement
+        if (folder.requiredTheme) {
+            const currentThemeId = this.game.themeManager.currentTheme.id;
+            const currentIndex = THEME_ORDER.indexOf(currentThemeId);
+            const requiredIndex = THEME_ORDER.indexOf(folder.requiredTheme);
+
+            if (currentIndex < requiredIndex) return false;
+        }
+
+        // Check File Requirement
+        if (folder.requiredFile) {
+            if (!this.isFileUnlocked(folder.requiredFile)) return false;
+        }
+
+        return true;
     }
 
     /**

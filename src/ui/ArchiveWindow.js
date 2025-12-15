@@ -87,7 +87,9 @@ export class ArchiveWindow extends Window {
         ctx.fillText("MEDIA", x + 10, sy);
         sy += 20;
 
-        Object.keys(LORE_DB).forEach(key => {
+        const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
+
+        visibleKeys.forEach(key => {
             const folder = LORE_DB[key];
             const isSelected = key === this.selectedFolderKey;
 
@@ -141,7 +143,7 @@ export class ArchiveWindow extends Window {
                 gy += 80;
             }
 
-            Object.keys(LORE_DB).forEach(key => {
+            visibleKeys.forEach(key => {
                 const folder = LORE_DB[key];
                 this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, folder.locked && !this.game.loreSystem.isFolderUnlocked(key));
                 gx += 80;
@@ -153,7 +155,9 @@ export class ArchiveWindow extends Window {
         } else if (this.selectedFolderKey === 'MEDIA') {
             // Collect all audio/image files from all folders
             const allMedia = [];
-            Object.values(LORE_DB).forEach(folder => {
+            Object.keys(LORE_DB).forEach(key => {
+                if (!this.game.loreSystem.isFolderVisible(key)) return;
+                const folder = LORE_DB[key];
                 if (folder.files) {
                     folder.files.forEach(f => {
                         if (f.type === 'audio' || f.type === 'image') {
@@ -313,9 +317,9 @@ export class ArchiveWindow extends Window {
 
             const diff = my - sy + 15; // Adjusted offset
             const index = Math.floor(diff / 20);
-            const keys = Object.keys(LORE_DB);
-            if (index >= 0 && index < keys.length) {
-                const key = keys[index];
+            const visibleKeys = Object.keys(LORE_DB).filter(k => this.game.loreSystem.isFolderVisible(k));
+            if (index >= 0 && index < visibleKeys.length) {
+                const key = visibleKeys[index];
                 this.selectFolder(key);
                 return 'consumed';
             }
@@ -358,7 +362,9 @@ export class ArchiveWindow extends Window {
             } else if (this.selectedFolderKey === 'MEDIA') {
                 // Click on media files
                 const allMedia = [];
-                Object.values(LORE_DB).forEach(folder => {
+                Object.keys(LORE_DB).forEach(key => {
+                    if (!this.game.loreSystem.isFolderVisible(key)) return;
+                    const folder = LORE_DB[key];
                     if (folder.files) {
                         folder.files.forEach(f => {
                             if (f.type === 'audio' || f.type === 'image') {
@@ -386,11 +392,11 @@ export class ArchiveWindow extends Window {
                 }
 
                 // Check other folders (Index 1+)
-                const keys = Object.keys(LORE_DB);
+                const visibleKeys = Object.keys(LORE_DB).filter(k => this.game.loreSystem.isFolderVisible(k));
                 const folderIdx = targetIdx - 1;
 
-                if (folderIdx >= 0 && folderIdx < keys.length) {
-                    const key = keys[folderIdx];
+                if (folderIdx >= 0 && folderIdx < visibleKeys.length) {
+                    const key = visibleKeys[folderIdx];
                     this.selectFolder(key);
                     return 'consumed';
                 }
