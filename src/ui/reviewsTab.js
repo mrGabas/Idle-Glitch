@@ -6,6 +6,7 @@
 
 import { REVIEWS } from '../data/reviews.js';
 import { UTILS } from '../core/config.js';
+import { assetLoader } from '../core/AssetLoader.js';
 
 export class ReviewsTab {
     constructor(game) {
@@ -191,12 +192,31 @@ export class ReviewsTab {
             if (r.type === 'creepy') ctx.fillStyle = '#220000'; // Slight red tint for horror
             ctx.fillRect(this.x + 15, ry, this.w - 30, 90);
 
-            // Avatar (Use stable color)
-            ctx.fillStyle = r.avatarColor || '#ddd';
-            ctx.fillRect(this.x + 25, ry + 15, 60, 60);
-            ctx.fillStyle = '#fff';
-            ctx.font = "30px Arial";
-            ctx.fillText(r.user.charAt(0), this.x + 55, ry + 45); // Initial
+            // Avatar
+            let drawnAvatar = false;
+            if (r.avatar) {
+                const img = assetLoader.getImage(r.avatar);
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, this.x + 25, ry + 15, 60, 60);
+
+                    // Simple border for image
+                    ctx.strokeStyle = '#6d2af7';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(this.x + 25, ry + 15, 60, 60);
+
+                    drawnAvatar = true;
+                }
+            }
+
+            if (!drawnAvatar) {
+                // Fallback: Colored Box
+                ctx.fillStyle = r.avatarColor || '#ddd';
+                ctx.fillRect(this.x + 25, ry + 15, 60, 60);
+                ctx.fillStyle = '#fff';
+                ctx.font = "30px Arial";
+                ctx.textAlign = 'center'; // Ensure text align is center for initial
+                ctx.fillText(r.user.charAt(0), this.x + 55, ry + 45); // Initial
+            }
 
             // Name
             ctx.textAlign = 'left';

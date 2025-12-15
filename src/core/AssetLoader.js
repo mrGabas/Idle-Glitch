@@ -95,6 +95,11 @@ export class AssetLoader {
      * @returns {HTMLImageElement}
      */
     getImage(src) {
+        if (!this.cache.images[src] && src) {
+            // Lazy load attempt for dynamic assets
+            this.cache.images[src] = new Image();
+            this.cache.images[src].src = src;
+        }
         return this.cache.images[src];
     }
 
