@@ -12,6 +12,7 @@ export class LoreSystem {
         this.game = game;
         this.unlockedFiles = []; // Array of file IDs
         this.unlockedFolders = []; // Array of folder keys
+        this.discoveredFolders = []; // Array of visible folder keys (persisted)
     }
 
     /**
@@ -22,6 +23,7 @@ export class LoreSystem {
         if (data) {
             this.unlockedFiles = data.unlockedFiles || [];
             this.unlockedFolders = data.unlockedFolders || [];
+            this.discoveredFolders = data.discoveredFolders || [];
         }
     }
 
@@ -32,7 +34,8 @@ export class LoreSystem {
     getSaveData() {
         return {
             unlockedFiles: this.unlockedFiles,
-            unlockedFolders: this.unlockedFolders
+            unlockedFolders: this.unlockedFolders,
+            discoveredFolders: this.discoveredFolders
         };
     }
 
@@ -85,6 +88,9 @@ export class LoreSystem {
      * @returns {boolean}
      */
     isFolderVisible(key) {
+        // 1. Check if already discovered
+        if (this.discoveredFolders.includes(key)) return true;
+
         const folder = LORE_DB[key];
         if (!folder) return false;
 
@@ -102,6 +108,9 @@ export class LoreSystem {
             if (!this.isFileUnlocked(folder.requiredFile)) return false;
         }
 
+        // If we got here, it's visible. Latch it!
+        this.discoveredFolders.push(key);
+        this.game.saveGame();
         return true;
     }
 

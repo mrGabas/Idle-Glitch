@@ -56,6 +56,91 @@ export class ArchiveWindow extends Window {
         this.selectedFolderKey = null;
     }
 
+    wrapText(ctx, text, maxWidth) {
+        const words = text.split(' ');
+        let lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = ctx.measureText(currentLine + " " + word).width;
+            if (width < maxWidth) {
+                currentLine += " " + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    }
+
+    getSidebarLayout(ctx, x, y) {
+        ctx.font = '12px Arial';
+        const sidebarW = 150;
+        const layout = [];
+        let curY = y + 10;
+        const paddingLeft = 10; // Consistent alignment
+
+        // Root
+        layout.push({
+            type: 'root',
+            key: null,
+            label: "My Computer",
+            lineHeight: 16,
+            lines: ["My Computer"],
+            x: x,
+            y: curY,
+            w: sidebarW,
+            h: 20
+        });
+        curY += 20;
+
+        // MEDIA
+        layout.push({
+            type: 'folder',
+            key: 'MEDIA',
+            label: "MEDIA",
+            lineHeight: 16,
+            lines: ["MEDIA"],
+            x: x,
+            y: curY,
+            w: sidebarW,
+            h: 20
+        });
+        curY += 20;
+
+        // Folders
+        const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
+
+        visibleKeys.forEach(key => {
+            const folder = LORE_DB[key];
+            let name = folder.name;
+            if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
+                name = "🔒 " + name;
+            }
+
+            const lines = this.wrapText(ctx, name, sidebarW - 20);
+            const itemHeight = Math.max(20, lines.length * 16 + 4);
+
+            layout.push({
+                type: 'folder',
+                key: key,
+                label: name,
+                lines: lines,
+                lineHeight: 16,
+                x: x,
+                y: curY,
+                w: sidebarW,
+                h: itemHeight
+            });
+
+            curY += itemHeight;
+        });
+
+        return layout;
+    }
+
     drawContent(ctx, x, y, w, h) {
         // Background
         ctx.fillStyle = '#fff';
@@ -68,48 +153,35 @@ export class ArchiveWindow extends Window {
         ctx.fillStyle = '#808080';
         ctx.fillRect(x + sidebarW, y, 1, h);
 
-        // Draw Sidebar Items (Root folders)
-        let sy = y + 10;
-        ctx.fillStyle = '#000';
-        ctx.font = '12px Arial';
-        ctx.fillText("My Computer", x + 10, sy);
-        sy += 20;
+        // Sidebar Content
+        // Reset text alignment to ensure left-align
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top'; // Easier for multiline
 
-        // "MEDIA" Folder
-        const isMediaSelected = this.selectedFolderKey === 'MEDIA';
-        if (isMediaSelected) {
-            ctx.fillStyle = '#000080';
-            ctx.fillRect(x + 5, sy - 12, sidebarW - 10, 16);
-            ctx.fillStyle = '#fff';
-        } else {
-            ctx.fillStyle = '#000';
-        }
-        ctx.fillText("MEDIA", x + 10, sy);
-        sy += 20;
+        const layout = this.getSidebarLayout(ctx, x, y);
 
-        const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
+        layout.forEach(item => {
+            const isSelected = item.key !== null && item.key === this.selectedFolderKey;
 
-        visibleKeys.forEach(key => {
-            const folder = LORE_DB[key];
-            const isSelected = key === this.selectedFolderKey;
-
+            // Selection Background
             if (isSelected) {
                 ctx.fillStyle = '#000080';
-                ctx.fillRect(x + 5, sy - 12, sidebarW - 10, 16);
+                ctx.fillRect(item.x + 2, item.y, sidebarW - 4, item.h);
                 ctx.fillStyle = '#fff';
             } else {
                 ctx.fillStyle = '#000';
             }
 
-            // Check if locked
-            let name = folder.name;
-            if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
-                name = "🔒 " + name;
-            }
-
-            ctx.fillText(name, x + 20, sy);
-            sy += 20;
+            // Text
+            let ty = item.y + 2;
+            item.lines.forEach(line => {
+                ctx.fillText(line, item.x + 10, ty);
+                ty += item.lineHeight;
+            });
         });
+
+        // Restore baseline for other draws if needed (though standard is usually alphabetic)
+        ctx.textBaseline = 'alphabetic';
 
         // Main Content Area
         const contentX = x + sidebarW + 10;
@@ -136,6 +208,7 @@ export class ArchiveWindow extends Window {
         const cellH = 110; // Increased height for wrapped text
 
         // If at root, show folders as icons
+        const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
         if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA') {
             // Draw MEDIA folder first
             this.drawIcon(ctx, gx, gy, "MEDIA", 'folder', false, false); // Never locked
@@ -377,32 +450,29 @@ export class ArchiveWindow extends Window {
         const contentY = this.y + 40; // Including address bar
 
         // --- ПРОВЕРКА САЙДБАРА ---
-        if (mx > this.x && mx < this.x + sidebarW && my > this.y + 10 && my < this.y + this.h) {
-            let sy = this.y + 30; // Start after "My Computer"
+        // --- ПРОВЕРКА САЙДБАРА ---
+        const contentStartX = this.x + 4;
+        const contentStartY = this.y + 24;
 
-            // Check My Computer (Root)
-            if (my >= sy - 15 && my < sy + 5) {
-                this.currentPath = [];
-                this.selectedFolderKey = null;
-                return 'consumed';
-            }
-            sy += 20;
+        if (mx > contentStartX && mx < contentStartX + sidebarW && my > contentStartY && my < this.y + this.h) {
+            // Use same layout logic
+            const layout = this.getSidebarLayout(this.game.renderer.ctx, contentStartX, contentStartY);
 
-            // Check MEDIA
-            if (my >= sy - 15 && my < sy + 5) {
-                this.currentPath = [];
-                this.selectedFolderKey = 'MEDIA';
-                return 'consumed';
-            }
-            sy += 20;
-
-            const diff = my - sy + 15; // Adjusted offset
-            const index = Math.floor(diff / 20);
-            const visibleKeys = Object.keys(LORE_DB).filter(k => this.game.loreSystem.isFolderVisible(k));
-            if (index >= 0 && index < visibleKeys.length) {
-                const key = visibleKeys[index];
-                this.selectFolder(key);
-                return 'consumed';
+            for (let item of layout) {
+                if (my >= item.y && my < item.y + item.h) {
+                    if (item.type === 'root') {
+                        this.currentPath = [];
+                        this.selectedFolderKey = null;
+                        return 'consumed';
+                    } else if (item.key === 'MEDIA') {
+                        this.currentPath = [];
+                        this.selectedFolderKey = 'MEDIA';
+                        return 'consumed';
+                    } else if (item.type === 'folder') {
+                        this.selectFolder(item.key);
+                        return 'consumed';
+                    }
+                }
             }
         }
 
