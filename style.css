@@ -129,7 +129,7 @@ input[type=range] {
 .error-box {
     margin: 40px 0;
     font-family: 'Courier New', monospace;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     padding: 20px;
     max-width: 800px;
     word-wrap: break-word;
