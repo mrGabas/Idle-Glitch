@@ -15,6 +15,7 @@ export const REVIEWS = [
     { user: 'RetroFan99', rating: 5, text: "Reminds me of the old internet. Nostalgia!", type: 'normal', avatar: 'assets/Reviews/7.webp' },
     { user: 'NoobMaster69', rating: 4, text: "Works great on my potato PC. 10/10 optimization.", type: 'normal', avatar: 'assets/Reviews/8.webp' },
     { user: 'Genius', rating: 1, text: "Top", type: 'normal', avatar: 'assets/Reviews/9.webp' },
+    { user: 'LongTester', rating: 5, text: "This is a very long review to test the new text wrapping functionality. It should automatically move to the next line when it reaches the edge of the card. If it works, the card height will increase.", type: 'normal', avatar: 'assets/Reviews/10.webp' },
 
     // --- CREEPY / META REVIEWS ---
     {

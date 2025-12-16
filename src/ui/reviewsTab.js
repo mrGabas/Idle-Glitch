@@ -57,12 +57,57 @@ export class ReviewsTab {
     }
 
     updateScrollBounds() {
-        // Calculate total content height
-        // Each review is ~105px tall (90px card + 15px gap)
-        this.contentHeight = this.activeReviews.length * 105;
+        const ctx = this.game.renderer.ctx;
+        const padding = 15;
+        const textX = 100;
+        const maxWidth = this.w - textX - padding; // Width available for text
+
+        this.contentHeight = 0;
+
+        this.activeReviews.forEach(r => {
+            // Determine Font (Must match draw)
+            if (r.type === 'creepy') {
+                ctx.font = "bold 14px Courier New";
+            } else {
+                ctx.font = "italic 14px Arial";
+            }
+
+            // Wrap Text
+            // We use the original text for wrapping. Glitching happens at render time.
+            r._lines = this.getLines(ctx, r.text, maxWidth);
+
+            // Calculate Card Height
+            // Text starts at y + 75
+            // Line height approx 18px
+            const textHeight = r._lines.length * 18;
+            const minHeight = 90; // Min height to cover avatar (60px + padding)
+            r._height = Math.max(minHeight, 75 + textHeight + 15);
+
+            this.contentHeight += r._height + 15; // +15 gap
+        });
+
         // Visible area is Window Height - Header (60px) - Padding (20px)
         const visibleH = this.h - 80;
         this.maxScroll = Math.max(0, this.contentHeight - visibleH);
+    }
+
+    getLines(ctx, text, maxWidth) {
+        const words = text.split(" ");
+        const lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = ctx.measureText(currentLine + " " + word).width;
+            if (width < maxWidth) {
+                currentLine += " " + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
     }
 
     handleScroll(delta) {
@@ -181,16 +226,18 @@ export class ReviewsTab {
         let ry = this.y + 80 - this.scrollTop;
 
         this.activeReviews.forEach((r, i) => {
+            const h = r._height || 90;
+
             // Optimization: Don't draw if out of view
-            if (ry > this.y + this.h || ry + 90 < this.y + 60) {
-                ry += 105;
+            if (ry > this.y + this.h || ry + h < this.y + 60) {
+                ry += h + 15;
                 return;
             }
 
             // Card BG
             ctx.fillStyle = '#2a2a2a';
             if (r.type === 'creepy') ctx.fillStyle = '#220000'; // Slight red tint for horror
-            ctx.fillRect(this.x + 15, ry, this.w - 30, 90);
+            ctx.fillRect(this.x + 15, ry, this.w - 30, h);
 
             // Avatar
             let drawnAvatar = false;
@@ -230,22 +277,29 @@ export class ReviewsTab {
             ctx.font = "16px Arial";
             ctx.fillText(stars, this.x + 100, ry + 50);
 
-            // Text with Glitch Logic
-            let displayText = r.text;
-            if (r.type === 'creepy' || Math.random() < 0.005) { // Random chance for glitch
-                const intensity = (this.game.state.corruption / 200) + (r.type === 'creepy' ? 0.2 : 0);
-                displayText = this.glitchText(r.text, intensity);
-            }
-
+            // Text
             ctx.fillStyle = '#ccc';
             ctx.font = "italic 14px Arial";
             if (r.type === 'creepy') {
                 ctx.fillStyle = '#f00';
                 ctx.font = "bold 14px Courier New";
             }
-            ctx.fillText(displayText, this.x + 100, ry + 75);
 
-            ry += 105;
+            // Render Wrapped Lines
+            let ly = ry + 75;
+            const lines = r._lines || [r.text];
+
+            lines.forEach(line => {
+                let displayText = line;
+                if (r.type === 'creepy' || Math.random() < 0.005) { // Random chance for glitch
+                    const intensity = (this.game.state.corruption / 200) + (r.type === 'creepy' ? 0.2 : 0);
+                    displayText = this.glitchText(line, intensity);
+                }
+                ctx.fillText(displayText, this.x + 100, ly);
+                ly += 18;
+            });
+
+            ry += h + 15;
         });
 
         // Scrollbar (if needed)
