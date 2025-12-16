@@ -113,6 +113,23 @@ export class WindowManager {
         return false;
     }
 
+    /**
+     * Handles Mouse Wheel. Iterates Top-Down.
+     * @param {number} deltaY
+     * @returns {boolean} True if input was consumed
+     */
+    handleWheel(deltaY) {
+        // Iterate backwards (Top windows first)
+        for (let i = this.windows.length - 1; i >= 0; i--) {
+            const win = this.windows[i];
+            if (win.active && win.onScroll) {
+                win.onScroll(deltaY);
+                return true;
+            }
+        }
+        return false;
+    }
+
     startDrag(win, mx, my) {
         this.draggedWindow = win;
         this.dragOffsetX = mx - win.x;

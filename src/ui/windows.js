@@ -479,6 +479,20 @@ export class NotepadWindow extends Window {
         }
 
         this.shake = 0;
+        this.scrollY = 0;
+        this.maxScroll = 0;
+        this.contentHeight = 0; // Calculated on draw/update
+    }
+
+    onScroll(deltaY) {
+        if (this.locked) return;
+
+        const scrollSpeed = 30;
+        this.scrollY += Math.sign(deltaY) * scrollSpeed;
+
+        // Clamp
+        if (this.scrollY < 0) this.scrollY = 0;
+        if (this.scrollY > this.maxScroll) this.scrollY = this.maxScroll;
     }
 
     tokenize(text) {
@@ -506,17 +520,13 @@ export class NotepadWindow extends Window {
                 }
             }
 
-            // Split into sub-tokens by whitespace (keeping delimiters)
-            // This handles wrapping even inside colored text
-            const subParts = partText.split(/(\s+)/);
-
-            subParts.forEach(sub => {
-                if (sub.length > 0) {
-                    tokens.push({
-                        text: sub,
-                        color: partColor
-                    });
-                }
+            // Split into characters or words? 
+            // For complex wrapping (breaking long words), we can tokenize by words first, but we handle splitting in getLines.
+            // Let's keep word-based tokens but split large words if needed in getLines.
+            // Actually, let's just keep tokens as chunks of colored text.
+            tokens.push({
+                text: partText,
+                color: partColor
             });
         });
 
@@ -528,34 +538,42 @@ export class NotepadWindow extends Window {
         let currentLine = [];
         let currentLineWidth = 0;
 
+        // Process each colored token
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
+            const color = token.color;
 
-            // Handle explicit newlines
-            if (token.text.includes('\n')) {
-                lines.push(currentLine);
-                currentLine = [];
-                currentLineWidth = 0;
-                continue;
-            }
+            // We need to process text character by character or word by word to wrap correctly
+            // Let's split by spaces to respect word boundaries, but also split by chars if a word is too long.
 
-            const tokenWidth = ctx.measureText(token.text).width;
+            // "Hello world" -> ["Hello", " ", "world"]
+            const words = token.text.split(/(\s+)/);
 
-            // Check Wrap
-            if (currentLineWidth + tokenWidth > maxWidth && currentLineWidth > 0) {
-                lines.push(currentLine);
+            for (let j = 0; j < words.length; j++) {
+                const word = words[j];
+                if (word.length === 0) continue;
 
-                // Start new line with this token
-                if (!/^\s+$/.test(token.text)) {
-                    currentLine = [token];
-                    currentLineWidth = tokenWidth;
-                } else {
-                    currentLine = [];
-                    currentLineWidth = 0;
+                if (word.includes('\n')) {
+                    // Handle newlines explicitly if they are preserved in tokens (regex above didn't handle \n well if inside words)
+                    // But assume \n comes in as separate whitespace token or inside text.
+                    // Let's handle explicit newline characters if present.
+                    const subParts = word.split('\n');
+                    subParts.forEach((sub, idx) => {
+                        if (idx > 0) {
+                            // Force new line
+                            lines.push(currentLine);
+                            currentLine = [];
+                            currentLineWidth = 0;
+                        }
+                        if (sub.length > 0) {
+                            // Process sub-word
+                            this.addTextToLine(ctx, sub, color, lines, currentLine, currentLineWidth, maxWidth, (l, w) => { currentLine = l; currentLineWidth = w; });
+                        }
+                    });
+                    continue;
                 }
-            } else {
-                currentLine.push(token);
-                currentLineWidth += tokenWidth;
+
+                this.addTextToLine(ctx, word, color, lines, currentLine, currentLineWidth, maxWidth, (l, w) => { currentLine = l; currentLineWidth = w; });
             }
         }
 
@@ -564,6 +582,72 @@ export class NotepadWindow extends Window {
         }
 
         return lines;
+    }
+
+    addTextToLine(ctx, text, color, lines, currentLine, currentLineWidth, maxWidth, updateState) {
+        const w = ctx.measureText(text).width;
+
+        // If fits, add it
+        if (currentLineWidth + w <= maxWidth) {
+            currentLine.push({ text: text, color: color });
+            updateState(currentLine, currentLineWidth + w);
+            return;
+        }
+
+        // If whitespace and doesn't fit, just skip/newline?
+        if (/^\s+$/.test(text)) {
+            // Newline
+            lines.push(currentLine);
+            updateState([], 0);
+            return;
+        }
+
+        // If word fits on a NEW line, push current line and start new
+        if (w <= maxWidth) {
+            lines.push(currentLine);
+            const newLine = [{ text: text, color: color }];
+            updateState(newLine, w);
+            return;
+        }
+
+        // If word is bigger than maxWidth, we MUST split it
+        let remaining = text;
+
+        // If current line is not empty, push it first
+        if (currentLineWidth > 0) {
+            lines.push(currentLine);
+            currentLine = [];
+            currentLineWidth = 0;
+            updateState(currentLine, currentLineWidth);
+        }
+
+        while (remaining.length > 0) {
+            // Find how many chars fit
+            let c = 1;
+            while (c <= remaining.length && ctx.measureText(remaining.substring(0, c)).width <= maxWidth) {
+                c++;
+            }
+            c--; // Backtrack one
+
+            if (c === 0) c = 1; // Force at least 1 char even if invalid
+
+            const chunk = remaining.substring(0, c);
+
+            // Push this chunk as a line (since we know it fills the width mostly)
+            // Unless it's the very last chunk which might be short.
+
+            if (c < remaining.length) {
+                // It was a full line chunk
+                lines.push([{ text: chunk, color: color }]);
+                remaining = remaining.substring(c);
+            } else {
+                // Last chunk
+                currentLine.push({ text: chunk, color: color });
+                currentLineWidth = ctx.measureText(chunk).width;
+                updateState(currentLine, currentLineWidth);
+                remaining = "";
+            }
+        }
     }
 
     drawContent(ctx, x, y, w, h) {
@@ -615,24 +699,69 @@ export class NotepadWindow extends Window {
             // Rich Text Content
             ctx.textAlign = 'left';
 
+            // Clip
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, ty, w, th);
+            ctx.clip();
+
             // 1. Tokenize
             const tokens = this.tokenize(this.content);
             // 2. Wrap
             const lines = this.getLines(ctx, tokens, w - 20);
 
-            let ly = ty + 20;
+            const lineHeight = 20;
+            this.contentHeight = lines.length * lineHeight;
+
+            // Max scroll is difference between content height and view height
+            // View height is th - padding?
+            const viewH = th - 10;
+            this.maxScroll = Math.max(0, this.contentHeight - viewH);
+
+            // Clamp ScrollY again
+            if (this.scrollY < 0) this.scrollY = 0;
+            if (this.scrollY > this.maxScroll) this.scrollY = this.maxScroll;
+
+            let ly = ty + 10 - this.scrollY;
 
             lines.forEach(line => {
+                // Optimization: Don't draw if out of view
+                if (ly + lineHeight < ty || ly > ty + th) {
+                    ly += lineHeight;
+                    return;
+                }
+
                 let currentX = x + 10 + sx;
 
                 line.forEach(token => {
                     ctx.fillStyle = token.color;
-                    ctx.fillText(token.text, currentX, ly);
+                    ctx.fillText(token.text, currentX, ly + 14); // +14 for baseline adjustment approx
                     currentX += ctx.measureText(token.text).width;
                 });
 
-                ly += 20;
+                ly += lineHeight;
             });
+
+            ctx.restore();
+
+            // Draw Scrollbar if needed
+            if (this.maxScroll > 0) {
+                const scrollBarH = th;
+                const scrollBarX = x + w - 10;
+
+                // Track
+                ctx.fillStyle = '#ddd';
+                ctx.fillRect(scrollBarX, ty, 10, scrollBarH);
+
+                // Thumb
+                const ratio = Math.min(1, viewH / this.contentHeight);
+                const thumbH = Math.max(20, scrollBarH * ratio);
+                const scrollRatio = this.scrollY / this.maxScroll;
+                const thumbY = ty + (scrollBarH - thumbH) * scrollRatio;
+
+                ctx.fillStyle = '#888';
+                ctx.fillRect(scrollBarX + 1, thumbY, 8, thumbH);
+            }
         }
     }
 

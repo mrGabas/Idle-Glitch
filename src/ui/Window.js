@@ -61,6 +61,14 @@ export class Window {
     }
 
     /**
+     * Called when mouse wheel event is propagated.
+     * @param {number} deltaY 
+     */
+    onScroll(deltaY) {
+        // Override me
+    }
+
+    /**
      * Draws the window.
      * @param {CanvasRenderingContext2D} ctx 
      */

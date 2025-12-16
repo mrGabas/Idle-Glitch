@@ -33,6 +33,14 @@ export class UIManager {
         this.archiveWindow = new ArchiveWindow(game);
 
         this.achievementsWindow = new AchievementsWindow(game);
+
+        // Bind Inputs
+        this.game.input.on('wheel', (e) => this.handleWheel(e));
+    }
+
+    handleWheel(e) {
+        // Propagate to WindowManager
+        this.windowManager.handleWheel(e.deltaY);
     }
 
     resize(w, h) {
