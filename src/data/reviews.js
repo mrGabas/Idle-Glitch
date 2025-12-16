@@ -10,6 +10,11 @@ export const REVIEWS = [
     { user: 'Mom', rating: 5, text: "Why is your computer fan so loud, honey?", type: 'normal', avatar: 'assets/Reviews/2.webp' },
     { user: 'CoolGamer123', rating: 5, text: "Best idle game ever! Love the colors.", type: 'normal', avatar: 'assets/Reviews/3.webp' },
     { user: 'ClickMaster', rating: 4, text: "Add more upgrades pls.", type: 'normal', avatar: 'assets/Reviews/4.webp' },
+    { user: 'HappyClicker', rating: 5, text: "So satisfying to watch numbers go up! 📈", type: 'normal', avatar: 'assets/Reviews/5.webp' },
+    { user: 'CoffeeLover', rating: 5, text: "Perfect game to play during work meetings. Don't tell my boss.", type: 'normal', avatar: 'assets/Reviews/6.webp' },
+    { user: 'RetroFan99', rating: 5, text: "Reminds me of the old internet. Nostalgia!", type: 'normal', avatar: 'assets/Reviews/7.webp' },
+    { user: 'NoobMaster69', rating: 4, text: "Works great on my potato PC. 10/10 optimization.", type: 'normal', avatar: 'assets/Reviews/8.webp' },
+    { user: 'Genius', rating: 1, text: "Top", type: 'normal', avatar: 'assets/Reviews/9.webp' },
 
     // --- CREEPY / META REVIEWS ---
     {
@@ -51,5 +56,13 @@ export const REVIEWS = [
         type: 'creepy',
         triggerCorruption: 90,
         avatar: 'assets/Reviews/15.webp'
+    },
+    {
+        user: 'Camera_Feed',
+        rating: 0,
+        text: "Nice room. You should probably lock your door though.",
+        type: 'creepy',
+        triggerCorruption: 65,
+        avatar: 'assets/Reviews/16.webp'
     }
 ];
