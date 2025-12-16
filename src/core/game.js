@@ -92,7 +92,6 @@ export class Game {
         this.uiManager = new UIManager(this);
 
         // Load Theme
-        // Load Theme
         const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
         this.themeManager.setTheme(savedTheme);
 
@@ -119,7 +118,7 @@ export class Game {
         this.scareText = "";
         this.selectedBIOSIndex = 0;
 
-        this.scareText = "";
+
 
         this.lastTime = 0;
         // Last Save Time for Offline Progress
@@ -182,7 +181,6 @@ export class Game {
 
 
 
-
     /**
      * Binds DOM event listeners to UI elements.
      */
@@ -199,15 +197,6 @@ export class Game {
 
         const pauseSettingsBtn = document.getElementById('btn-pause-settings');
         if (pauseSettingsBtn) pauseSettingsBtn.onclick = () => this.openSettings('pause-menu');
-
-        // New Feedback Button (We need to add this to HTML or check existing IDs)
-        // For now, I'll assume we might want to attach it to an existing or new element
-        // But since I can't edit HTML right now in this step easily without separate tool...
-        // I will rely on creating it in JS or assuming user adds it
-
-        // Actually, let's create a dynamic button for it in Renderer or index.html
-        // For now, let's just make a floating button in JS if it doesn't exist
-
 
         const backBtn = document.getElementById('btn-back');
         if (backBtn) backBtn.onclick = () => this.closeSettings();
@@ -342,8 +331,6 @@ export class Game {
     handleTabReturn(seconds) {
         if (this.gameState !== 'PLAYING') return;
 
-        // Penalty: Lose resources instead of gaining
-        // 1.5x penalty simply for being rude
         // Penalty: Lose resources instead of gaining
         // 1.5x penalty simply for being rude
         const penalty = this.state.autoRate * seconds * 1.5;
@@ -488,7 +475,6 @@ export class Game {
         this.uiManager.chat.addMessage('SYSTEM', 'BIOS LOADED. WELCOME USER.');
 
         // Apply passive metas
-        // Apply passive metas
         this.economySystem.applyMetaUpgrades();
     }
 
@@ -536,7 +522,6 @@ export class Game {
     }
 
     handleBIOSAction(index) {
-        // Upgrades
         // Upgrades
         if (index < META_UPGRADES.length) {
             this.economySystem.buyMetaUpgrade(META_UPGRADES[index]);

@@ -153,8 +153,6 @@ export class GlitchSystem {
             this.fakeCursor.update(dt);
         }
 
-
-
         // Captchas
         // const enemies = this.game.entities.getAll('enemies'); // Reuse from above
         if (state.corruption > 15 && Math.random() < 0.0005) {
@@ -189,7 +187,6 @@ export class GlitchSystem {
                 this.game.entities.add('items', new ExecutableFile(this.game, this.game.w, this.game.h, 'Snake'));
             }
         }
-
 
 
         // --- MINIGAME LOGIC ---
