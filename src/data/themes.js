@@ -273,7 +273,7 @@ export const THEMES = {
         startText: 'BYPASSING SECURITY...',
         parallax: {
             layers: [
-                { src: 'assets/Levels/Firewall/parallax/layer 1.webp', speed: 0 },
+                { src: 'assets/Levels/Firewall/parallax/layer 1.webp', speed: 10 },
                 { src: 'assets/Levels/Firewall/parallax/layer 2.webp', speed: 20 }
             ]
         },
@@ -423,7 +423,7 @@ export const THEMES = {
         startText: 'BOOTING RACK...',
         parallax: {
             layers: [
-                { src: 'assets/Levels/Server Farm/parallax/layer 1.webp', speed: 0 },
+                { src: 'assets/Levels/Server Farm/parallax/background.webm', speed: 0 },
                 { src: 'assets/Levels/Server Farm/parallax/layer 2.webp', speed: 15 }
             ]
         },
