@@ -295,6 +295,16 @@ export class Game {
         // Scroll / Wheel
         this.input.on('wheel', (e) => {
             if (this.gameState === 'PLAYING') {
+                // Check Chat
+                const rect = this.renderer.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                if (this.uiManager.chat && this.uiManager.chat.isMouseOver(mouseX, mouseY, this.h)) {
+                    this.uiManager.chat.handleWheel(e.deltaY);
+                    return;
+                }
+
                 if (this.uiManager.reviewsTab.visible) {
                     this.uiManager.reviewsTab.handleScroll(e.deltaY);
                 } else if (this.uiManager.achievementsWindow && this.uiManager.achievementsWindow.visible) {

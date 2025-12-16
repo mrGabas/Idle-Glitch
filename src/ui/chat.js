@@ -67,6 +67,9 @@ export class ChatSystem {
         this.cursorBlink = 0;
         this.ambientTimer = 10; // First message after 10s
 
+        this.scrollOffset = 0;
+        this.maxScroll = 0;
+
         // Welcome message
         this.addMessage('SYSTEM', 'Connecting to secure server...');
         this.addMessage('SYSTEM', 'Type /help for available commands.');
@@ -96,8 +99,8 @@ export class ChatSystem {
 
         this.cursorBlink += dt;
 
-        // Remove old messages
-        if (this.messages.length > 8) {
+        // Remove old messages (Limit 100)
+        if (this.messages.length > 100) {
             this.messages.shift();
         }
     }
@@ -121,6 +124,53 @@ export class ChatSystem {
             life: 15.0, // Long life
             timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" })
         });
+        // Auto-scroll to bottom on new message if near bottom
+        if (this.scrollOffset < 50) {
+            this.scrollOffset = 0;
+        }
+    }
+
+    handleWheel(deltaY) {
+        const scrollSpeed = 20;
+        if (deltaY < 0) {
+            // Scroll Up (History)
+            this.scrollOffset += scrollSpeed;
+        } else {
+            // Scroll Down (Newest)
+            this.scrollOffset -= scrollSpeed;
+        }
+
+        // Clamp
+        if (this.scrollOffset < 0) this.scrollOffset = 0;
+        if (this.scrollOffset > this.maxScroll) this.scrollOffset = this.maxScroll;
+    }
+
+    isMouseOver(mx, my, h) {
+        const boxH = 260;
+        const boxW = 580;
+        const x = 10;
+        const y = h - boxH - 10;
+
+        return mx >= x && mx <= x + boxW && my >= y && my <= y + boxH;
+    }
+
+    wrapText(ctx, text, maxWidth) {
+        const words = text.split(' ');
+        let lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = ctx.measureText(currentLine + " " + word).width;
+            if (width < maxWidth) {
+                currentLine += " " + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
     }
 
     draw(ctx, h) {
@@ -149,31 +199,92 @@ export class ChatSystem {
         ctx.textAlign = 'left';
         ctx.fillText("> DEBUG_CONSOLE_V.0.9 [USER: GUEST]", x + 5, y + 14);
 
-        // 2. Messages
+        // 2. Messages Area
+        const msgAreaTop = y + 20; // Below header
+        const inputHeight = 30;
+        const msgAreaHeight = boxH - 20 - inputHeight;
+        const msgAreaBottom = y + boxH - inputHeight;
+
         ctx.beginPath();
-        ctx.rect(x, y + 20, boxW, boxH - 50); // Leave room for input
+        ctx.rect(x, msgAreaTop, boxW, msgAreaHeight);
         ctx.clip();
 
         ctx.font = "20px 'VT323', monospace";
 
-        // Last 6 messages
-        const visibleMsgs = this.messages.slice(-6);
+        // Render Messages Bottom-Up
+        // Apply Scroll Offset
+        let cursorY = msgAreaBottom - 10 + this.scrollOffset;
+        const lineHeight = 20;
+        const maxTextWidth = boxW - 20;
 
-        visibleMsgs.forEach((msg, i) => {
-            const msgY = y + 40 + (i * 20);
+        let totalHeight = 0;
 
-            // Color by author
-            let color = '#ccc';
-            if (msg.author === 'Admin_Alex') color = '#55ff55';
-            if (msg.author === 'SYSTEM') color = '#ffff55';
-            if (msg.author === 'UNKNOWN' || msg.author === '???') color = '#ff3333';
-            if (msg.author === 'YOU') color = '#00ffff';
+        // Draw Loop
+        // We need to iterate ALL messages to calculate total height for scroll clamping,
+        // but we only DRAW visible ones. To be efficient, we can do one pass backwards.
 
-            ctx.fillStyle = color;
+        // Actually, for accurate scroll clamping, we need to know the Total Height of ALL messages.
+        // We can do this by wrapping text for all messages every frame (expensive?)
+        // OR we can just clamp loosely / calculate only when adding messages.
+        // Let's do a simplified approach: Render what we can, and if we run out of messages before hitting top + maxScroll logic.
 
-            const line = `[${msg.timestamp}] [${msg.author}]: ${msg.text}`;
-            ctx.fillText(line, x + 8, msgY);
-        });
+        // BETTER: Iterate ALL messages backwards. 
+        // Track 'virtualY'. If virtualY is within view, draw.
+        // Calculate minVirtualY (top most line relative to un-scrolled bottom).
+
+        // Let's stick to the current cursorY logic but track how high we go.
+
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+            const msg = this.messages[i];
+
+            // Calc lines
+            const fullText = `[${msg.timestamp}] [${msg.author}]: ${msg.text}`;
+            // Optimization: if we are WAY off screen, maybe don't measureText? 
+            // Wrapper is needed to know height. 
+            // 100 messages is fast enough to just wrap.
+            const lines = this.wrapText(ctx, fullText, maxTextWidth);
+
+            totalHeight += lines.length * lineHeight;
+
+            // Draw if visible
+            // The bottom of this message block is at cursorY.
+            // The top is at cursorY - (lines.length * lineHeight).
+            // Visible Range: [msgAreaTop, msgAreaBottom]
+
+            // Checking visibility
+            const msgBottom = cursorY;
+            const msgTop = cursorY - (lines.length * lineHeight);
+
+            if (msgBottom > msgAreaTop && msgTop < msgAreaBottom) {
+                // Color by author
+                let color = '#ccc';
+                if (msg.author === 'Admin_Alex') color = '#55ff55';
+                if (msg.author === 'SYSTEM') color = '#ffff55';
+                if (msg.author === 'UNKNOWN' || msg.author === '???') color = '#ff3333';
+                if (msg.author === 'YOU') color = '#00ffff';
+
+                ctx.fillStyle = color;
+
+                let lineCursor = cursorY;
+                for (let j = lines.length - 1; j >= 0; j--) {
+                    // One last check for specific line visibility to avoid drawing text outside clip (opt)
+                    if (lineCursor > msgAreaTop && lineCursor - lineHeight < msgAreaBottom) {
+                        ctx.fillText(lines[j], x + 10, lineCursor);
+                    }
+                    lineCursor -= lineHeight;
+                }
+            }
+
+            cursorY -= lines.length * lineHeight;
+        }
+
+        // Update Max Scroll
+        // contentHeight = totalHeight
+        // viewHeight = msgAreaHeight
+        // maxScroll = Math.max(0, contentHeight - viewHeight)
+        // Wait, cursorY logic started at bottom.
+        // If contentHeight > viewHeight, we can scroll up.
+        this.maxScroll = Math.max(0, totalHeight - msgAreaHeight + 20); // +20 buffer
 
         ctx.restore(); // Restore clip
 
@@ -184,7 +295,13 @@ export class ChatSystem {
         ctx.textAlign = 'left';
 
         const cursor = (Math.floor(this.cursorBlink * 2) % 2 === 0 && this.isFocused) ? "_" : "";
-        ctx.fillText(`> ${this.inputBuffer}${cursor}`, x + 10, inputY);
+
+        let displayInput = `> ${this.inputBuffer}${cursor}`;
+        if (ctx.measureText(displayInput).width > boxW - 20) {
+            displayInput = "> ..." + this.inputBuffer.slice(-40) + cursor;
+        }
+
+        ctx.fillText(displayInput, x + 10, inputY);
 
         if (!this.isFocused) {
             ctx.fillStyle = '#666';
@@ -194,12 +311,7 @@ export class ChatSystem {
     }
 
     checkClick(mx, my, h) {
-        const boxH = 260;
-        const boxW = 580;
-        const x = 10;
-        const y = h - boxH - 10;
-
-        if (mx >= x && mx <= x + boxW && my >= y && my <= y + boxH) {
+        if (this.isMouseOver(mx, my, h)) {
             this.isFocused = true;
             return true;
         } else {
@@ -233,7 +345,12 @@ export class ChatSystem {
         const args = cmd.split(' ');
         const command = args[0].toLowerCase();
 
-        // ... existing code ...
+        // Easter eggs / Cheats
+        if (command === '/dev_me_money') {
+            this.game.state.score += 1000000;
+            this.addMessage('SYSTEM', 'Dev cheat activated.');
+            return;
+        }
 
         switch (command) {
             case '/help':
