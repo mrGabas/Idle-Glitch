@@ -54,6 +54,7 @@ export class TerminalHack {
                 const inputChar = key.toUpperCase();
 
                 if (inputChar === expectedChar) {
+                    this.timer += 1.0;
                     this.currentIndex++;
                     if (this.currentIndex >= targetStr.length) {
                         this.won = true;
