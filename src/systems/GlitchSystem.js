@@ -153,12 +153,7 @@ export class GlitchSystem {
             this.fakeCursor.update(dt);
         }
 
-        // Fake Browser Error
-        if (state.corruption > 60 && !state.crashed && !state.rebooting && !state.falseCrash) {
-            if (Math.random() < 0.0001) {
-                this.triggerBrowserError();
-            }
-        }
+
 
         // Captchas
         // const enemies = this.game.entities.getAll('enemies'); // Reuse from above
@@ -329,29 +324,7 @@ export class GlitchSystem {
         document.body.style.cursor = 'wait';
     }
 
-    triggerBrowserError() {
-        // We need to access DOM elements. Game.js had logic for this.
-        // Game.js accessed document directly.
-        // ideally we move this to UIManager or keep direct access if "System" related.
-        const el = document.getElementById('browser-error-overlay');
-        if (el) el.style.display = 'flex';
-        this.game.gameState = 'PAUSED';
-        this.game.events.emit('play_sound', 'error');
-    }
 
-    handleBrowserWait() {
-        const el = document.getElementById('browser-error-overlay');
-        if (el) el.style.display = 'none';
-        this.game.gameState = 'PLAYING';
-        const reward = this.game.state.autoRate * 60;
-        this.game.addScore(reward);
-        this.game.uiManager.chat.addMessage('SYSTEM', `Recalibrating... compensation awarded: ${UTILS.fmt(reward)}`);
-        this.game.events.emit('play_sound', 'startup');
-    }
-
-    handleBrowserKill() {
-        location.reload();
-    }
 
     // Resize handler for fake cursor
     resize(w, h) {

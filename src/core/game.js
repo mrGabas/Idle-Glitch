@@ -212,12 +212,7 @@ export class Game {
         const backBtn = document.getElementById('btn-back');
         if (backBtn) backBtn.onclick = () => this.closeSettings();
 
-        // Fake Browser Error Buttons
-        const waitBtn = document.getElementById('btn-error-wait');
-        if (waitBtn) waitBtn.onclick = () => this.glitchSystem.handleBrowserWait();
 
-        const killBtn = document.getElementById('btn-error-kill');
-        if (killBtn) killBtn.onclick = () => this.glitchSystem.handleBrowserKill();
 
         // Volume Sliders
         const sfx = document.getElementById('vol-sfx');
@@ -909,12 +904,7 @@ export class Game {
 
     }
 
-    /**
-     * Manually triggers a browser error simulation.
-     */
-    triggerBrowserError() {
-        this.glitchSystem.triggerBrowserError();
-    }
+
 
     /**
      * Renders the game frame.
