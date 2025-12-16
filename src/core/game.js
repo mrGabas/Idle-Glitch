@@ -620,6 +620,11 @@ export class Game {
         this.mouse.y = e.clientY - rect.top;
         this.mouse.down = true;
 
+        // Mouse Inversion Fix
+        if (this.state.corruption > 85) {
+            this.mouse.x = this.w - this.mouse.x;
+        }
+
         const mx = this.mouse.x;
         const my = this.mouse.y;
 
