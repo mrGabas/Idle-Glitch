@@ -20,6 +20,12 @@ export class SoundEngine {
 
         // Event Subscription
         events.on('play_sound', (type) => this.play(type));
+
+        // Throttling
+        this.lastPlayed = {};
+        this.COOLDOWNS = {
+            'click': 0.05 // 50ms limit for clicks (prevents shard explosion volume)
+        };
     }
 
     init() {
@@ -69,6 +75,17 @@ export class SoundEngine {
         // Guard: Context must be ready (initialized in resume())
         if (!this.ctx) return;
         if (!this.enabled) return;
+
+        const now = this.ctx.currentTime;
+
+        // Throttling Check
+        if (this.COOLDOWNS[type]) {
+            const last = this.lastPlayed[type] || 0;
+            if (now - last < this.COOLDOWNS[type]) {
+                return; // Skip sound
+            }
+            this.lastPlayed[type] = now;
+        }
 
         // Check for file-based sound
         if (ASSET_SOUNDS[type]) {
