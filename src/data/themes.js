@@ -62,7 +62,8 @@ export const THEMES = {
         button: {
             text: 'CLICK ME!',
             emoji: '🌈',
-            gradient: ['#ff69b4', '#87ceeb', '#98fb98']
+            gradient: ['#ff69b4', '#87ceeb', '#98fb98'],
+            image: 'assets/Levels/Rainbow Paradise/main button.webp'
         },
 
         // Upgrades for this theme
@@ -159,7 +160,8 @@ export const THEMES = {
         button: {
             text: 'DOWNLOAD',
             emoji: '⬇️',
-            gradient: ['#ff0000', '#ffff00', '#00ff00']
+            gradient: ['#ff0000', '#ffff00', '#00ff00'],
+            image: 'assets/Levels/Ad Purgatory/main button.webp'
         },
 
         upgrades: [
@@ -247,7 +249,8 @@ export const THEMES = {
         button: {
             text: 'BREACH',
             emoji: '🛡️',
-            gradient: ['#660000', '#ff0000']
+            gradient: ['#660000', '#ff0000'],
+            image: 'assets/Levels/Firewall/main button.webp'
         },
         upgrades: [
             { id: 'f1', name: 'Port Scanner', baseCost: 15, type: 'auto', val: 1, desc: '+1 ♦/sec' },
@@ -322,7 +325,8 @@ export const THEMES = {
         button: {
             text: 'SUBMIT',
             emoji: '📊',
-            gradient: ['#c0c0c0', '#ffffff']
+            gradient: ['#c0c0c0', '#ffffff'],
+            image: 'assets/Levels/Corporate/main button.webp'
         },
         upgrades: [
             { id: 'c1', name: 'Outlook Email', baseCost: 15, type: 'auto', val: 1, desc: '+1 📄/sec' },
@@ -397,7 +401,8 @@ export const THEMES = {
         button: {
             text: 'POWER',
             emoji: '🔌',
-            gradient: ['#111111', '#333333']
+            gradient: ['#111111', '#333333'],
+            image: 'assets/Levels/Server Farm/main button.webp'
         },
         upgrades: [
             { id: 's1', name: 'Case Fan', baseCost: 15, type: 'auto', val: 1, desc: '+1 °C/sec' },
@@ -476,7 +481,8 @@ export const THEMES = {
         button: {
             text: 'DELETE',
             emoji: '🗑️',
-            gradient: ['#ece9d8', '#ffffff'] // Recycle bin white
+            gradient: ['#ece9d8', '#ffffff'], // Recycle bin white
+            image: 'assets/Levels/Dev Desktop/main button.webp'
         },
 
         upgrades: [
@@ -562,7 +568,8 @@ export const THEMES = {
         button: {
             text: 'TODO',
             emoji: '🛠️',
-            gradient: ['#ff00ff', '#000000']
+            gradient: ['#ff00ff', '#000000'],
+            image: 'assets/Levels/Beta Build/main button.webp'
         },
         upgrades: [
             { id: 'b1', name: 'Placeholder Asset', baseCost: 15, type: 'auto', val: 1, desc: '+1 🐛/sec' },
@@ -641,7 +648,8 @@ export const THEMES = {
         button: {
             text: 'DECRYPT',
             emoji: '🗝️',
-            gradient: ['#003300', '#001100']
+            gradient: ['#003300', '#001100'],
+            image: 'assets/Levels/Digital Decay/main button.webp'
         },
 
         upgrades: [
@@ -720,7 +728,8 @@ export const THEMES = {
         button: {
             text: 'EXECUTE',
             emoji: '💾',
-            gradient: ['#aaaaaa', '#777777']
+            gradient: ['#aaaaaa', '#777777'],
+            image: 'assets/Levels/Legacy System/main button.webp'
         },
 
         upgrades: [
@@ -808,7 +817,8 @@ export const THEMES = {
         button: {
             text: 'EXIST',
             emoji: '👁️',
-            gradient: ['#ffffff', '#ffffff'] // Pure white
+            gradient: ['#ffffff', '#ffffff'],
+            image: 'assets/Levels/Null Void/main button.webp'
         },
 
         upgrades: [

@@ -388,33 +388,52 @@ export class Renderer {
         this.ctx.beginPath();
         this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
 
-        // Gradient
-        // Gradient
-        let grad = this.mainButtonGrad;
-        if (!grad) {
-            grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
-            theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
-            this.mainButtonGrad = grad;
+        // Check for Image
+        let img = null;
+        if (theme.button.image) {
+            img = assetLoader.getImage(theme.button.image);
         }
 
-        this.ctx.fillStyle = grad;
-        this.ctx.fill();
-        this.ctx.lineWidth = 5;
-        this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
-        this.ctx.stroke();
+        if (img && img.complete && img.naturalWidth > 0) {
+            // Draw full image without clipping
+            this.ctx.drawImage(img, cx - 80, cy - 180, 160, 160);
+
+            // Border removed as per user request
+            // this.ctx.lineWidth = 5;
+            // this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; 
+            // this.ctx.stroke();
+        } else {
+            // Gradient Fallback
+            let grad = this.mainButtonGrad;
+            if (!grad) {
+                grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
+                theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
+                this.mainButtonGrad = grad;
+            }
+
+            this.ctx.fillStyle = grad;
+            this.ctx.fill();
+            this.ctx.lineWidth = 5;
+            this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
+            this.ctx.stroke();
+        }
 
         this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
         this.ctx.font = "bold 24px Arial";
         this.ctx.textAlign = 'center';
 
-        // UI GASLIGHTING: Main Button
-        let btnText = theme.button.text;
-        if (state.corruption > 50) {
-            btnText = this.getGlitchText(btnText, state.corruption);
+        // Hide Text/Emoji if we have an image
+        if (!img || !img.complete) {
+            // UI GASLIGHTING: Main Button
+            let btnText = theme.button.text;
+            if (state.corruption > 50) {
+                btnText = this.getGlitchText(btnText, state.corruption);
+            }
+            this.ctx.fillText(btnText, cx, cy - 110);
+
+            this.ctx.font = "40px Arial";
+            this.ctx.fillText(theme.button.emoji, cx, cy - 70);
         }
-        this.ctx.fillText(btnText, cx, cy - 110);
-        this.ctx.font = "40px Arial";
-        this.ctx.fillText(theme.button.emoji, cx, cy - 70);
 
         this.ctx.globalAlpha = 1; // Reset
 
