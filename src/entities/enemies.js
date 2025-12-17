@@ -38,12 +38,15 @@ export class GlitchHunter {
 
         // 3. Attack (if reached cursor)
         if (dist < this.size + 10) {
-            // Apply damage directly
-            context.state.score -= context.state.autoRate * dt * 2;
-            if (context.state.score < 0) context.state.score = 0;
-            context.shake = 5;
-            // No return needed for damage, or return null
+            this.onReachTarget(context, dt);
         }
+    }
+
+    onReachTarget(context, dt) {
+        // Apply damage directly
+        context.state.score -= context.state.autoRate * dt * 2;
+        if (context.state.score < 0) context.state.score = 0;
+        context.shake = 5;
     }
 
     draw(ctx) {
@@ -280,50 +283,16 @@ export class AntiVirusBot extends GlitchHunter {
     }
 
     // Override update to heal (reduce corruption) on hit
-    update(dt, context) {
-        if (!this.active) return;
-
-        const mx = context.mouse.x;
-        const my = context.mouse.y;
-
-        // 1. Move to cursor
-        const dx = mx - this.x;
-        const dy = my - this.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist > 0) {
-            this.x += (dx / dist) * this.speed;
-            this.y += (dy / dist) * this.speed;
-        }
-
-        this.pulse += dt * 5;
-
-        // 2. Attack (Heal System)
-        if (dist < this.size + 10) {
-            // "Heal" the system -> Reduce corruption
-            context.state.addCorruption(-5); // Penalize progress
-            context.createFloatingText(this.x, this.y, "PATCHED!", "#00ffff");
-            context.events.emit('play_sound', 'error'); // Bad sound
-            this.active = false; // Die after patching
-        }
+    onReachTarget(context, dt) {
+        // "Heal" the system -> Reduce corruption
+        context.state.addCorruption(-5); // Penalize progress
+        context.createFloatingText(this.x, this.y, "PATCHED!", "#00ffff");
+        context.events.emit('play_sound', 'error'); // Bad sound
+        this.active = false; // Die after patching
     }
 
-    // Override Click (Kill)
-    checkClick(mx, my) {
-        const dist = Math.hypot(mx - this.x, my - this.y);
-        if (dist < this.size + 15) {
-            this.hp--;
-            this.x += (this.x - mx) * 2; // Knockback
-            this.y += (this.y - my) * 2;
-
-            if (this.hp <= 0) {
-                this.active = false;
-                return true; // Killed
-            }
-            return 'hit';
-        }
-        return false;
-    }
+    // Rely on base checkClick implementation
+    // We already moved generic movement/click logic to base
 }
 
 export class SuddenMeeting {

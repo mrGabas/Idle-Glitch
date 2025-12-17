@@ -123,7 +123,7 @@ export class EconomySystem {
         // WHISPER SYSTEM
         if (this.game.state.corruption > 20) {
             if (Math.random() < 0.1) { // 10% chance
-                const phrases = ["I FEEL THAT", "DONT STOP", "CLOSER", "IT BURNS", "FEED ME", "ARE YOU REAL?", "7734..."];
+                const phrases = CFG.texts.whispers;
                 const text = UTILS.randArr(phrases);
                 // Faint Red or Gray
                 const color = Math.random() > 0.5 ? 'rgba(100, 0, 0, 0.7)' : 'rgba(100, 100, 100, 0.7)';
@@ -192,11 +192,11 @@ export class EconomySystem {
             const now = Date.now();
             const diff = (now - this.game.lastSaveTime) / 1000; // seconds
 
-            if (diff > 60) {
+            if (diff > CFG.economy.minOfflineTime) {
                 const lastRate = this.game.saveSystem.loadNumber('last_auto_rate', 0);
                 if (lastRate > 0) {
-                    // 25% efficiency
-                    const gained = lastRate * diff * 0.25;
+                    // Efficiency from config
+                    const gained = lastRate * diff * CFG.economy.offlineEfficiency;
                     if (gained > 0) {
                         this.game.state.addScore(gained);
                         this.game.uiManager.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);

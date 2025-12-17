@@ -42,6 +42,13 @@ export const CFG = {
                 "LOOK BEHIND YOU", "SYSTEM FAILURE"
             ]
         }
+    },
+    economy: {
+        offlineEfficiency: 0.25,
+        minOfflineTime: 60, // seconds
+    },
+    texts: {
+        whispers: ["I FEEL THAT", "DONT STOP", "CLOSER", "IT BURNS", "FEED ME", "ARE YOU REAL?", "7734..."]
     }
 };
 
