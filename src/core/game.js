@@ -690,45 +690,41 @@ export class Game {
 
 
         // 4. DESTRUCTION OF FAKE UI
-        let hitUI = false;
-        this.fakeUI.elements.forEach(el => {
-            if (el.active && mx > el.x && mx < el.x + el.w && my > el.y && my < el.y + el.h) {
-                hitUI = true;
-                // Damage UI logic moved to CrazyFakes class partly, but effect logic here
-                const destroyed = this.fakeUI.damage(el);
+        // Restriction: Only works in Rainbow Paradise
+        if (this.themeManager.currentTheme.id === 'rainbow_paradise') {
+            let hitUI = false;
+            this.fakeUI.elements.forEach(el => {
+                if (el.active && mx > el.x && mx < el.x + el.w && my > el.y && my < el.y + el.h) {
+                    hitUI = true;
+                    // Damage UI logic moved to CrazyFakes class partly, but effect logic here
+                    const destroyed = this.fakeUI.damage(el);
 
-                // Spawn debris
-                for (let i = 0; i < 3; i++) {
-                    this.entities.add('debris', new Debris(mx, my, el.color));
-                }
-
-                if (destroyed) {
-                    // Big debris explosion
-                    for (let i = 0; i < 15; i++) {
-                        this.entities.add('debris', new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
+                    // Spawn debris
+                    for (let i = 0; i < 3; i++) {
+                        this.entities.add('debris', new Debris(mx, my, el.color));
                     }
-                    this.state.addScore(100 * this.state.multiplier);
 
-                    if (this.themeManager.currentTheme.id === 'rainbow_paradise') {
+                    if (destroyed) {
+                        // Big debris explosion
+                        for (let i = 0; i < 15; i++) {
+                            this.entities.add('debris', new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
+                        }
+                        this.state.addScore(100 * this.state.multiplier);
                         this.state.addCorruption(1.5);
-                    } else {
-                        this.state.addCorruption(0.5);
                     }
                 }
-            }
-        });
+            });
 
-        if (hitUI) {
-            this.shake = 3;
-            // Additional lock logic for early game
-            if (this.themeManager.currentTheme.id === 'rainbow_paradise' && this.state.corruption < 30) {
-                this.events.emit('play_sound', 'error');
-                this.createFloatingText(mx, my, "LOCKED", "#888");
-                return; // No corruption if locked?
-            }
+            if (hitUI) {
+                this.shake = 3;
+                // Additional lock logic for early game
+                if (this.state.corruption < 30) {
+                    this.events.emit('play_sound', 'error');
+                    this.createFloatingText(mx, my, "LOCKED", "#888");
+                    return; // No corruption if locked?
+                }
 
-            this.events.emit('play_sound', 'glitch');
-            if (this.themeManager.currentTheme.id === 'rainbow_paradise') {
+                this.events.emit('play_sound', 'glitch');
                 this.state.addCorruption(0.2);
             }
         }

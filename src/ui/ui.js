@@ -13,6 +13,12 @@ export class CrazyFakes {
     init(w, h) {
         this.elements = [];
         const theme = this.game.themeManager.currentTheme;
+
+        // Restriction: Fake UI only exists in Rainbow Paradise
+        if (theme.id !== 'rainbow_paradise') {
+            return;
+        }
+
         const isGlitchTheme = theme.id === 'digital_decay';
 
         // CrazyFakes Colors
@@ -68,6 +74,9 @@ export class CrazyFakes {
     }
 
     draw(ctx) {
+        // Restriction: Only draw in Rainbow Paradise
+        if (this.game.themeManager.currentTheme.id !== 'rainbow_paradise') return;
+
         const uiColor = '#6842ff';
         const h = this.game.h;
 
