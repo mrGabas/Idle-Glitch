@@ -120,6 +120,9 @@ export class GlitchSystem {
             if (!avBot && Math.random() < spawnChance) {
                 this.game.entities.add('enemies', new AntiVirusBot(this.game.w, this.game.h));
                 this.game.uiManager.chat.addMessage('SYSTEM', 'ANTIVIRUS PROTOCOL INITIATED');
+
+                // Trigger Tutorial Warning
+                this.game.tutorialSystem.triggerContextual('antivirus_warning');
             }
         }
 

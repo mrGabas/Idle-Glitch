@@ -563,6 +563,8 @@ export class ArchiveWindow extends Window {
 
         // Проверяем пароль
         if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
+            this.game.tutorialSystem.triggerContextual('locked_folder_hint');
+
             // Check if PasswordWindow for this folder is already open
             const existingWindow = this.game.uiManager.windowManager.windows.find(w =>
                 w instanceof PasswordWindow && w.folderName === folder.name

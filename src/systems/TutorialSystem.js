@@ -54,8 +54,35 @@ export class TutorialSystem {
                         this.game.economySystem.openShop();
                     }
                 }
+            ],
+            'locked_folder_hint': [
+                {
+                    id: 'locked_folder_msg',
+                    sender: 'Admin_Alex',
+                    message: "Damn, it's encrypted. Gabas usually used his pets' names as passwords. Check the 'Personal' files.",
+                    trigger: () => true
+                }
+            ],
+            'antivirus_warning': [
+                {
+                    id: 'antivirus_msg',
+                    sender: 'Admin_Alex',
+                    message: "Wait! That bot will purge your corruption progress! Click to destroy it!",
+                    trigger: () => true
+                }
             ]
         };
+    }
+
+    /**
+     * Contextual Trigger: attempts to start a tutorial if not already completed.
+     * @param {string} sequenceId 
+     */
+    triggerContextual(sequenceId) {
+        if (this.completedTutorials.has(sequenceId)) return;
+
+        // Interrupt current or just start
+        this.startSequence(sequenceId);
     }
 
     /**
