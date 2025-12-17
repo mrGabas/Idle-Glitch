@@ -114,7 +114,7 @@ export class TutorialSystem {
         this.currentStepIndex = 0;
         this.isActive = true;
 
-        console.log(`Tutorial '${sequenceId}' started.`);
+
 
         // Setup first step
         if (this.steps.length > 0) {
@@ -216,7 +216,7 @@ export class TutorialSystem {
 
         if (this.currentSequenceId) {
             this.completedTutorials.add(this.currentSequenceId);
-            console.log(`Tutorial '${this.currentSequenceId}' completed.`);
+
             this.game.saveGame(); // Ensure progress is saved
         }
 

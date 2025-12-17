@@ -15,7 +15,7 @@ export class ErrorHandler {
             event.preventDefault();
         };
 
-        console.log("ErrorHandler Initialized.");
+
     }
 
     static showError(message, stack) {

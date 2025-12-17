@@ -36,6 +36,6 @@ window.addEventListener('load', () => {
         // Init Debug Tools (which exposes window.game)
         new DebugTools(game);
 
-        console.log("Protocol: FELINE initialized.");
+
     });
 });

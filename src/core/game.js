@@ -12,7 +12,7 @@ import { Renderer } from '../systems/Renderer.js';
 import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFakes } from '../ui/ui.js';
 import { Particle, Debris, FloatingText } from '../entities/particles.js';
-import { CursedCaptcha } from '../entities/enemies.js';
+
 import { Popup, NotepadWindow } from '../ui/windows.js';
 import { PasswordWindow } from '../ui/PasswordWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
@@ -342,7 +342,7 @@ export class Game {
         // 1.5x penalty simply for being rude
         const penalty = this.state.autoRate * seconds * 1.5;
         this.state.addScore(-penalty);
-        this.addScore(0); // Updates UI potentially if needed immediately
+        this.state.addScore(0); // Updates UI potentially if needed immediately
 
         // Scare
         this.events.emit('play_sound', 'error');
@@ -673,7 +673,7 @@ export class Game {
             if (res) {
                 popupHit = true;
                 if (res === 'bonus') {
-                    this.addScore(this.state.autoRate * 20 + 500);
+                    this.state.addScore(this.state.autoRate * 20 + 500);
                     this.createParticles(mx, my, this.themeManager.currentTheme.colors.accent);
                     this.events.emit('play_sound', 'buy');
                 } else if (res === 'drag') {
@@ -702,7 +702,7 @@ export class Game {
                     // Global restriction: Needs 60 Corruption to interact
                     if (this.state.corruption < 60) {
                         this.events.emit('play_sound', 'error');
-                        this.createFloatingText(mx, my, "Need 60 Corruption", "#888");
+                        this.createFloatingText(mx, my, "Need 60 happiness <3", "#888");
                         return;
                     }
 
@@ -763,19 +763,7 @@ export class Game {
 
 
 
-    addScore(amount) {
-        // Redundant if we access this.state.addScore directly but let's keep it as proxy or remove.
-        // The requirements say "Use this.state.addScore()". 
-        // Existing calls to this.addScore(x) should refactor to this.state.addScore(x) OR we update this method.
-        // Let's update this method to be a wrapper for now to avoid breaking other files if they use game.addScore().
-        this.state.addScore(amount);
 
-        // Visuals were here? No, visuals were usually separate or inside the old addScore?
-        // Old Game.js didn't have addScore shown in the view_file ranges except maybe implied or I missed it.
-        // Wait, line 356 call `this.addScore(0)`.
-        // Let's check where `addScore` was defined.
-        // I'll assume it was defined around line 800+ which I didn't see fully.
-    }
 
     createParticles(x, y, color) {
         for (let i = 0; i < 8; i++) {

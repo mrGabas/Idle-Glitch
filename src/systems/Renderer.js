@@ -549,20 +549,30 @@ export class Renderer {
                 this.ctx.textAlign = 'left';
                 this.ctx.font = "bold 16px Arial";
 
-                this.ctx.fillText(uInfo.name, ux + 10, uy + 25);
+                // Move text up slightly to fit 3 lines
+                this.ctx.fillText(uInfo.name, ux + 10, uy + 20);
 
                 // Digital Decay Redaction
                 if (theme.id === 'digital_decay' && (uInfo.name.includes('[REDACTED]') || Math.random() < 0.01)) {
                     const w = this.ctx.measureText(uInfo.name).width;
                     this.ctx.fillStyle = '#000';
-                    this.ctx.fillRect(ux + 10, uy + 10, w, 18);
+                    this.ctx.fillRect(ux + 10, uy + 8, w, 14);
                 }
 
                 // Cost
                 const canBuy = state.score >= u.cost;
                 this.ctx.fillStyle = canBuy ? colors.accent : '#888';
                 this.ctx.font = "14px monospace";
-                this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 45);
+                this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 40);
+
+                // Rate / Click Power
+                this.ctx.fillStyle = '#ffffff'; // White text
+                this.ctx.font = "12px monospace";
+                let rateText = "";
+                if (u.type === 'auto') rateText = `+${UTILS.fmt(u.val)}/sec`;
+                else if (u.type === 'click') rateText = `+${UTILS.fmt(u.val)} Click`;
+
+                this.ctx.fillText(rateText, ux + 10, uy + 60);
 
                 // Count
                 this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
@@ -570,12 +580,10 @@ export class Renderer {
                 this.ctx.font = "bold 20px Arial";
                 this.ctx.fillText(u.count, ux + 210, uy + 60);
 
-                // Desc
-                this.ctx.fillStyle = theme.id === 'null_void' ? '#888' : '#aaa';
-                this.ctx.font = "12px Arial";
-                this.ctx.textAlign = 'right';
-                // Check if uInfo has a custom desc, otherwise use original but maybe glitch it
-                this.ctx.fillText(uInfo.desc || u.desc, ux + 210, uy + 25);
+                // Desc removed as per request
+                // this.ctx.fillText(uInfo.desc || u.desc, ux + 210, uy + 20);
+
+                this.ctx.globalAlpha = 1; // Reset
 
                 this.ctx.globalAlpha = 1; // Reset
             });

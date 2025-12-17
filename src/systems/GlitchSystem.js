@@ -290,7 +290,7 @@ export class GlitchSystem {
 
                 if (e instanceof CursedCaptcha) {
                     this.game.events.emit('play_sound', 'buy');
-                    this.game.addScore(this.game.state.autoRate * 120 + 1000);
+                    this.game.state.addScore(this.game.state.autoRate * 120 + 1000);
                     this.game.state.addCorruption(-5);
                     this.game.createParticles(mx, my, '#0f0');
                     this.game.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
