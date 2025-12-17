@@ -28,6 +28,7 @@ import { AchievementSystem } from '../systems/AchievementSystem.js';
 import { LoreSystem } from '../systems/LoreSystem.js';
 import { AchievementPopup } from '../ui/notifications.js';
 import { VirtualControls } from '../ui/VirtualControls.js';
+import { TutorialSystem } from '../systems/TutorialSystem.js';
 
 /**
  * @typedef {Object} GameState
@@ -66,6 +67,7 @@ export class Game {
         this.glitchSystem = new GlitchSystem(this);
         this.achievementSystem = new AchievementSystem(this);
         this.loreSystem = new LoreSystem(this);
+        this.tutorialSystem = new TutorialSystem(this);
 
         this.events.on('achievement_unlocked', (ach) => {
             this.entities.add('ui', new AchievementPopup(this, ach));
@@ -78,6 +80,9 @@ export class Game {
 
         // Load Lore Data
         this.loreSystem.load(this.saveSystem.load('lore_data', null));
+
+        // Load Tutorial Data
+        this.tutorialSystem.init(this.saveSystem.load('tutorial_data', []));
 
         // Recalculate multiplier based on generic prestige + meta upgrades (if we implement that)
         // For now, prestigeMult is legacy. Let's keep it but maybe add to it.
@@ -176,6 +181,9 @@ export class Game {
 
         // Save Lore Data
         this.saveSystem.save('lore_data', this.loreSystem.getSaveData());
+
+        // Save Tutorial Data
+        this.saveSystem.save('tutorial_data', this.tutorialSystem.getSaveData());
     }
 
 
@@ -779,6 +787,7 @@ export class Game {
 
         this.themeManager.update(safeDt);
         this.uiManager.update(safeDt);
+        this.tutorialSystem.update(safeDt);
         this.update(safeDt);
         this.draw();
 
