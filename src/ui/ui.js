@@ -24,8 +24,27 @@ export class CrazyFakes {
         // CrazyFakes Colors
         const cardColor = isGlitchTheme ? '#222' : '#2b2b2b';
 
+        // 0. Background & Title (Initially Locked)
+        this.elements.push({
+            type: 'sidebar_bg',
+            x: 0, y: 0, w: 240, h: h,
+            color: '#161616',
+            hp: 10, maxHp: 10,
+            active: true,
+            locked: true
+        });
+
+        this.elements.push({
+            type: 'title',
+            x: 20, y: 15, w: 150, h: 30, // Approx rect for text
+            text: "CrazyFakes",
+            color: '#6842ff',
+            hp: 5, maxHp: 5,
+            active: true,
+            locked: true
+        });
+
         // 1. Sidebar (Left)
-        const sbW = 220;
         // Generate category buttons
         const cats = ['New', 'Trending', 'Action', 'Driving', 'Clicker', 'Horror', 'Multiplayer'];
         cats.forEach((txt, i) => {
@@ -36,7 +55,8 @@ export class CrazyFakes {
                 color: '#6842ff', // Purple accent
                 hp: 3,
                 maxHp: 3,
-                active: true
+                active: true,
+                locked: false
             });
         });
 
@@ -48,20 +68,12 @@ export class CrazyFakes {
         // Restriction: Only draw in Rainbow Paradise
         if (this.game.themeManager.currentTheme.id !== 'rainbow_paradise') return;
 
-        const uiColor = '#6842ff';
         const h = this.game.h;
-
-        // Sidebar BG
-        ctx.fillStyle = '#161616';
-        ctx.fillRect(0, 0, 240, h);
-
-        // Logo Area
-        ctx.fillStyle = uiColor;
-        ctx.font = "bold 24px Arial";
-        ctx.fillText("CrazyFakes", 20, 40);
 
         this.elements.forEach(el => {
             if (!el.active) return;
+            // Locked elements look normal (or maybe slightly hinted?)
+            // For now, look identical.
 
             let dx = 0, dy = 0;
             if (el.hp < el.maxHp) {
@@ -69,7 +81,22 @@ export class CrazyFakes {
                 dy = (Math.random() - 0.5) * 2;
             }
 
-            if (el.type === 'sidebar_btn') {
+            if (el.type === 'sidebar_bg') {
+                ctx.fillStyle = el.color;
+                ctx.fillRect(el.x + dx, el.y + dy, el.w, el.h);
+            }
+            else if (el.type === 'title') {
+                ctx.fillStyle = el.color;
+                ctx.font = "bold 24px Arial";
+                // If damaged/unlocked, maybe glitch text?
+                let txt = el.text;
+                if (!el.locked) txt = UTILS.corrupt(txt, (el.maxHp - el.hp) / el.maxHp);
+                ctx.fillText(txt, el.x + dx, el.y + 24 + dy); // y is baseline? No, usually fillText uses x,y baseline. 
+                // Previous code: ctx.fillText("CrazyFakes", 20, 40); -> y=40.
+                // My rect y=40 is top? Or baseline? Canvas default textBaseline is alphabetic (so y is bottom).
+                // Let's assume passed y is baseline.
+            }
+            else if (el.type === 'sidebar_btn') {
                 ctx.fillStyle = (el.hp < el.maxHp) ? '#444' : '#222';
                 ctx.fillRect(el.x + dx, el.y + dy, el.w, el.h);
                 // Icon placeholder
@@ -82,40 +109,32 @@ export class CrazyFakes {
                 if (this.game.state.glitchIntensity > 0.5) txt = UTILS.corrupt(txt, 0.5);
                 ctx.fillText(txt, el.x + 40 + dx, el.y + 22 + dy);
             }
-            else if (el.type === 'game_card') {
-                // Card BG
-                ctx.fillStyle = (el.hp < el.maxHp) ? '#333' : el.color;
-                ctx.fillRect(el.x + dx, el.y + dy, el.w, el.h);
-
-                // Procedural Thumbnail Art
-                ctx.fillStyle = '#444';
-                if (el.iconType === 0) { // Car
-                    ctx.fillStyle = '#f55';
-                    ctx.fillRect(el.x + 40 + dx, el.y + 50 + dy, 80, 30);
-                    ctx.fillStyle = '#fff';
-                    ctx.beginPath(); ctx.arc(el.x + 60 + dx, el.y + 80 + dy, 10, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(el.x + 100 + dx, el.y + 80 + dy, 10, 0, Math.PI * 2); ctx.fill();
-                } else if (el.iconType === 1) { // Sword
-                    ctx.strokeStyle = '#5ff';
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(el.x + 40 + dx, el.y + 90 + dy);
-                    ctx.lineTo(el.x + 120 + dx, el.y + 30 + dy);
-                    ctx.stroke();
-                } else { // Clicker Circle
-                    ctx.fillStyle = '#ff5';
-                    ctx.beginPath();
-                    ctx.arc(el.x + el.w / 2 + dx, el.y + el.h / 2 + dy, 20, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
         });
     }
 
     damage(el) {
+        if (el.locked) return false;
+
         el.hp--;
         if (el.hp <= 0) {
             el.active = false;
+
+            // Unlock Logic
+            if (el.type === 'sidebar_btn') {
+                // Check if any buttons remain
+                const remaining = this.elements.filter(e => e.type === 'sidebar_btn' && e.active).length;
+                if (remaining === 0) {
+                    // Unlock BG and Title
+                    this.elements.forEach(e => {
+                        if (e.type === 'sidebar_bg' || e.type === 'title') {
+                            e.locked = false;
+                        }
+                    });
+                    this.game.state.addCorruption(5); // Bonus corruption for clearing list
+                    this.game.events.emit('play_sound', 'powerup');
+                }
+            }
+
             return true; // Destroyed
         }
         return false;

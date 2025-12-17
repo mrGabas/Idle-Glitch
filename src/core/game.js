@@ -694,36 +694,51 @@ export class Game {
         // Restriction: Only works in Rainbow Paradise
         if (this.themeManager.currentTheme.id === 'rainbow_paradise') {
             let hitUI = false;
-            this.fakeUI.elements.forEach(el => {
+            // Iterate backwards to hit top elements first (buttons are added last)
+            for (let i = this.fakeUI.elements.length - 1; i >= 0; i--) {
+                const el = this.fakeUI.elements[i];
                 if (el.active && mx > el.x && mx < el.x + el.w && my > el.y && my < el.y + el.h) {
+
+                    // Global restriction: Needs 60 Corruption to interact
+                    if (this.state.corruption < 60) {
+                        this.events.emit('play_sound', 'error');
+                        this.createFloatingText(mx, my, "Need 60 Corruption", "#888");
+                        return;
+                    }
+
+                    if (el.locked) {
+                        this.events.emit('play_sound', 'error');
+                        this.createFloatingText(mx, my, "LOCKED", "#888");
+                        // Stop propagation (don't click elements underneath)
+                        return;
+                    }
+
                     hitUI = true;
                     // Damage UI logic moved to CrazyFakes class partly, but effect logic here
                     const destroyed = this.fakeUI.damage(el);
 
                     // Spawn debris
-                    for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
                         this.entities.add('debris', new Debris(mx, my, el.color));
                     }
 
                     if (destroyed) {
                         // Big debris explosion
-                        for (let i = 0; i < 15; i++) {
+                        for (let j = 0; j < 15; j++) {
                             this.entities.add('debris', new Debris(el.x + el.w / 2, el.y + el.h / 2, el.color));
                         }
                         this.state.addScore(100 * this.state.multiplier);
                         this.state.addCorruption(1.5);
                     }
+
+                    // Stop propagation after hitting one element
+                    break;
                 }
-            });
+            }
 
             if (hitUI) {
                 this.shake = 3;
-                // Additional lock logic for early game
-                if (this.state.corruption < 30) {
-                    this.events.emit('play_sound', 'error');
-                    this.createFloatingText(mx, my, "LOCKED", "#888");
-                    return; // No corruption if locked?
-                }
+
 
                 this.events.emit('play_sound', 'glitch');
                 this.state.addCorruption(0.2);
