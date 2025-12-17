@@ -62,6 +62,11 @@ export class TutorialSystem {
         this.isActive = true;
 
         console.log(`Tutorial '${sequenceId}' started.`);
+
+        // Setup first step
+        if (this.steps.length > 0) {
+            this.showStep(this.steps[0]);
+        }
     }
 
     /**
@@ -85,6 +90,9 @@ export class TutorialSystem {
     nextStep() {
         if (!this.isActive) return;
 
+        // Clean up previous step
+        this.clearHighlight();
+
         const currentStep = this.steps[this.currentStepIndex];
         if (currentStep && currentStep.action) {
             currentStep.action();
@@ -95,7 +103,55 @@ export class TutorialSystem {
         if (this.currentStepIndex >= this.steps.length) {
             this.complete();
         } else {
-            // Optional: Trigger 'start' logic for the new step if we had entry actions
+            // Show next step
+            const next = this.steps[this.currentStepIndex];
+            if (next.delay) {
+                setTimeout(() => this.showStep(next), next.delay);
+            } else {
+                this.showStep(next);
+            }
+        }
+    }
+
+    /**
+     * Show the visual cues for a tutorial step.
+     * @param {Object} step 
+     */
+    showStep(step) {
+        // Chat Message
+        if (step.message) {
+            // Determine sender, default to 'SYSTEM' or specific character
+            const sender = step.sender || 'SYSTEM';
+            this.game.uiManager.chat.addMessage(sender, step.message);
+        }
+
+        // Visual Highlight
+        if (step.targetId) {
+            this.highlightElement(step.targetId);
+        }
+    }
+
+    /**
+     * Highlights a DOM element by ID.
+     * @param {string} id 
+     */
+    highlightElement(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('tutorial-highlight');
+            this.activeHighlight = el;
+        } else {
+            console.warn(`Tutorial: Target element #${id} not found.`);
+        }
+    }
+
+    /**
+     * Removes the current highlight.
+     */
+    clearHighlight() {
+        if (this.activeHighlight) {
+            this.activeHighlight.classList.remove('tutorial-highlight');
+            this.activeHighlight = null;
         }
     }
 
@@ -103,6 +159,8 @@ export class TutorialSystem {
      * Mark the current sequence as complete.
      */
     complete() {
+        this.clearHighlight(); // Ensure cleanup
+
         if (this.currentSequenceId) {
             this.completedTutorials.add(this.currentSequenceId);
             console.log(`Tutorial '${this.currentSequenceId}' completed.`);
