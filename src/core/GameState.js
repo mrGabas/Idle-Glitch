@@ -132,5 +132,37 @@ export class GameState {
 
     // --- ARCHIVE METHODS ---
 
+    /**
+     * Exports current state to a JSON-serializable object.
+     */
+    export() {
+        return {
+            score: this.score,
+            clickPower: this.clickPower,
+            autoRate: this.autoRate,
+            corruption: this.corruption,
+            multiplier: this.multiplier,
+            startTime: this.startTime,
+            isPurged: this.isPurged,
+            temperature: this.temperature
+        };
+    }
 
+    /**
+     * Imports state from a data object.
+     * @param {Object} data 
+     */
+    import(data) {
+        if (!data) return;
+        this.score = data.score || 0;
+        this.clickPower = data.clickPower || 1;
+        this.autoRate = data.autoRate || 0;
+        this.corruption = data.corruption || 0;
+        this.multiplier = data.multiplier || 1;
+        this.startTime = data.startTime || Date.now();
+        this.isPurged = data.isPurged || false;
+        this.temperature = data.temperature || 0;
+
+        events.emit('state_updated', this);
+    }
 }

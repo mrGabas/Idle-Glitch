@@ -146,6 +146,7 @@ export class EconomySystem {
 
         this.game.events.emit('play_sound', 'buy');
         this.game.state.addCorruption(1.5);
+        this.game.saveGame();
     }
 
     /**
@@ -190,18 +191,32 @@ export class EconomySystem {
     checkOfflineProgress() {
         if (this.game.metaUpgrades['offline_progress']) {
             const now = Date.now();
-            const diff = (now - this.game.lastSaveTime) / 1000; // seconds
+            const diff = now - this.game.lastSaveTime; // ms
 
-            if (diff > CFG.economy.minOfflineTime) {
+            // Minimum time check (e.g. 60 seconds) - using config value in seconds * 1000
+            if (diff > CFG.economy.minOfflineTime * 1000) {
+
+                const MAX_OFFLINE_TIME = 8 * 60 * 60 * 1000; // 8 Hours
+                const effectiveTime = Math.min(diff, MAX_OFFLINE_TIME);
+
                 const lastRate = this.game.saveSystem.loadNumber('last_auto_rate', 0);
+
                 if (lastRate > 0) {
-                    // Efficiency from config
-                    const gained = lastRate * diff * CFG.economy.offlineEfficiency;
-                    if (gained > 0) {
-                        this.game.state.addScore(gained);
-                        this.game.uiManager.chat.addMessage('SYSTEM', `OFFLINE GAINS: +${UTILS.fmt(gained)} (Duration: ${Math.floor(diff / 60)}m)`);
+                    // Calculate earnings: rate (per sec) * seconds * efficiency
+                    // Note: effectiveTime is ms, rate is per second
+                    const earnings = lastRate * (effectiveTime / 1000) * CFG.economy.offlineEfficiency;
+
+                    if (earnings > 0) {
+                        // Do NOT add score immediately. Show Report.
+                        this.game.uiManager.showOfflineReport(earnings, effectiveTime);
+                    } else {
+                        console.log("Offline: Earnings 0");
                     }
+                } else {
+                    console.log("Offline: Rate 0");
                 }
+            } else {
+                console.log("Offline: Time diff too small", diff);
             }
         }
     }

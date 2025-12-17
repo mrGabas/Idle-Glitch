@@ -107,6 +107,15 @@ export class Game {
             this.themeManager.loadThemeUpgrades(themeData);
         }
 
+        // --- LOAD GAME STATE ---
+        const savedState = this.saveSystem.load('game_state', null);
+        if (savedState) {
+            this.state.import(savedState);
+        } else {
+            // Apply initial multipliers if no save
+            this.state.multiplier = 1 * this.prestigeMult;
+        }
+
         this.entities = new EntityManager();
         // this.debris, this.popups, this.captchas, this.loreFiles, this.particles -> managed by this.entities
         // We can keep references locally if we need direct access or just use getters.
@@ -171,6 +180,9 @@ export class Game {
         // Save rate for offline calc
         this.saveSystem.saveNumber('last_auto_rate', this.state.autoRate);
         this.saveSystem.save('selected_theme', this.themeManager.currentTheme.id);
+
+        // SAVE GAME STATE
+        this.saveSystem.save('game_state', this.state.export());
 
         // NEW: Save Theme Upgrades
         this.saveSystem.save('theme_data', this.themeManager.getSaveData());
@@ -305,6 +317,11 @@ export class Game {
         });
 
         this.initTabStalker();
+
+        // Save on exit
+        window.addEventListener('beforeunload', () => {
+            this.saveGame();
+        });
     }
 
     initTabStalker() {

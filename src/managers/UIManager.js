@@ -8,6 +8,7 @@ import { MailWindow, NotepadWindow } from '../ui/windows.js';
 import { ArchiveWindow, ImageViewerWindow } from '../ui/ArchiveWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { AchievementsWindow } from '../ui/achievementsWindow.js';
+import { OfflineReportWindow } from '../ui/OfflineWindow.js';
 
 import { MailSystem } from '../systems/MailSystem.js';
 import { WindowManager } from './WindowManager.js';
@@ -137,6 +138,11 @@ export class UIManager {
             const win = new ImageViewerWindow(this.game.w, this.game.h, data.src, data.name);
             this.windowManager.add(win);
         }
+    }
+
+    showOfflineReport(earnings, timeOffline) {
+        const win = new OfflineReportWindow(this.game, earnings, timeOffline);
+        this.windowManager.add(win);
     }
 
     // Toggle Mail
