@@ -40,37 +40,8 @@ export class CrazyFakes {
             });
         });
 
-        // 2. Game Grid (Right side background)
-        const startX = sbW + 20;
-        const cardW = 160;
-        const cardH = 120;
-        const gap = 20;
-        const cols = Math.floor((w - startX) / (cardW + gap));
-        const rows = Math.ceil(h / (cardH + gap));
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const cx = w / 2;
-                const cy = h / 2;
-                const tx = startX + c * (cardW + gap);
-                const ty = 80 + r * (cardH + gap);
-
-                // Skip center zone
-                const distToCenter = Math.hypot(tx + cardW / 2 - cx, ty + cardH / 2 - cy);
-                if (distToCenter < 350) continue;
-
-                this.elements.push({
-                    type: 'game_card',
-                    x: tx, y: ty, w: cardW, h: cardH,
-                    color: cardColor,
-                    hp: 5,
-                    maxHp: 5,
-                    active: true,
-                    // Procedural icon type
-                    iconType: Math.floor(Math.random() * 3)
-                });
-            }
-        }
+        // 2. Game Grid REMOVED as per request.
+        // Only Sidebar remains.
     }
 
     draw(ctx) {

@@ -95,6 +95,7 @@ export class Game {
         this.economySystem.applyMetaUpgrades();
 
         this.uiManager = new UIManager(this);
+        this.fakeUI = new CrazyFakes(this);
 
         // Load Theme
         const savedTheme = this.saveSystem.load('selected_theme', 'rainbow_paradise');
@@ -111,7 +112,7 @@ export class Game {
         // We can keep references locally if we need direct access or just use getters.
         // For simplicity and to follow requirements, we should use the manager.
 
-        this.fakeUI = new CrazyFakes(this);
+
 
         this.mouse = { x: 0, y: 0, down: false };
         this.realMouse = { x: 0, y: 0 }; // Track physical mouse
