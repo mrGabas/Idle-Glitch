@@ -209,8 +209,6 @@ export class Game {
         const backBtn = document.getElementById('btn-back');
         if (backBtn) backBtn.onclick = () => this.closeSettings();
 
-
-
         // Volume Sliders
         const sfx = document.getElementById('vol-sfx');
         const music = document.getElementById('vol-music');
@@ -365,6 +363,14 @@ export class Game {
         this.audio.resume();
         this.setScreen(null);
         this.gameState = 'PLAYING';
+
+        // Check Tutorial
+        if (!this.tutorialSystem.completedTutorials.has('intro')) {
+            this.tutorialSystem.startSequence('intro');
+        } else {
+            // If tutorial finished, ensure shop is open
+            this.economySystem.openShop();
+        }
     }
 
     /**
@@ -919,7 +925,10 @@ export class Game {
             rebootTimer: this.rebootTimer,
             metaUpgrades: this.metaUpgrades,
             glitchData: this.glitchData,
-            selectedBIOSIndex: this.selectedBIOSIndex
+            metaUpgrades: this.metaUpgrades,
+            glitchData: this.glitchData,
+            selectedBIOSIndex: this.selectedBIOSIndex,
+            shopOpen: this.economySystem.shopOpen
         };
 
         const entities = {

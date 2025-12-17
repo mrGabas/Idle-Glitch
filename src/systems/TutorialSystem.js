@@ -19,14 +19,40 @@ export class TutorialSystem {
         this.sequences = {
             'intro': [
                 {
-                    id: 'click_button',
-                    trigger: () => this.game.state.score >= 10,
-                    action: () => console.log('Tutorial: Clicked enough!'), // Placeholder
+                    id: 'welcome',
+                    sender: 'Admin_Alex',
+                    message: "Welcome, Operator #7734. Protocol initialized.",
+                    trigger: () => true,
+                    action: () => { }
                 },
                 {
-                    id: 'buy_upgrade',
-                    trigger: () => this.game.state.clickPower > 1,
-                    action: () => console.log('Tutorial: Upgrade bought!'), // Placeholder
+                    id: 'generate_entropy',
+                    sender: 'SYSTEM',
+                    message: "TASK: Generate 10 Entropy. Click the central area.",
+                    targetId: 'gameCanvas',
+                    delay: 2000,
+                    trigger: () => this.game.state.score >= 10,
+                    action: () => {
+                        this.game.economySystem.openShop();
+                    }
+                },
+                {
+                    id: 'buy_unicorn',
+                    sender: 'SYSTEM',
+                    message: "ACTION: Purchase 'Unicorn Friend'.",
+                    trigger: () => {
+                        const u = this.game.themeManager.upgrades.find(u => u.id === 'r1');
+                        return u && u.count >= 1;
+                    }
+                },
+                {
+                    id: 'complete',
+                    sender: 'Admin_Alex',
+                    message: "Efficiency increased. Continue monitoring.",
+                    action: () => {
+                        // Keep shop open just in case
+                        this.game.economySystem.openShop();
+                    }
                 }
             ]
         };

@@ -10,7 +10,7 @@ export const ACHIEVEMENTS = [
         desc: 'Manually generate resources for the first time.',
         condition: (game) => game.state.score >= 10 || game.mouse.down, // Use game.mouse instead of game.input.mouse
         reward: (game) => {
-            game.state.addScore(100);
+            game.state.addScore(5);
         }
     },
     {
@@ -37,7 +37,7 @@ export const ACHIEVEMENTS = [
         desc: 'Have an automatic resource generation rate.',
         condition: (game) => game.state.autoRate > 0,
         reward: (game) => {
-            game.state.autoRate *= 1.1; // 10% boost
+            game.state.addScore(500);; // 10% boost
         }
     },
     {

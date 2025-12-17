@@ -8,6 +8,16 @@ export class EconomySystem {
      */
     constructor(game) {
         this.game = game;
+        this.shopOpen = false; // Default closed for tutorial flow
+    }
+
+    toggleShop() {
+        this.shopOpen = !this.shopOpen;
+        this.game.events.emit('play_sound', 'click');
+    }
+
+    openShop() {
+        this.shopOpen = true;
     }
 
     /**
@@ -28,27 +38,30 @@ export class EconomySystem {
      * @returns {boolean} True if a click was handled.
      */
     handleClick(mx, my) {
-        // 1. Shop Upgrades
+        // 1. Shop Upgrades (Only if open)
         let shopHit = false;
-        // Access upgrades via themeManager
-        const upgrades = this.game.themeManager.upgrades;
 
-        upgrades.forEach((u, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-            // Re-calculate positions or use CFG constants directly as Game.js did
-            const bx = (this.game.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
-            const by = this.game.h / 2 + 50 + row * CFG.game.shop.rowHeight;
+        if (this.shopOpen) {
+            // Access upgrades via themeManager
+            const upgrades = this.game.themeManager.upgrades;
 
-            if (mx >= bx && mx <= bx + CFG.game.shop.width && my >= by && my <= by + CFG.game.shop.height) {
-                shopHit = true;
-                if (this.game.state.score >= u.cost) {
-                    this.buyUpgrade(u);
-                } else {
-                    this.game.events.emit('play_sound', 'error');
+            upgrades.forEach((u, i) => {
+                const col = i % 2;
+                const row = Math.floor(i / 2);
+                // Re-calculate positions or use CFG constants directly as Game.js did
+                const bx = (this.game.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
+                const by = this.game.h / 2 + 50 + row * CFG.game.shop.rowHeight;
+
+                if (mx >= bx && mx <= bx + CFG.game.shop.width && my >= by && my <= by + CFG.game.shop.height) {
+                    shopHit = true;
+                    if (this.game.state.score >= u.cost) {
+                        this.buyUpgrade(u);
+                    } else {
+                        this.game.events.emit('play_sound', 'error');
+                    }
                 }
-            }
-        });
+            });
+        }
 
         if (shopHit) return true;
 

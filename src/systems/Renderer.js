@@ -69,7 +69,7 @@ export class Renderer {
      * @param {Object} uiManager - The UI Manager instance
      */
     draw(state, entities, input, uiManager) {
-        const { currentTheme, mouse, shake, scareTimer, scareText } = input;
+        const { currentTheme, mouse, shake, scareTimer, scareText, shopOpen, gameState } = input;
 
         // Optimize Time String (Update once per second)
         const now = Date.now();
@@ -152,7 +152,7 @@ export class Renderer {
         this.ctx.fillStyle = this.vignetteGrad;
         this.ctx.fillRect(0, 0, this.w, this.h);
 
-        this.drawGameUI(state, currentTheme, entities.upgrades, mouse);
+        this.drawGameUI(state, currentTheme, entities.upgrades, mouse, shopOpen);
 
         // Entities
         if (entities.debris) entities.debris.forEach(d => d.draw(this.ctx));
@@ -370,7 +370,7 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    drawGameUI(state, theme, upgrades, mouse) {
+    drawGameUI(state, theme, upgrades, mouse, shopOpen) {
         const cx = this.w / 2;
         const cy = this.h / 2;
         const colors = theme.colors;
@@ -510,7 +510,7 @@ export class Renderer {
 
         // Upgrades Shop
         // Grid 2x4
-        if (upgrades) {
+        if (upgrades && shopOpen) {
             upgrades.forEach((u, i) => {
                 const col = i % 2;
                 const row = Math.floor(i / 2);
