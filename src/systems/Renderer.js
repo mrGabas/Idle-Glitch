@@ -14,7 +14,7 @@ export class Renderer {
         this.ctx = this.canvas.getContext('2d');
         this.w = 0;
         this.h = 0;
-        // this.imageCache = {}; // Removed in favor of AssetLoader
+
 
         // Matrix Rain Settings
         this.matrixFontSize = 16;
@@ -398,10 +398,7 @@ export class Renderer {
             // Draw full image without clipping
             this.ctx.drawImage(img, cx - 80, cy - 180, 160, 160);
 
-            // Border removed as per user request
-            // this.ctx.lineWidth = 5;
-            // this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; 
-            // this.ctx.stroke();
+
         } else {
             // Gradient Fallback
             let grad = this.mainButtonGrad;
@@ -580,8 +577,7 @@ export class Renderer {
                 this.ctx.font = "bold 20px Arial";
                 this.ctx.fillText(u.count, ux + 210, uy + 60);
 
-                // Desc removed as per request
-                // this.ctx.fillText(uInfo.desc || u.desc, ux + 210, uy + 20);
+
 
                 this.ctx.globalAlpha = 1; // Reset
 
@@ -751,7 +747,7 @@ export class Renderer {
     }
 
     createGlitchSlice() {
-        // if (Math.random() > 0.3) return; // Logic moved to Game or check before call
+
         const h = Math.random() * 30 + 5;
         const y = Math.random() * this.h;
         try {

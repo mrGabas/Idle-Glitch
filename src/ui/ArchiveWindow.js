@@ -436,21 +436,19 @@ export class ArchiveWindow extends Window {
     checkClick(mx, my) {
         const res = super.checkClick(mx, my);
 
-        // 1. Если кликнули на кнопку закрытия или начали перетаскивать — возвращаем результат сразу
+        // 1. If close button clicked or drag started - return immediately
         if (res === 'close' || res === 'drag') return res;
 
-        // 2. Если клик был мимо окна — возвращаем null (чтобы игра знала, что клик не обработан)
+        // 2. If click was outside window - return null
         if (res === null) return null;
 
-        // 3. Если res === 'consumed', значит клик был внутри тела окна.
-        // Мы продолжаем проверку, чтобы узнать, нажали ли на папку/файл.
+        // 3. If res === 'consumed', click was inside window body.
 
         const sidebarW = 150;
         const contentX = this.x + sidebarW + 10;
         const contentY = this.y + 40; // Including address bar
 
-        // --- ПРОВЕРКА САЙДБАРА ---
-        // --- ПРОВЕРКА САЙДБАРА ---
+        // --- SIDEBAR CHECK ---
         const contentStartX = this.x + 4;
         const contentStartY = this.y + 24;
 
@@ -476,9 +474,9 @@ export class ArchiveWindow extends Window {
             }
         }
 
-        // --- ПРОВЕРКА СЕТКИ ФАЙЛОВ ---
+        // --- FILE GRID CHECK ---
         if (mx > contentX && my > contentY) {
-            // Рассчитываем клик по сетке
+            // Calculate grid click
             const relX = mx - contentX;
             const relY = my - contentY;
             const cellW = 80;
@@ -486,13 +484,13 @@ export class ArchiveWindow extends Window {
 
             const col = Math.floor(relX / cellW);
             const row = Math.floor(relY / cellH);
-            // Ширина контента (должна совпадать с той, что в draw)
+            // Content width
             const contentW = this.w - sidebarW - 20;
             const cols = Math.floor(contentW / cellW);
 
             const targetIdx = row * cols + col;
 
-            // Если мы внутри папки
+            // If inside a folder
             if (this.currentPath.length > 0) {
                 const folderKey = this.currentPath[0];
                 const folder = LORE_DB[folderKey];
@@ -502,7 +500,7 @@ export class ArchiveWindow extends Window {
                     this.handleFileClick(file);
                     return 'consumed';
                 } else if (targetIdx === folder.files.length) {
-                    // Это кнопка ".."
+                    // ".." button
                     this.currentPath = []; // Go to root
                     this.selectedFileId = null;
                     return 'consumed';
@@ -552,7 +550,7 @@ export class ArchiveWindow extends Window {
             }
         }
 
-        // Если кликнули внутри окна, но не по папке/файлу — все равно "поглощаем" клик
+        // If clicked inside window but not on folder/file - consume click anyway
         return 'consumed';
     }
 
@@ -561,7 +559,7 @@ export class ArchiveWindow extends Window {
 
         const folder = LORE_DB[key];
 
-        // Проверяем пароль
+        // Check password
         if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
             this.game.tutorialSystem.triggerContextual('locked_folder_hint');
 
