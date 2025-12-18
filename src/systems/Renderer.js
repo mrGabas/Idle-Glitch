@@ -240,11 +240,11 @@ export class Renderer {
         uiManager.draw(this.ctx);
 
         // Feedback / Reviews Button
-        this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬');
+        this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬', uiManager.reviewsTab.hasNew);
         // Achievements Button
-        this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆');
+        this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆', uiManager.game.achievementSystem.hasNew);
         // Archive Button
-        this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁');
+        this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁', uiManager.game.loreSystem.hasNew);
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
@@ -304,14 +304,16 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawFeedbackIcon(x, y, color, emoji) {
+    drawFeedbackIcon(x, y, color, emoji, animate = false) {
         // Stylish modern icon
         this.ctx.save();
         this.ctx.translate(x, y); // x,y passed from draw() calls
 
         // Bouncing animation
-        const bounce = Math.sin(Date.now() / 300) * 3;
-        this.ctx.translate(0, bounce);
+        if (animate) {
+            const bounce = Math.sin(Date.now() / 300) * 3;
+            this.ctx.translate(0, bounce);
+        }
 
         // Glow
         this.ctx.shadowColor = color;
@@ -331,37 +333,77 @@ export class Renderer {
         this.ctx.textBaseline = "middle";
         this.ctx.fillText(emoji || '?', 0, 2);
 
+        // Notification Badge (!)
+        if (animate) {
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.beginPath();
+            this.ctx.arc(15, -10, 10, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.fillStyle = '#000'; // Black text
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText("!", 15, -9);
+        }
+
         this.ctx.restore();
     }
 
     drawHUD(mx, my, uiManager) {
-        // Mail Icon Position Passed in
-        // const mx = w - 50; // REMOVED
-        // const my = 50;
+        this.ctx.save();
+        this.ctx.translate(mx, my);
+
+        // Bouncing animation (Sync with others) only if unread
+        if (uiManager.mail && uiManager.mail.hasUnread) {
+            const bounce = Math.sin(Date.now() / 300) * 3;
+            this.ctx.translate(0, bounce);
+        }
+
+        // Circle Background (Style match)
+        const color = '#ff4757'; // Red for Mail
+        this.ctx.shadowColor = color;
+        this.ctx.shadowBlur = 15;
+        this.ctx.fillStyle = color;
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, 25, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        // Envelope Icon (Centered at 0,0)
+        // Previous was centered at mx, my. Now we are translated.
+        // Bounds: -15 to +15 x, -10 to +10 y
 
         this.ctx.fillStyle = '#fff';
-        this.ctx.fillRect(mx - 15, my - 10, 30, 20); // Envelope body
+        this.ctx.fillRect(-15, -10, 30, 20); // Envelope body
 
         // Flap
-        this.ctx.strokeStyle = '#000';
+        this.ctx.strokeStyle = '#e6e6e6'; // Slightly darker for visibility on white? Or keep outline.
+        // Actually envelope is white. Background is Red. Contrast is good.
+        // Let's add slight detail lines
+        this.ctx.strokeStyle = '#ccc';
         this.ctx.lineWidth = 1;
         this.ctx.beginPath();
-        this.ctx.moveTo(mx - 15, my - 10);
-        this.ctx.lineTo(mx, my + 5);
-        this.ctx.lineTo(mx + 15, my - 10);
+        this.ctx.moveTo(-15, -10);
+        this.ctx.lineTo(0, 5);
+        this.ctx.lineTo(15, -10);
         this.ctx.stroke();
 
         // Notification Badge
         if (uiManager.mail && uiManager.mail.hasUnread) {
-            this.ctx.fillStyle = '#f00';
+            this.ctx.fillStyle = '#ffaa00'; // Orange Warning on Red? Or White with Red text? 
+            // Let's do distinct yellow badge
+            this.ctx.fillStyle = '#FFD700';
             this.ctx.beginPath();
-            this.ctx.arc(mx + 15, my - 10, 8, 0, Math.PI * 2);
+            this.ctx.arc(15, -10, 10, 0, Math.PI * 2);
             this.ctx.fill();
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = 'bold 10px Arial';
+            this.ctx.fillStyle = '#000'; // Black text
+            this.ctx.font = 'bold 12px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText("!", mx + 15, my - 7);
+            this.ctx.textBaseline = 'middle'; // Center vertical
+            this.ctx.fillText("!", 15, -9);
         }
+
+        this.ctx.restore();
     }
 
     drawCursor(state, theme, mouse) {

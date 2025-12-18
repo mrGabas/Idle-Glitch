@@ -21,6 +21,7 @@ export class ReviewsTab {
 
         this.activeReviews = [];
         this.nextReviewIndex = 0;
+        this.hasNew = false; // Track unread reviews
 
         // Scroll state
         this.scrollTop = 0;
@@ -35,6 +36,7 @@ export class ReviewsTab {
 
     toggle() {
         this.visible = !this.visible;
+        if (this.visible) this.hasNew = false; // Clear notification
         this.game.events.emit('play_sound', 'click');
         this.resize(); // Re-center
         this.scrollTop = 0; // Reset scroll
@@ -52,6 +54,7 @@ export class ReviewsTab {
             r.avatarColor = r.type === 'creepy' ? '#000' : UTILS.randArr(['#f0f', '#0ff', '#ff0', '#f00', '#0f0']);
             this.activeReviews.unshift(r);
             this.nextReviewIndex++;
+            this.hasNew = true; // New review arrived
             this.updateScrollBounds();
         }
     }

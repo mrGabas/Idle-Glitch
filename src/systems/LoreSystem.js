@@ -13,6 +13,9 @@ export class LoreSystem {
         this.unlockedFiles = []; // Array of file IDs
         this.unlockedFolders = []; // Array of folder keys
         this.discoveredFolders = []; // Array of visible folder keys (persisted)
+        this.newFileIds = []; // Track IDs of unviewed files
+        this.acknowledgedLockedFolders = []; // Track locked folders clicked by user
+        this.hasNew = false; // Legacy/Aggregate flag
     }
 
     /**
@@ -24,6 +27,9 @@ export class LoreSystem {
             this.unlockedFiles = data.unlockedFiles || [];
             this.unlockedFolders = data.unlockedFolders || [];
             this.discoveredFolders = data.discoveredFolders || [];
+            this.newFileIds = data.newFileIds || [];
+            this.acknowledgedLockedFolders = data.acknowledgedLockedFolders || [];
+            this.hasNew = this.newFileIds.length > 0;
         }
     }
 
@@ -35,7 +41,9 @@ export class LoreSystem {
         return {
             unlockedFiles: this.unlockedFiles,
             unlockedFolders: this.unlockedFolders,
-            discoveredFolders: this.discoveredFolders
+            discoveredFolders: this.discoveredFolders,
+            newFileIds: this.newFileIds,
+            acknowledgedLockedFolders: this.acknowledgedLockedFolders
         };
     }
 
@@ -47,6 +55,8 @@ export class LoreSystem {
     unlockFile(id) {
         if (!this.unlockedFiles.includes(id)) {
             this.unlockedFiles.push(id);
+            this.newFileIds.push(id);
+            this.hasNew = true;
             this.game.uiManager.chat.addMessage('SYSTEM', `NEW DATA ACQUIRED: ${this.getFileName(id)}`);
             this.game.events.emit('play_sound', 'startup');
             this.game.saveGame(); // Trigger auto-save or ensure state is marked dirty
@@ -62,6 +72,10 @@ export class LoreSystem {
     unlockFolder(key) {
         if (!this.unlockedFolders.includes(key)) {
             this.unlockedFolders.push(key);
+            // Remove from acknowledged list so badge can reappear if needed
+            const idx = this.acknowledgedLockedFolders.indexOf(key);
+            if (idx !== -1) this.acknowledgedLockedFolders.splice(idx, 1);
+
             this.game.saveGame();
             return true;
         }
@@ -77,11 +91,27 @@ export class LoreSystem {
         return this.unlockedFiles.includes(id);
     }
 
+    markFileAsViewed(id) {
+        const idx = this.newFileIds.indexOf(id);
+        if (idx !== -1) {
+            this.newFileIds.splice(idx, 1);
+            if (this.newFileIds.length === 0) this.hasNew = false;
+            this.game.saveGame();
+        }
+    }
+
     /**
      * Checks if a folder is unlocked.
      * @param {string} key 
      * @returns {boolean}
      */
+    acknowledgeLockedFolder(key) {
+        if (!this.acknowledgedLockedFolders.includes(key)) {
+            this.acknowledgedLockedFolders.push(key);
+            this.game.saveGame();
+        }
+    }
+
     /**
      * Checks if a folder is visible (discovered).
      * @param {string} key 

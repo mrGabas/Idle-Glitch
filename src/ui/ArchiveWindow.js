@@ -220,7 +220,15 @@ export class ArchiveWindow extends Window {
 
             visibleKeys.forEach(key => {
                 const folder = LORE_DB[key];
-                this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, folder.locked && !this.game.loreSystem.isFolderUnlocked(key));
+                // Check if folder has new files
+                // Badge logic: Show if has new files AND (Unlocked OR (Locked AND Not Acknowledged))
+                const hasNewFiles = folder.files.some(f => this.game.loreSystem.newFileIds.includes(f.id));
+                const isLocked = folder.locked && !this.game.loreSystem.isFolderUnlocked(key);
+                const isAcknowledged = this.game.loreSystem.acknowledgedLockedFolders.includes(key);
+
+                const hasNewInFolder = hasNewFiles && (!isLocked || !isAcknowledged);
+
+                this.drawIcon(ctx, gx, gy, folder.name, 'folder', key === this.selectedFolderKey, isLocked, hasNewInFolder);
                 gx += cellW;
                 if (gx > x + w - cellW) {
                     gx = contentX;
@@ -269,7 +277,8 @@ export class ArchiveWindow extends Window {
                 let icon = isCollected ? 'file' : 'unknown';
 
                 if (isCollected) {
-                    this.drawIcon(ctx, gx, gy, label, icon, file.id === this.selectedFileId);
+                    const isNew = this.game.loreSystem.newFileIds.includes(file.id);
+                    this.drawIcon(ctx, gx, gy, label, icon, file.id === this.selectedFileId, false, isNew);
                 } else {
                     ctx.globalAlpha = 0.5;
                     this.drawIcon(ctx, gx, gy, label, icon, false);
@@ -288,7 +297,7 @@ export class ArchiveWindow extends Window {
         }
     }
 
-    drawIcon(ctx, x, y, label, type, selected, locked) {
+    drawIcon(ctx, x, y, label, type, selected, locked, hasNew = false) {
         // Icon drawing (same size as before)
         const iconW = 64;
         const iconH = 64; // Visual icon height approx
@@ -296,34 +305,20 @@ export class ArchiveWindow extends Window {
         // Calculate text wrapping first to determine selection box size
         ctx.font = '10px Arial';
         const maxWidth = 70;
-        const words = label.split(/(?=[_])|(?<=[_])|\s+/); // specific split for file names with underscores if needed, or just space?
-        // Let's stick to spaces and maybe aggressive breaking if too long. 
-        // Simple word wrap by space:
+        const words = label.split(/(?=[_])|(?<=[_])|\s+/);
         const lines = [];
         let currentLine = words[0] || "";
 
-        const allWords = label.split(/\s+|(?=[_-])/); // split by space or before _-
+        const allWords = label.split(/\s+|(?=[_-])/);
 
-        // Re-implementing a simpler word wrap logic
         let line = "";
-        const wList = label.match(/[\w\d\.\-]+|\s+/g) || [label]; // simplified tokenizer
+        const wList = label.match(/[\w\d\.\-]+|\s+/g) || [label];
 
-        // Let's just do character check or space check. Many files are "file_name.txt" -> one word.
-        // We need to force break if a word is too long.
-
-        // Better approach for filenames:
-        // Try to break on special chars or just length
-        const maxChars = 11;
-        let pending = label;
-
-        // Helper to measure
         const fit = (text) => ctx.measureText(text).width <= maxWidth;
 
         if (fit(label)) {
             lines.push(label);
         } else {
-            // Tokenize by special chars to nice break points?
-            // "incident_report_7734" -> "incident_", "report_", "7734"
             const parts = label.split(/([_\-\s\.])/);
             let buf = "";
             parts.forEach(p => {
@@ -337,31 +332,27 @@ export class ArchiveWindow extends Window {
             if (buf) lines.push(buf);
         }
 
-        // Fallback: if a line is still too huge (e.g. no separators), hard break
         for (let i = 0; i < lines.length; i++) {
             if (!fit(lines[i])) {
-                // Hard chop
                 let sub = lines[i];
                 lines.splice(i, 1);
                 while (sub.length > 0) {
-                    // Find how many chars fit
                     let c = sub.length;
                     while (c > 0 && !fit(sub.substring(0, c))) c--;
-                    if (c === 0) c = 1; // force at least 1
+                    if (c === 0) c = 1;
                     lines.splice(i, 0, sub.substring(0, c));
                     sub = sub.substring(c);
                     i++;
                 }
-                i--; // backtrack to check next
+                i--;
             }
         }
 
 
         // Selection Box
         if (selected) {
-            ctx.fillStyle = '#000080'; // Selection Blue
+            ctx.fillStyle = '#000080';
             ctx.globalAlpha = 0.3;
-            // Height covers icon + text lines
             const textH = lines.length * 12;
             ctx.fillRect(x, y, 64, 54 + textH + 4);
             ctx.globalAlpha = 1.0;
@@ -402,7 +393,28 @@ export class ArchiveWindow extends Window {
             ctx.fillRect(x + 20, y + 20, 20, 2);
             ctx.fillRect(x + 20, y + 25, 20, 2);
             ctx.fillRect(x + 20, y + 30, 20, 2);
-        } else {
+        } else if (type === 'image' || type === 'audio') {
+            // Check previous file where I might have missed defined types?
+            // Actually previous code handled 'file' or 'unknown'. 
+            // wait, user said "Archive". 
+            // In handleFileClick below, we see handleFileClick checks type.
+            // But drawIcon was simplified in source view.
+            // I need to support image/audio in drawIcon if I want to visualize them properly.
+            // But for now, let's just stick to 'file' style for known uncollected? 
+            // Ah, drawContent logic passes 'file' icon for collected files.
+            // Except for the MEDIA folder block which passes 'image' or 'audio'. 
+            // I should add those cases to be safe or map them to 'file'.
+            // Actually, let's keep it simple and just draw badges.
+            // I will inject badge drawing at end of function.
+
+            // Simulating image/audio icon if needed, or fallback to file.
+            ctx.fillStyle = '#ccc';
+            ctx.fillRect(x + 15, y + 10, 34, 44);
+            ctx.strokeRect(x + 15, y + 10, 34, 44);
+            ctx.fillStyle = '#000';
+            ctx.fillText(type[0].toUpperCase(), x + 28, y + 35);
+        }
+        else {
             // Unknown
             ctx.fillStyle = '#ccc';
             ctx.fillRect(x + 15, y + 10, 34, 44);
@@ -411,10 +423,19 @@ export class ArchiveWindow extends Window {
             ctx.fillText("?", x + 28, y + 35);
         }
 
-        // Label Rendering
+        // Notification Badge (!)
+        if (hasNew) {
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x + 45, y + 15, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText("!", x + 45, y + 18);
+        }
 
-        // Draw selection highlight for text specifically? 
-        // Classic windows has dark blue bg for text when selected.
+        // Label Rendering
 
         let ty = y + 66;
         ctx.textAlign = 'center';
@@ -559,8 +580,10 @@ export class ArchiveWindow extends Window {
 
         const folder = LORE_DB[key];
 
-        // Check password
         if (folder.locked && !this.game.loreSystem.isFolderUnlocked(key)) {
+            // Acknowledge the lock (supress badge)
+            this.game.loreSystem.acknowledgeLockedFolder(key);
+
             this.game.tutorialSystem.triggerContextual('locked_folder_hint');
 
             // Check if PasswordWindow for this folder is already open
@@ -597,6 +620,7 @@ export class ArchiveWindow extends Window {
         if (this.game.loreSystem.isFileUnlocked(file.id)) {
             // Check for Audio/Image types
             if (file.type === 'audio' || file.type === 'image') {
+                this.game.loreSystem.markFileAsViewed(file.id); // Mark as viewed
                 this.game.uiManager.showMedia({
                     mediaType: file.type,
                     src: file.src || file.content, // Fallback if src not set but content is path
@@ -619,6 +643,7 @@ export class ArchiveWindow extends Window {
             }
 
             this.selectedFileId = file.id;
+            this.game.loreSystem.markFileAsViewed(file.id); // Mark as viewed
             this.game.uiManager.openNotepad(file.content, { title: file.name, password: null });
         } else {
             this.game.events.emit('play_sound', 'error');

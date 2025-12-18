@@ -10,6 +10,7 @@ export class AchievementSystem {
         const savedIds = this.game.saveSystem.load('unlocked_achievements', []);
         // Validate IDs
         this.unlocked = savedIds.filter(id => this.achievements.find(a => a.id === id));
+        this.hasNew = false; // Track unviewed achievements
     }
 
     reset() {
@@ -32,6 +33,7 @@ export class AchievementSystem {
         if (this.unlocked.includes(achievement.id)) return;
 
         this.unlocked.push(achievement.id);
+        this.hasNew = true;
 
         // Grant Reward
         if (achievement.reward) {
