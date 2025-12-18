@@ -23,13 +23,22 @@ export const CFG = {
     },
     // New constants moved from Game.js
     game: {
-        mainButtonRadius: 80,
+        mainButtonRatio: 0.18, // Slightly larger
+        gameAreaWidthRatio: 0.65, // Game area width ratio
         shop: {
-            startX: 230, // Offset from center
-            colWidth: 240,
-            rowHeight: 80,
-            width: 220,
-            height: 70
+            // Ratios relative to Width for X/W and Height for Y/H
+            startXRatio: 0.66,
+            startYRatio: 0.10,
+            // Wait, user said "Improvements should be lower".
+            // Previous was 150px. 150 / 969 ~ 0.15.
+            // 0.35 is LOWER down the screen. Good.
+
+            cardWidthRatio: 0.32,
+            cardHeightRatio: 0.10,
+
+            // Spacing
+            colSpacingRatio: 0,
+            rowSpacingRatio: 0.11
         },
         bios: {
             startY: 120,

@@ -945,7 +945,8 @@ export class Game {
             metaUpgrades: this.metaUpgrades,
             glitchData: this.glitchData,
             selectedBIOSIndex: this.selectedBIOSIndex,
-            shopOpen: this.economySystem.shopOpen
+            shopOpen: this.economySystem.shopOpen,
+            activeHighlightTarget: this.tutorialSystem.activeHighlightTarget
         };
 
         const entities = {

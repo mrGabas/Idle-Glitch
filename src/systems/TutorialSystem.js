@@ -28,8 +28,8 @@ export class TutorialSystem {
                 {
                     id: 'generate_entropy',
                     sender: 'SYSTEM',
-                    message: "TASK: Generate 10 Entropy. Click the central area.",
-                    targetId: 'gameCanvas',
+                    message: "TASK: Generate 10 Entropy. Click the Main Button.",
+                    targetId: 'MAIN_BUTTON',
                     delay: 2000,
                     trigger: () => this.game.state.score >= 10,
                     action: () => {
@@ -185,10 +185,15 @@ export class TutorialSystem {
     }
 
     /**
-     * Highlights a DOM element by ID.
+     * Highlights a DOM element by ID or sets a virtual target.
      * @param {string} id 
      */
     highlightElement(id) {
+        if (id === 'MAIN_BUTTON') {
+            this.activeHighlightTarget = id;
+            return;
+        }
+
         const el = document.getElementById(id);
         if (el) {
             el.classList.add('tutorial-highlight');
@@ -202,6 +207,8 @@ export class TutorialSystem {
      * Removes the current highlight.
      */
     clearHighlight() {
+        this.activeHighlightTarget = null; // Clear virtual target
+
         if (this.activeHighlight) {
             this.activeHighlight.classList.remove('tutorial-highlight');
             this.activeHighlight = null;

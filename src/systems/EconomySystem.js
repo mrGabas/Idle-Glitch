@@ -41,18 +41,28 @@ export class EconomySystem {
         // 1. Shop Upgrades (Only if open)
         let shopHit = false;
 
+        const w = this.game.w;
+        const h = this.game.h;
+
         if (this.shopOpen) {
             // Access upgrades via themeManager
             const upgrades = this.game.themeManager.upgrades;
 
-            upgrades.forEach((u, i) => {
-                const col = i % 2;
-                const row = Math.floor(i / 2);
-                // Re-calculate positions or use CFG constants directly as Game.js did
-                const bx = (this.game.w / 2 - CFG.game.shop.startX) + col * CFG.game.shop.colWidth;
-                const by = this.game.h / 2 + 50 + row * CFG.game.shop.rowHeight;
+            // Must match Renderer.js positioning (Responsive)
+            const shopStartX = w * CFG.game.shop.startXRatio;
+            const shopStartY = h * CFG.game.shop.startYRatio;
 
-                if (mx >= bx && mx <= bx + CFG.game.shop.width && my >= by && my <= by + CFG.game.shop.height) {
+            const cardW = w * CFG.game.shop.cardWidthRatio;
+            const cardH = h * CFG.game.shop.cardHeightRatio;
+
+            const colStep = w * CFG.game.shop.colSpacingRatio;
+            const rowStep = h * CFG.game.shop.rowSpacingRatio;
+
+            upgrades.forEach((u, i) => {
+                const bx = shopStartX;
+                const by = shopStartY + i * rowStep;
+
+                if (mx >= bx && mx <= bx + cardW && my >= by && my <= by + cardH) {
                     shopHit = true;
                     if (this.game.state.score >= u.cost) {
                         this.buyUpgrade(u);
@@ -65,10 +75,14 @@ export class EconomySystem {
 
         if (shopHit) return true;
 
-        // 2. Main Button
-        const cx = this.game.w / 2;
-        const cy = this.game.h / 2 - 100;
-        if (Math.hypot(mx - cx, my - cy) < CFG.game.mainButtonRadius) {
+        // 2. Main Button (Game Area Center)
+        const gameW = w * CFG.game.gameAreaWidthRatio;
+        const btnX = gameW / 2;
+        const btnY = h * 0.5;
+        const btnRadius = Math.min(gameW, h) * CFG.game.mainButtonRatio;
+
+        if (Math.hypot(mx - btnX, my - btnY) < btnRadius) {
+            this.game.createParticles(mx, my, this.game.themeManager.currentTheme.colors.accent); // Visual tap feedback at actual mouse pos
             this.handleMainClick(mx, my);
             return true;
         }

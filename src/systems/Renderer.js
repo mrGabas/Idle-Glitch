@@ -69,7 +69,7 @@ export class Renderer {
      * @param {Object} uiManager - The UI Manager instance
      */
     draw(state, entities, input, uiManager) {
-        const { currentTheme, mouse, shake, scareTimer, scareText, shopOpen, gameState } = input;
+        const { currentTheme, mouse, shake, scareTimer, scareText, shopOpen, gameState, activeHighlightTarget } = input;
 
         // Optimize Time String (Update once per second)
         const now = Date.now();
@@ -141,7 +141,9 @@ export class Renderer {
 
         // Game Center Vignette
         if (!this.vignetteGrad || this.vignetteGradTheme !== currentTheme.id) {
-            const cx = this.w / 2;
+            // Center in Game Area, matching Main Button
+            const gameW = this.w * CFG.game.gameAreaWidthRatio;
+            const cx = gameW / 2;
             const cy = this.h / 2;
             const grad = this.ctx.createRadialGradient(cx, cy, 100, cx, cy, 500);
             grad.addColorStop(0, currentTheme.colors.bg);
@@ -152,7 +154,7 @@ export class Renderer {
         this.ctx.fillStyle = this.vignetteGrad;
         this.ctx.fillRect(0, 0, this.w, this.h);
 
-        this.drawGameUI(state, currentTheme, entities.upgrades, mouse, shopOpen);
+        this.drawGameUI(state, currentTheme, entities.upgrades, mouse, shopOpen, activeHighlightTarget);
 
         // Entities
         if (entities.debris) entities.debris.forEach(d => d.draw(this.ctx));
@@ -370,23 +372,57 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    drawGameUI(state, theme, upgrades, mouse, shopOpen) {
-        const cx = this.w / 2;
+    drawGameUI(state, theme, upgrades, mouse, shopOpen, activeHighlightTarget) {
+        // const cx = this.w / 2; // Removed (Redeclared below)
         const cy = this.h / 2;
         const colors = theme.colors;
+
+        // --- LAYOUT AREAS ---
+        const gameW = this.w * CFG.game.gameAreaWidthRatio;
+        const sideW = this.w - gameW;
+
+        // Game Area Center
+        const cx = gameW / 2;
+
+        // --- SIDEBAR BACKGROUND ---
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Subtle darken
+        this.ctx.fillRect(gameW, 0, sideW, this.h);
+
+        // --- POSITIONING CONSTANTS (RESPONSIVE) ---
+        const btnX = cx; // Center of Game Area
+        const btnY = this.h * 0.5;  // Center Height
+
+        // --- TUTORIAL HIGHLIGHT: MAIN BUTTON ---
+        if (activeHighlightTarget === 'MAIN_BUTTON') {
+            this.ctx.save();
+            this.ctx.strokeStyle = '#0f0';
+            this.ctx.lineWidth = 4;
+            // Pulsing radius
+            const pulse = Math.sin(Date.now() / 200) * 10;
+            this.ctx.beginPath();
+            this.ctx.arc(btnX, btnY, this.h * CFG.game.mainButtonRatio + 20 + pulse, 0, Math.PI * 2);
+            this.ctx.stroke();
+
+            // "CLICK ME" text or arrow?
+            // Let's rely on the pulse for now.
+            this.ctx.restore();
+        }
+
+        // Dynamic Radius based on screen size (min of w,h)
+        const btnRadius = Math.min(gameW, this.h) * CFG.game.mainButtonRatio;
 
         // NULL VOID MECHANIC: Main Button Invisibility
         let btnAlpha = 1;
         if (theme.id === 'null_void') {
-            const dist = Math.hypot(mouse.x - cx, mouse.y - (cy - 100));
-            if (dist < 80) btnAlpha = 1; else btnAlpha = 0;
+            const dist = Math.hypot(mouse.x - btnX, mouse.y - btnY);
+            if (dist < btnRadius) btnAlpha = 1; else btnAlpha = 0;
         }
 
         this.ctx.globalAlpha = btnAlpha;
 
         // Main Button circle
         this.ctx.beginPath();
-        this.ctx.arc(cx, cy - 100, 80, 0, Math.PI * 2);
+        this.ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
 
         // Check for Image
         let img = null;
@@ -396,28 +432,35 @@ export class Renderer {
 
         if (img && img.complete && img.naturalWidth > 0) {
             // Draw full image without clipping
-            this.ctx.drawImage(img, cx - 80, cy - 180, 160, 160);
-
-
+            this.ctx.drawImage(img, btnX - btnRadius, btnY - btnRadius, btnRadius * 2, btnRadius * 2);
         } else {
             // Gradient Fallback
             let grad = this.mainButtonGrad;
+            // Ideally invalidate gradient if size changes, but for now just recreate/use
+            // Simpler: Just make new gradient every frame is expensive? No.
+            // But we cache.
+            // If radius changes, gradient should be rebuilt?
+            // "this.mainButtonGrad" cache might be stale if window resizes.
+            // "setSize" invalidates it. So we are good.
             if (!grad) {
-                grad = this.ctx.createLinearGradient(cx - 80, cy - 180, cx + 80, cy - 20);
+                grad = this.ctx.createLinearGradient(btnX - btnRadius, btnY - btnRadius, btnX + btnRadius, btnY + btnRadius);
                 theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
                 this.mainButtonGrad = grad;
             }
 
             this.ctx.fillStyle = grad;
             this.ctx.fill();
-            this.ctx.lineWidth = 5;
+            this.ctx.lineWidth = Math.max(2, btnRadius * 0.05); // Dynamic stroke
             this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
             this.ctx.stroke();
         }
 
         this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
-        this.ctx.font = "bold 24px Arial";
         this.ctx.textAlign = 'center';
+
+        // Dynamic Font
+        const btnFontSize = Math.floor(btnRadius * 0.3); // 30% of radius
+        this.ctx.font = `bold ${btnFontSize}px Arial`;
 
         // Hide Text/Emoji if we have an image
         if (!img || !img.complete) {
@@ -426,27 +469,30 @@ export class Renderer {
             if (state.corruption > 50) {
                 btnText = this.getGlitchText(btnText, state.corruption);
             }
-            this.ctx.fillText(btnText, cx, cy - 110);
+            this.ctx.fillText(btnText, btnX, btnY - btnRadius * 0.3);
 
-            this.ctx.font = "40px Arial";
-            this.ctx.fillText(theme.button.emoji, cx, cy - 70);
+            const emojiSize = Math.floor(btnRadius * 0.6);
+            this.ctx.font = `${emojiSize}px Arial`;
+            this.ctx.fillText(theme.button.emoji, btnX, btnY + btnRadius * 0.5);
         }
 
         this.ctx.globalAlpha = 1; // Reset
 
-        // Score
+        // Score (Top Center)
         this.ctx.fillStyle = colors.text;
+        // Adjust Font Size? Use config or dynamic?
+        // Let's stick to config fonts for text consistency unless requested.
         this.ctx.font = CFG.fonts.xl;
-        this.ctx.fillText(UTILS.fmt(state.score) + ' ' + theme.currency.symbol, cx, cy + 20);
+        this.ctx.fillText(UTILS.fmt(state.score) + ' ' + theme.currency.symbol, cx, this.h * 0.1);
 
         this.ctx.font = CFG.fonts.m;
-        this.ctx.fillText(`${UTILS.fmt(state.autoRate)} / sec`, cx, cy + 50);
+        this.ctx.fillText(`${UTILS.fmt(state.autoRate)} / sec`, cx, this.h * 0.14);
 
-        // Progress Bar (Corruption/Happiness)
-        const barW = 400;
-        const barH = 20;
+        // Progress Bar (Bottom Center of Game Area)
+        const barW = gameW * 0.8; // 80% Width of Game Area
+        const barH = Math.max(10, this.h * 0.03); // 3% Height
         const bx = cx - barW / 2;
-        const by = this.h - 50;
+        const by = this.h * 0.9;
 
         // Null Void: Invisible Progress Bar too
         let barAlpha = 1;
@@ -477,9 +523,9 @@ export class Renderer {
         // OVERHEAT GAUGE (Server Farm)
         if (theme.mechanics && theme.mechanics.overheat) {
             const hbx = bx;
-            const hby = by - 30; // Above corruption bar
+            const hby = by - barH * 1.5; // Above corruption bar
             const hbW = barW;
-            const hbH = 10;
+            const hbH = barH * 0.5;
 
             // BG
             this.ctx.fillStyle = '#220000';
@@ -505,22 +551,27 @@ export class Renderer {
             this.ctx.fillText(state.throttled ? "THROTTLED" : `TEMP: ${Math.floor(state.temperature)}°C`, cx, hby - 5);
         }
 
-        // Upgrades Shop
-        // Grid 2x4
+        // Upgrades Shop (Right Side - Responsive)
+        const shopStartX = this.w * CFG.game.shop.startXRatio;
+        const shopStartY = this.h * CFG.game.shop.startYRatio;
+
+        const cardW = this.w * CFG.game.shop.cardWidthRatio;
+        const cardH = this.h * CFG.game.shop.cardHeightRatio;
+
+        const colStep = this.w * CFG.game.shop.colSpacingRatio;
+        const rowStep = this.h * CFG.game.shop.rowSpacingRatio;
+
         if (upgrades && shopOpen) {
             upgrades.forEach((u, i) => {
-                const col = i % 2;
-                const row = Math.floor(i / 2);
-
-                const ux = cx - 230 + col * 240;
-                const uy = cy + 50 + row * 80;
+                const ux = shopStartX;
+                const uy = shopStartY + i * rowStep;
 
                 // NULL VOID MECHANIC: Invisible UI
                 let alpha = 1;
                 if (theme.id === 'null_void') {
                     const mx = mouse.x;
                     const my = mouse.y;
-                    if (mx >= ux && mx <= ux + 220 && my >= uy && my <= uy + 70) {
+                    if (mx >= ux && mx <= ux + cardW && my >= uy && my <= uy + cardH) {
                         alpha = 1;
                     } else {
                         alpha = 0; // Completely invisible
@@ -531,55 +582,61 @@ export class Renderer {
 
                 // BG
                 this.ctx.fillStyle = state.score >= u.cost ? colors.ui : (theme.id === 'null_void' ? '#fff' : '#333');
-                this.ctx.fillRect(ux, uy, 220, 70);
+                this.ctx.fillRect(ux, uy, cardW, cardH);
 
                 // Border
                 this.ctx.strokeStyle = colors.uiBorder;
                 this.ctx.lineWidth = 1;
-                this.ctx.strokeRect(ux, uy, 220, 70);
+                this.ctx.strokeRect(ux, uy, cardW, cardH);
 
                 // UI Gaslighting Logic
                 const uInfo = this.getCorruptedUpgradeInfo(u, state.corruption);
 
-                // Name
+                // Icon (Left)
+                const iconSize = cardH * 0.6;
+                this.ctx.font = `${Math.floor(iconSize)}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillStyle = '#fff';
+                let icon = u.type === 'auto' ? '⚙️' : '👆';
+                if (u.id.includes('cursor')) icon = '👆';
+                if (u.id.includes('auto')) icon = '⚡';
+                this.ctx.fillText(icon, ux + cardH * 0.5, uy + cardH * 0.7);
+
+                // Name (Right)
                 this.ctx.fillStyle = colors.text;
                 this.ctx.textAlign = 'left';
-                this.ctx.font = "bold 16px Arial";
+                const fontSize = Math.max(12, Math.floor(cardH * 0.18));
+                this.ctx.font = `bold ${fontSize}px Arial`;
+                const textX = ux + cardH;
 
-                // Move text up slightly to fit 3 lines
-                this.ctx.fillText(uInfo.name, ux + 10, uy + 20);
+                this.ctx.fillText(uInfo.name, textX, uy + cardH * 0.3);
 
                 // Digital Decay Redaction
                 if (theme.id === 'digital_decay' && (uInfo.name.includes('[REDACTED]') || Math.random() < 0.01)) {
                     const w = this.ctx.measureText(uInfo.name).width;
                     this.ctx.fillStyle = '#000';
-                    this.ctx.fillRect(ux + 10, uy + 8, w, 14);
+                    this.ctx.fillRect(textX, uy + cardH * 0.3 - fontSize * 0.8, w, fontSize);
                 }
+
+                // Rate Text
+                this.ctx.fillStyle = '#ccc';
+                this.ctx.font = `${Math.floor(fontSize * 0.8)}px monospace`;
+                let rateText = "";
+                if (u.type === 'auto') rateText = `+${UTILS.fmt(u.val)}/sec`;
+                else if (u.type === 'click') rateText = `+${UTILS.fmt(u.val)} Click`;
+                this.ctx.fillText(rateText, textX, uy + cardH * 0.55);
 
                 // Cost
                 const canBuy = state.score >= u.cost;
                 this.ctx.fillStyle = canBuy ? colors.accent : '#888';
-                this.ctx.font = "14px monospace";
-                this.ctx.fillText("Cost: " + UTILS.fmt(u.cost), ux + 10, uy + 40);
-
-                // Rate / Click Power
-                this.ctx.fillStyle = '#ffffff'; // White text
-                this.ctx.font = "12px monospace";
-                let rateText = "";
-                if (u.type === 'auto') rateText = `+${UTILS.fmt(u.val)}/sec`;
-                else if (u.type === 'click') rateText = `+${UTILS.fmt(u.val)} Click`;
-
-                this.ctx.fillText(rateText, ux + 10, uy + 60);
+                this.ctx.font = `bold ${Math.floor(fontSize * 0.9)}px monospace`;
+                this.ctx.fillText(UTILS.fmt(u.cost) + theme.currency.symbol, textX, uy + cardH * 0.85);
 
                 // Count
                 this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
                 this.ctx.textAlign = 'right';
-                this.ctx.font = "bold 20px Arial";
-                this.ctx.fillText(u.count, ux + 210, uy + 60);
-
-
-
-                this.ctx.globalAlpha = 1; // Reset
+                this.ctx.font = `bold ${Math.floor(fontSize * 1.2)}px Arial`;
+                this.ctx.fillText(u.count, ux + cardW - 10, uy + cardH * 0.85);
 
                 this.ctx.globalAlpha = 1; // Reset
             });
