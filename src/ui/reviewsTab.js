@@ -28,10 +28,22 @@ export class ReviewsTab {
         this.maxScroll = 0;
         this.contentHeight = 0;
 
-        // Add initial batch
-        this.addReview();
-        this.addReview();
-        this.addReview();
+        // Setup Reviews with Corruption Thresholds
+        this.allReviews = REVIEWS.map((r, i) => {
+            // If no trigger defined, assign one based on index
+            // e.g. Review 0 -> 0 corr, Review 1 -> 5 corr...
+            const trigger = r.triggerCorruption !== undefined ? r.triggerCorruption : i * 5;
+            return { ...r, triggerCorruption: trigger, id: i };
+        });
+
+        this.addedReviewIds = new Set();
+
+        // Add initial batch (reviews that meet 0 corruption or starting requirements)
+        // We will let the update loop handle this to avoid duplicate logic, 
+        // OR we pre-fill. Let's pre-fill the first few if they match 0.
+        // Actually, better to just let update() handle it instantly on first frame.
+        // But the previous code added 3 explicit ones.
+        // Let's rely on the update loop.
     }
 
     toggle() {
@@ -47,17 +59,12 @@ export class ReviewsTab {
         this.y = (this.game.h - this.h) / 2;
     }
 
+    // Old addReview removed/replaced above
+    /*
     addReview() {
-        if (this.nextReviewIndex < REVIEWS.length) {
-            const r = REVIEWS[this.nextReviewIndex];
-            // Store stable avatar color
-            r.avatarColor = r.type === 'creepy' ? '#000' : UTILS.randArr(['#f0f', '#0ff', '#ff0', '#f00', '#0f0']);
-            this.activeReviews.unshift(r);
-            this.nextReviewIndex++;
-            this.hasNew = true; // New review arrived
-            this.updateScrollBounds();
-        }
+       ...
     }
+    */
 
     updateScrollBounds() {
         const ctx = this.game.renderer.ctx;
@@ -123,27 +130,30 @@ export class ReviewsTab {
     }
 
     update(dt) {
-        if (!this.visible) return;
 
         const corruption = this.game.state.corruption;
 
-        // Check if we can unlock a creepy review
-        const nextReview = REVIEWS[this.nextReviewIndex];
-        if (nextReview) {
-            let canAdd = false;
+        // Check for new reviews based on corruption
+        this.allReviews.forEach(r => {
+            if (this.addedReviewIds.has(r.id)) return;
 
-            if (nextReview.type === 'normal') {
-                if (Math.random() < 0.01) canAdd = true; // Slowly trickle
-            } else if (nextReview.type === 'creepy') {
-                if (corruption >= nextReview.triggerCorruption) {
-                    canAdd = true;
-                }
-            }
+            if (corruption >= r.triggerCorruption) {
+                // Determine if we add it
+                // Creepy ones might technically have extra conditions but here we just used corruption before
+                // Normal ones now use assigned corruption.
 
-            if (canAdd) {
-                this.addReview();
+                this.addReview(r);
+                this.addedReviewIds.add(r.id);
+                this.hasNew = true;
+                this.updateScrollBounds();
             }
-        }
+        });
+    }
+
+    addReview(reviewData) {
+        // Store stable avatar color
+        reviewData.avatarColor = reviewData.type === 'creepy' ? '#000' : UTILS.randArr(['#f0f', '#0ff', '#ff0', '#f00', '#0f0']);
+        this.activeReviews.unshift(reviewData);
     }
 
     checkClick(mx, my) {
