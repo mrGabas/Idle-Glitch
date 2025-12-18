@@ -8,28 +8,33 @@ export const COLLECTION_DB = {
     },
     items: [
         // Common
-        // { id: 'meme_c_1', name: '1', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/1.webp' }, // Exists in list?
-        // Checked list: 1. Common contains: 1.webp, 3.webp. (Wait, let's just map safe ones)
-        { id: 'meme_c_1', name: '1', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/1.webp' },
-        { id: 'meme_c_3', name: '3', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/3.webp' },
+        { id: 'meme_c_1', name: 'Chill Guy', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Chill Guy.webp' },
+        { id: 'meme_c_2', name: 'Cramped', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Cramped.webp' },
+        { id: 'meme_c_3', name: 'Grumpy', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Grumpy.webp' },
+        { id: 'meme_c_4', name: 'Polite', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Polite.webp' },
+        { id: 'meme_c_5', name: 'Shocked', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Shocked.webp' },
+        { id: 'meme_c_6', name: 'Side Eye', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Side Eye.webp' },
+        { id: 'meme_c_7', name: 'Suspicious', type: 'image', rarity: 'common', src: 'assets/Media/1. Common/Suspicious.webp' },
 
         // Uncommon
-        // List: Like.webp. (Others were 404 or not shown). Assumed 1-5 don't exist?
-        // User error said 5.webp 404. 
-        // I will only include what I SAW in the partial list output + 'Like.webp'.
-        // Actually, I'll rely on the user to fill the rest or I ask for full dir list?
-        // I'll add the ones I saw:
-        { id: 'meme_u_like', name: 'Like', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Like.webp' },
+        { id: 'meme_u_1', name: 'Confused', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Confused.webp' },
+        { id: 'meme_u_2', name: 'Crying', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Crying.webp' },
+        { id: 'meme_u_3', name: 'Disaster Girl', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Disaster Girl.webp' },
+        { id: 'meme_u_4', name: 'Fine', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Fine.webp' },
+        { id: 'meme_u_5', name: 'Like', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Like.webp' },
+        { id: 'meme_u_6', name: 'Success Kid', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Success Kid.webp' },
 
         // Rare
-        { id: 'meme_r_ginger', name: 'Ginger Catzilla', type: 'image', rarity: 'rare', src: 'assets/Media/3. Rare/Ginger Catzilla.webp' },
         { id: 'meme_r_dont', name: "don't eat me pls", type: 'image', rarity: 'rare', src: "assets/Media/3. Rare/don't eat me pls.webp" },
+        { id: 'meme_r_ginger', name: 'Ginger Catzilla', type: 'image', rarity: 'rare', src: 'assets/Media/3. Rare/Ginger Catzilla.webp' },
+        { id: 'meme_r_ok', name: "ok...", type: 'image', rarity: 'rare', src: "assets/Media/3. Rare/ok....webp" },
+        { id: 'meme_r_strong', name: 'StrongCAT', type: 'image', rarity: 'rare', src: 'assets/Media/3. Rare/StrongCAT.webp' },
 
         // Epic
-        { id: 'meme_e_1', name: '1', type: 'image', rarity: 'epic', src: 'assets/Media/4. Epic/1.webp' },
-        { id: 'meme_e_2', name: '2', type: 'video', rarity: 'epic', src: 'assets/Media/4. Epic/2.webm' },
-        { id: 'meme_e_3', name: '3', type: 'image', rarity: 'epic', src: 'assets/Media/4. Epic/3.webp' },
-        { id: 'meme_e_strong', name: 'StrongCAT', type: 'image', rarity: 'epic', src: 'assets/Media/4. Epic/StrongCAT.webp' },
+        { id: 'meme_e_boss', name: 'Final Boss', type: 'image', rarity: 'epic', src: 'assets/Media/4. Epic/Final Boss.webp' },
+        { id: 'meme_e_first', name: 'First meeeow', type: 'video', rarity: 'epic', src: 'assets/Media/4. Epic/First meeeow.mp4' },
+        { id: 'meme_e_ohno', name: 'Oh no...', type: 'video', rarity: 'epic', src: 'assets/Media/4. Epic/Oh no....webm' },
+        { id: 'meme_e_sad', name: 'So sad', type: 'video', rarity: 'epic', src: 'assets/Media/4. Epic/So sad.mp4' },
 
         // Legendary
         { id: 'meme_l_huh', name: 'huh', type: 'video', rarity: 'legendary', src: 'assets/Media/5. Legendary/huh.mp4' },
