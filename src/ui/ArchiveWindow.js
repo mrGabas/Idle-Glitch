@@ -1,6 +1,7 @@
 import { Window } from './Window.js';
 import { PasswordWindow } from './PasswordWindow.js';
 import { LORE_DB } from '../data/loreData.js';
+import { COLLECTION_DB } from '../data/collectionData.js';
 import { UTILS } from '../core/config.js';
 import { assetLoader } from '../core/AssetLoader.js';
 
@@ -110,6 +111,20 @@ export class ArchiveWindow extends Window {
         });
         curY += 20;
 
+        // COLLECTION (MEMES)
+        layout.push({
+            type: 'folder',
+            key: 'COLLECTION',
+            label: "Collection",
+            lineHeight: 16,
+            lines: ["Collection"],
+            x: x,
+            y: curY,
+            w: sidebarW,
+            h: 20
+        });
+        curY += 20;
+
         // Folders
         const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
 
@@ -209,9 +224,17 @@ export class ArchiveWindow extends Window {
 
         // If at root, show folders as icons
         const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
-        if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA') {
+        if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA' && this.selectedFolderKey !== 'COLLECTION') {
             // Draw MEDIA folder first
             this.drawIcon(ctx, gx, gy, "MEDIA", 'folder', false, false); // Never locked
+            gx += cellW;
+            if (gx > x + w - cellW) {
+                gx = contentX;
+                gy += cellH;
+            }
+
+            // Draw COLLECTION folder second
+            this.drawIcon(ctx, gx, gy, "Collection", 'folder', false, false);
             gx += cellW;
             if (gx > x + w - cellW) {
                 gx = contentX;
@@ -252,8 +275,6 @@ export class ArchiveWindow extends Window {
 
             allMedia.forEach(file => {
                 const isCollected = this.game.loreSystem.isFileUnlocked(file.id);
-                // Only show collected media? Or all? Usually archives show gathered stuff.
-                // Let's show collected ones.
                 if (isCollected) {
                     let icon = file.type === 'image' ? 'image' : 'audio';
                     this.drawIcon(ctx, gx, gy, file.name, icon, file.id === this.selectedFileId);
@@ -263,6 +284,27 @@ export class ArchiveWindow extends Window {
                         gx = contentX;
                         gy += cellH;
                     }
+                }
+            });
+        } else if (this.selectedFolderKey === 'COLLECTION') {
+            // COLLECTION VIEW
+            const allItems = COLLECTION_DB.items;
+            allItems.forEach(item => {
+                const isUnlocked = this.game.collectionSystem.isUnlocked(item.id);
+                // We show locked items as shadowed/unknown potentially? 
+                // Requests said "Collection memes". Usually valid to show blanks or just hidden.
+                // Let's show all but locked ones are gray/question mark.
+
+                let label = isUnlocked ? item.name : "???";
+                let icon = isUnlocked ? 'image' : 'unknown';
+
+                // Draw icon with rarity color if unlocked
+                this.drawIcon(ctx, gx, gy, label, icon, item.id === this.selectedFileId, false, false, item.rarity);
+
+                gx += cellW;
+                if (gx > x + w - cellW) {
+                    gx = contentX;
+                    gy += cellH;
                 }
             });
         } else {
@@ -297,7 +339,7 @@ export class ArchiveWindow extends Window {
         }
     }
 
-    drawIcon(ctx, x, y, label, type, selected, locked, hasNew = false) {
+    drawIcon(ctx, x, y, label, type, selected, locked, hasNew = false, rarity = null) {
         // Icon drawing (same size as before)
         const iconW = 64;
         const iconH = 64; // Visual icon height approx
@@ -394,25 +436,24 @@ export class ArchiveWindow extends Window {
             ctx.fillRect(x + 20, y + 25, 20, 2);
             ctx.fillRect(x + 20, y + 30, 20, 2);
         } else if (type === 'image' || type === 'audio') {
-            // Check previous file where I might have missed defined types?
-            // Actually previous code handled 'file' or 'unknown'. 
-            // wait, user said "Archive". 
-            // In handleFileClick below, we see handleFileClick checks type.
-            // But drawIcon was simplified in source view.
-            // I need to support image/audio in drawIcon if I want to visualize them properly.
-            // But for now, let's just stick to 'file' style for known uncollected? 
-            // Ah, drawContent logic passes 'file' icon for collected files.
-            // Except for the MEDIA folder block which passes 'image' or 'audio'. 
-            // I should add those cases to be safe or map them to 'file'.
-            // Actually, let's keep it simple and just draw badges.
-            // I will inject badge drawing at end of function.
+            // If rarity provided, color the bg/border
+            if (rarity) {
+                const rColor = COLLECTION_DB.rarities[rarity].color;
+                ctx.strokeStyle = rColor;
+                ctx.lineWidth = 2;
+                ctx.fillStyle = '#eee'; // Light bg for image placeholder
+                ctx.fillRect(x + 15, y + 10, 34, 44);
+                ctx.strokeRect(x + 15, y + 10, 34, 44);
+                ctx.lineWidth = 1;
+            } else {
+                ctx.fillStyle = '#ccc';
+                ctx.fillRect(x + 15, y + 10, 34, 44);
+                ctx.strokeRect(x + 15, y + 10, 34, 44);
+            }
 
-            // Simulating image/audio icon if needed, or fallback to file.
-            ctx.fillStyle = '#ccc';
-            ctx.fillRect(x + 15, y + 10, 34, 44);
-            ctx.strokeRect(x + 15, y + 10, 34, 44);
             ctx.fillStyle = '#000';
-            ctx.fillText(type[0].toUpperCase(), x + 28, y + 35);
+            const iconChar = type === 'image' ? '🖼️' : '🎵';
+            ctx.fillText(iconChar, x + 32, y + 35);
         }
         else {
             // Unknown
@@ -487,6 +528,10 @@ export class ArchiveWindow extends Window {
                         this.currentPath = [];
                         this.selectedFolderKey = 'MEDIA';
                         return 'consumed';
+                    } else if (item.key === 'COLLECTION') {
+                        this.currentPath = [];
+                        this.selectedFolderKey = 'COLLECTION';
+                        return 'consumed';
                     } else if (item.type === 'folder') {
                         this.selectFolder(item.key);
                         return 'consumed';
@@ -549,6 +594,23 @@ export class ArchiveWindow extends Window {
                     return 'consumed';
                 }
 
+            } else if (this.selectedFolderKey === 'COLLECTION') {
+                const allItems = COLLECTION_DB.items;
+                if (targetIdx >= 0 && targetIdx < allItems.length) {
+                    const item = allItems[targetIdx];
+                    if (this.game.collectionSystem.isUnlocked(item.id)) {
+                        // Open item
+                        this.game.uiManager.showMedia({
+                            mediaType: item.type,
+                            src: item.src,
+                            name: item.name
+                        });
+                    } else {
+                        this.game.events.emit('play_sound', 'error');
+                    }
+                    return 'consumed';
+                }
+
             } else {
                 // We are in Root (Root + Media)
 
@@ -559,9 +621,16 @@ export class ArchiveWindow extends Window {
                     return 'consumed';
                 }
 
-                // Check other folders (Index 1+)
+                // Check COLLECTION (Index 1)
+                if (targetIdx === 1) {
+                    this.currentPath = [];
+                    this.selectedFolderKey = 'COLLECTION';
+                    return 'consumed';
+                }
+
+                // Check other folders (Index 2+)
                 const visibleKeys = Object.keys(LORE_DB).filter(k => this.game.loreSystem.isFolderVisible(k));
-                const folderIdx = targetIdx - 1;
+                const folderIdx = targetIdx - 2;
 
                 if (folderIdx >= 0 && folderIdx < visibleKeys.length) {
                     const key = visibleKeys[folderIdx];

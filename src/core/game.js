@@ -29,6 +29,7 @@ import { LoreSystem } from '../systems/LoreSystem.js';
 import { AchievementPopup } from '../ui/notifications.js';
 import { VirtualControls } from '../ui/VirtualControls.js';
 import { TutorialSystem } from '../systems/TutorialSystem.js';
+import { CollectionSystem } from '../systems/CollectionSystem.js';
 
 /**
  * @typedef {Object} GameState
@@ -68,6 +69,7 @@ export class Game {
         this.achievementSystem = new AchievementSystem(this);
         this.loreSystem = new LoreSystem(this);
         this.tutorialSystem = new TutorialSystem(this);
+        this.collectionSystem = new CollectionSystem(this);
 
         this.events.on('achievement_unlocked', (ach) => {
             this.entities.add('ui', new AchievementPopup(this, ach));
@@ -681,6 +683,7 @@ export class Game {
 
         // 0.1 Handle Entity/Glitch Clicks
         if (this.glitchSystem.handleClick(mx, my)) return;
+        if (this.collectionSystem.checkClick(mx, my)) return;
 
         // 1. Popups
         let popupHit = false;
@@ -855,7 +858,8 @@ export class Game {
         if (this.state.falseCrash || this.state.crashed || this.state.rebooting) return;
 
         this.economySystem.update(dt);
-        this.achievementSystem.update(dt);
+        this.collectionSystem.update(dt);
+        this.tutorialSystem.update(dt);
         // 5. Update Timer
         this.state.timer += dt;
 

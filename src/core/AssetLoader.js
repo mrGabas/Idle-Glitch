@@ -49,7 +49,7 @@ export class AssetLoader {
         return this.cache;
     }
 
-    loadImage(src, onProgress) {
+    loadImage(src, onProgress = () => { }) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
@@ -69,7 +69,7 @@ export class AssetLoader {
         });
     }
 
-    loadAudio(src, onProgress) {
+    loadAudio(src, onProgress = () => { }) {
         return new Promise((resolve, reject) => {
             const audio = new Audio();
             audio.oncanplaythrough = () => {

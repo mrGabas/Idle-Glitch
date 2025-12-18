@@ -160,6 +160,11 @@ export class Renderer {
         if (entities.debris) entities.debris.forEach(d => d.draw(this.ctx));
         if (entities.particles) entities.particles.forEach(p => p.draw(this.ctx));
 
+        // Draw Collection Drops (Desktop level)
+        if (uiManager && uiManager.game && uiManager.game.collectionSystem) {
+            uiManager.game.collectionSystem.draw(this.ctx);
+        }
+
         // Draw Popups (Legacy or specific EntityManager popups)
         if (entities.popups) {
             entities.popups.forEach(p => p.draw(this.ctx));
