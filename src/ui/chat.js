@@ -70,6 +70,9 @@ export class ChatSystem {
         this.scrollOffset = 0;
         this.maxScroll = 0;
 
+        // Collapsed State
+        this.collapsed = false;
+
         // Welcome message
         this.addMessage('SYSTEM', 'Connecting to secure server...');
         this.addMessage('SYSTEM', 'Type /help for available commands.');
@@ -131,6 +134,8 @@ export class ChatSystem {
     }
 
     handleWheel(deltaY) {
+        if (this.collapsed) return; // No scroll if collapsed
+
         const scrollSpeed = 20;
         if (deltaY < 0) {
             // Scroll Up (History)
@@ -146,7 +151,7 @@ export class ChatSystem {
     }
 
     isMouseOver(mx, my, h) {
-        const boxH = 260;
+        const boxH = this.collapsed ? 20 : 260; // Dynamic Height
         const boxW = 580;
         const x = 10;
         const y = h - boxH - 10;
@@ -177,7 +182,7 @@ export class ChatSystem {
         ctx.save();
 
         // --- CONSOLE SETTINGS ---
-        const boxH = 260;   // Height
+        const boxH = this.collapsed ? 20 : 260;   // Dynamic Height
         const boxW = 580;   // Width
         const x = 10;       // Margin Left
         const y = h - boxH - 10; // Margin Bottom
@@ -198,6 +203,22 @@ export class ChatSystem {
         ctx.font = "12px 'Courier New', monospace";
         ctx.textAlign = 'left';
         ctx.fillText("> DEBUG_CONSOLE_V.0.9 [USER: GUEST]", x + 5, y + 14);
+
+        // Collapse/Expand Button
+        const btnX = x + boxW - 20;
+        const btnY = y + 2;
+        ctx.fillStyle = this.isMouseOver(this.game.mouse.x, this.game.mouse.y, h) && this.game.mouse.x > btnX
+            ? '#444' : '#222'; // Hover effect check logic needs care, doing simple assumption or just text
+        // Actually button hitbox check happens in checkClick. Here just draw.
+
+        ctx.fillStyle = '#0f0';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.collapsed ? "[+]" : "[-]", btnX + 10, y + 14);
+
+        if (this.collapsed) {
+            ctx.restore();
+            return;
+        }
 
         // 2. Messages Area
         const msgAreaTop = y + 20; // Below header
@@ -312,7 +333,23 @@ export class ChatSystem {
 
     checkClick(mx, my, h) {
         if (this.isMouseOver(mx, my, h)) {
-            this.isFocused = true;
+            // Check Button Click
+            const boxH = this.collapsed ? 20 : 260; // Needs to match draw
+            const boxW = 580;
+            const x = 10;
+            const y = h - boxH - 10;
+            const btnX = x + boxW - 20;
+
+            // Simple hitbox for button (Top right corner of header)
+            if (mx >= btnX && mx <= x + boxW && my >= y && my <= y + 20) {
+                this.collapsed = !this.collapsed;
+                this.game.events.emit('play_sound', 'click');
+                return true;
+            }
+
+            if (!this.collapsed) {
+                this.isFocused = true;
+            }
             return true;
         } else {
             this.isFocused = false;
