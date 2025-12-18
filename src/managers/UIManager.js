@@ -229,6 +229,8 @@ export class UIManager {
         // Priority 6: HUD Icons (Achievements)
         if (this.achievementsWindow && Math.hypot(mx - achX, my - iconY) < hitRadius) {
             this.achievementsWindow.toggle();
+            // Clear flag
+            if (this.achievementsWindow.visible && this.game.achievementSystem) this.game.achievementSystem.hasNew = false;
             return true;
         }
 
@@ -238,6 +240,8 @@ export class UIManager {
                 this.archiveWindow.close();
             } else {
                 this.windowManager.add(this.archiveWindow);
+                // Clear flag
+                if (this.game.loreSystem) this.game.loreSystem.hasNew = false;
             }
             return true;
         }
