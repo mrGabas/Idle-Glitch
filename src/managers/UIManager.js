@@ -5,7 +5,7 @@
 import { ChatSystem } from '../ui/chat.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
 import { MailWindow, NotepadWindow } from '../ui/windows.js';
-import { ArchiveWindow, ImageViewerWindow } from '../ui/ArchiveWindow.js';
+import { ArchiveWindow, MediaViewerWindow } from '../ui/ArchiveWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { AchievementsWindow } from '../ui/achievementsWindow.js';
 import { OfflineReportWindow } from '../ui/OfflineWindow.js';
@@ -134,9 +134,9 @@ export class UIManager {
             } else {
                 this.game.uiManager.chat.addMessage('SYSTEM', 'AUDIO NOT FOUND: ' + data.src);
             }
-        } else if (data.mediaType === 'image') {
-            // Open Image Viewer
-            const win = new ImageViewerWindow(this.game.w, this.game.h, data.src, data.name);
+        } else if (data.mediaType === 'image' || data.mediaType === 'video') {
+            // Open Media Viewer
+            const win = new MediaViewerWindow(this.game.w, this.game.h, data.mediaType, data.src, data.name);
             this.windowManager.add(win);
         }
     }

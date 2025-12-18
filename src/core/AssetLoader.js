@@ -111,6 +111,27 @@ export class AssetLoader {
     getAudio(src) {
         return this.cache.audio[src];
     }
+    /**
+     * Get a video object (lazy cached)
+     * @param {string} src 
+     * @returns {HTMLVideoElement}
+     */
+    getVideo(src) {
+        if (!this.cache.images[src]) { // Reuse cache or separate? Better separate but for now reuse or new prop?
+            // "cache.images" is misnamed if we put videos there. Let's make a videos cache.
+        }
+        if (!this.cache.videos) this.cache.videos = {};
+
+        if (!this.cache.videos[src]) {
+            const v = document.createElement('video');
+            v.src = src;
+            v.crossOrigin = "anonymous";
+            v.preload = "auto";
+            v.muted = false; // Allow sound if needed? Loop logic in Window.
+            this.cache.videos[src] = v;
+        }
+        return this.cache.videos[src];
+    }
 }
 
 export const assetLoader = new AssetLoader();

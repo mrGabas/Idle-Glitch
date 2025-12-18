@@ -18,7 +18,9 @@ export class CollectionSystem {
 
         // Preload images
         this.db.items.forEach(item => {
-            assetLoader.loadImage(item.src);
+            if (item.type === 'image') {
+                assetLoader.loadImage(item.src);
+            }
         });
     }
 
@@ -140,7 +142,12 @@ export class CollectionSystem {
     // Called by Renderer to draw the drops
     draw(ctx) {
         this.activeDrops.forEach(d => {
-            const img = assetLoader.getImage(d.item.src);
+            // Drop Rendering
+            // If item is video, we use a placeholder or specific icon
+            let img = null;
+            if (d.item.type === 'image') {
+                img = assetLoader.getImage(d.item.src);
+            }
 
             ctx.save();
             ctx.translate(d.x + d.w / 2, d.y + d.h / 2);
@@ -155,11 +162,16 @@ export class CollectionSystem {
             if (img && img.complete) {
                 ctx.drawImage(img, -d.w / 2, -d.h / 2, d.w, d.h);
             } else {
-                // Fallback placeholder
+                // Fallback / Video Placeholder
                 ctx.fillStyle = color;
                 ctx.fillRect(-d.w / 2, -d.h / 2, d.w, d.h);
                 ctx.fillStyle = '#000';
-                ctx.fillText("?", -4, 4);
+
+                const iconChar = d.item.type === 'video' ? '🎥' : '?';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(iconChar, 0, 0);
             }
 
             // Border

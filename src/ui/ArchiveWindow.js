@@ -5,15 +5,33 @@ import { COLLECTION_DB } from '../data/collectionData.js';
 import { UTILS } from '../core/config.js';
 import { assetLoader } from '../core/AssetLoader.js';
 
-export class ImageViewerWindow extends Window {
-    constructor(gameW, gameH, src, name) {
+export class MediaViewerWindow extends Window {
+    constructor(gameW, gameH, type, src, name) {
         const w = 600;
         const h = 500;
         const x = (gameW - w) / 2;
         const y = (gameH - h) / 2;
-        super(x, y, w, h, name || "Image Viewer");
+        super(x, y, w, h, name || "Media Viewer");
+        this.type = type;
         this.src = src;
-        this.image = assetLoader.getImage(src);
+
+        if (this.type === 'image') {
+            this.image = assetLoader.getImage(src);
+        } else if (this.type === 'video') {
+            this.video = assetLoader.getVideo(src);
+            if (this.video) {
+                this.video.currentTime = 0;
+                this.video.loop = true;
+                this.video.play().catch(e => console.error(e));
+            }
+        }
+    }
+
+    onClose() {
+        if (this.video) {
+            this.video.pause();
+            this.video.currentTime = 0;
+        }
     }
 
     drawContent(ctx, x, y, w, h) {
@@ -21,7 +39,7 @@ export class ImageViewerWindow extends Window {
         ctx.fillStyle = '#000';
         ctx.fillRect(x, y, w, h);
 
-        if (this.image && this.image.complete) {
+        if (this.type === 'image' && this.image && this.image.complete) {
             // Fit logic
             const imgW = this.image.naturalWidth;
             const imgH = this.image.naturalHeight;
@@ -35,10 +53,26 @@ export class ImageViewerWindow extends Window {
 
                 ctx.drawImage(this.image, dx, dy, drawW, drawH);
             }
+        } else if (this.type === 'video' && this.video) {
+            const vidW = this.video.videoWidth;
+            const vidH = this.video.videoHeight;
+            if (vidW > 0 && vidH > 0) {
+                const scale = Math.min(w / vidW, h / vidH);
+                const drawW = vidW * scale;
+                const drawH = vidH * scale;
+                const dx = x + (w - drawW) / 2;
+                const dy = y + (h - drawH) / 2;
+
+                ctx.drawImage(this.video, dx, dy, drawW, drawH);
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText("Buffering Video...", x + w / 2, y + h / 2);
+            }
         } else {
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'center';
-            ctx.fillText("Loading Image...", x + w / 2, y + h / 2);
+            ctx.fillText("Loading Media...", x + w / 2, y + h / 2);
         }
     }
 }
@@ -435,7 +469,7 @@ export class ArchiveWindow extends Window {
             ctx.fillRect(x + 20, y + 20, 20, 2);
             ctx.fillRect(x + 20, y + 25, 20, 2);
             ctx.fillRect(x + 20, y + 30, 20, 2);
-        } else if (type === 'image' || type === 'audio') {
+        } else if (type === 'image' || type === 'audio' || type === 'video') {
             // If rarity provided, color the bg/border
             if (rarity) {
                 const rColor = COLLECTION_DB.rarities[rarity].color;
@@ -452,7 +486,8 @@ export class ArchiveWindow extends Window {
             }
 
             ctx.fillStyle = '#000';
-            const iconChar = type === 'image' ? '🖼️' : '🎵';
+            let iconChar = type === 'image' ? '🖼️' : '🎵';
+            if (type === 'video') iconChar = '🎥';
             ctx.fillText(iconChar, x + 32, y + 35);
         }
         else {
