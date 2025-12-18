@@ -130,7 +130,8 @@ export class CollectionSystem {
         } else {
             // Duplicate reward?
             this.game.createFloatingText(drop.x, drop.y, "Duplicate...", "#cccccc");
-            this.game.economySystem.addBytes(100); // Small currency reward
+            this.game.createFloatingText(drop.x, drop.y, "Duplicate...", "#cccccc");
+            this.game.state.addScore(100); // Small currency reward
         }
 
         this.game.events.emit('play_sound', 'click'); // Placeholder
