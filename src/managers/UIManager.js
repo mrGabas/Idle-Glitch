@@ -13,6 +13,7 @@ import { OfflineReportWindow } from '../ui/OfflineWindow.js';
 import { MailSystem } from '../systems/MailSystem.js';
 import { WindowManager } from './WindowManager.js';
 import { assetLoader } from '../core/AssetLoader.js';
+import { CFG } from '../core/config.js';
 
 export class UIManager {
     constructor(game) {
@@ -193,8 +194,22 @@ export class UIManager {
 
         // Mail Window is now in WindowManager
 
-        // Priority 4: HUD Icons (Mail Icon)
-        if (Math.hypot(mx - (this.game.w - 50), my - 50) < 25) {
+        // Priority 4: HUD Icons (Header Config)
+        const sx = this.game.w * CFG.game.shop.startXRatio;
+        const sw = this.game.w - sx;
+        const iconY = this.game.h * 0.05;
+        const iconStep = sw / 4;
+        const halfStep = iconStep / 2;
+
+        const mailX = sx + halfStep;
+        const chatX = sx + halfStep + iconStep;
+        const achX = sx + halfStep + iconStep * 2;
+        const arcX = sx + halfStep + iconStep * 3;
+
+        const hitRadius = 25;
+
+        // Mail
+        if (Math.hypot(mx - mailX, my - iconY) < hitRadius) {
             // Toggle Mail
             if (this.mailWindow.manager) {
                 this.mailWindow.close();
@@ -202,25 +217,23 @@ export class UIManager {
                 this.mailWindow.active = true;
                 this.windowManager.add(this.mailWindow);
             }
-            // this.game.events.emit('play_sound', 'click'); // Add does it
             return true;
         }
 
         // Priority 5: HUD Icons (Reviews Icon)
-        if (Math.hypot(mx - (this.game.w - 50), my - 110) < 25) {
+        if (Math.hypot(mx - chatX, my - iconY) < hitRadius) {
             this.reviewsTab.toggle();
             return true;
         }
 
         // Priority 6: HUD Icons (Achievements)
-        if (this.achievementsWindow && Math.hypot(mx - (this.game.w - 50), my - 170) < 25) {
+        if (this.achievementsWindow && Math.hypot(mx - achX, my - iconY) < hitRadius) {
             this.achievementsWindow.toggle();
             return true;
         }
 
         // Priority 6.5: HUD Icons (Archive)
-        // Only if unlocked? Or always visible? Let's make it always visible for now or check lore unlocked count?
-        if (Math.hypot(mx - (this.game.w - 50), my - 230) < 25) {
+        if (Math.hypot(mx - arcX, my - iconY) < hitRadius) {
             if (this.archiveWindow.manager) {
                 this.archiveWindow.close();
             } else {

@@ -216,18 +216,35 @@ export class Renderer {
             else if (Math.random() < 0.05) this.drawClippy(this.w - 80, this.h - 100);
         }
 
+        // --- HUD ICONS (Sidebar Header) ---
+        // Layout: 4 icons distributed horizontally in the sidebar top area
+        // Sidebar X starts at w * 0.66
+        const sx = this.w * CFG.game.shop.startXRatio;
+        const sw = this.w - sx;
+        const iconY = this.h * 0.05; // Higher up to avoid overlap
+
+        // Distribute 4 icons: Mail, Reviews, Achievements, Archive
+        // Centers: 20%, 40%, 60%, 80% of Sidebar Width
+        const iconStep = sw / 4;
+        const halfStep = iconStep / 2;
+
+        const mailX = sx + halfStep;
+        const chatX = sx + halfStep + iconStep;
+        const achX = sx + halfStep + iconStep * 2;
+        const arcX = sx + halfStep + iconStep * 3;
+
         // Draw HUD Elements (Mail Icon)
-        this.drawHUD(this.w, this.h, uiManager);
+        this.drawHUD(mailX, iconY, uiManager);
 
         // Draw Windows & UI Overlay (Delegated to UIManager)
         uiManager.draw(this.ctx);
 
-        // Feedback / Reviews Button (Top Right, Below Mail)
-        this.drawFeedbackIcon(this.w - 50, 110, '#6d2af7', '💬'); // Chat bubble emoji or draw custom
+        // Feedback / Reviews Button
+        this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬');
         // Achievements Button
-        this.drawFeedbackIcon(this.w - 50, 170, '#FFD700', '🏆');
+        this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆');
         // Archive Button
-        this.drawFeedbackIcon(this.w - 50, 230, '#ebb434', '📁');
+        this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁');
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
@@ -317,10 +334,10 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawHUD(w, h, uiManager) {
-        // Mail Icon (Top Right)
-        const mx = w - 50;
-        const my = 50;
+    drawHUD(mx, my, uiManager) {
+        // Mail Icon Position Passed in
+        // const mx = w - 50; // REMOVED
+        // const my = 50;
 
         this.ctx.fillStyle = '#fff';
         this.ctx.fillRect(mx - 15, my - 10, 30, 20); // Envelope body
