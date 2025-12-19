@@ -170,6 +170,12 @@ export class ArchiveWindow extends Window {
             w: sidebarW,
             h: 20
         });
+
+        // Debug: Show count
+        const count = COLLECTION_DB.items.length;
+        layout[2].label = `Collection (${count})`;
+        layout[2].lines = [`Collection (${count})`];
+
         curY += 20;
 
         // Folders
@@ -345,22 +351,26 @@ export class ArchiveWindow extends Window {
         } else if (this.selectedFolderKey === 'COLLECTION') {
             // COLLECTION VIEW
             const allItems = COLLECTION_DB.items;
-            allItems.forEach(item => {
+            const itemsPerRow = 5;
+
+            allItems.forEach((item, index) => {
+                const col = index % itemsPerRow;
+                const row = Math.floor(index / itemsPerRow);
+
+                // Calculate position based on grid logic
+                const drawX = contentX + (col * cellW);
+                const drawY = gy + (row * cellH); // gy includes scroll offset
+
                 const isUnlocked = this.game.collectionSystem.isUnlocked(item.id);
-                // We show locked items as shadowed/unknown potentially? 
-                // Requests said "Collection memes". Usually valid to show blanks or just hidden.
-                // Let's show all but locked ones are gray/question mark.
 
                 let label = isUnlocked ? item.name : "???";
                 let icon = isUnlocked ? 'image' : 'unknown';
 
-                // Draw icon with rarity color if unlocked
-                this.drawIcon(ctx, gx, gy, label, icon, item.id === this.selectedFileId, false, false, item.rarity);
+                this.drawIcon(ctx, drawX, drawY, label, icon, item.id === this.selectedFileId, false, false, item.rarity);
 
-                gx += cellW;
-                if (gx > x + w - cellW) {
-                    gx = contentX;
-                    gy += cellH;
+                // Update final GY for scroll calc
+                if (index === allItems.length - 1) {
+                    gy = (contentY + 30 - this.scrollY) + ((row + 1) * cellH);
                 }
             });
         } else {
