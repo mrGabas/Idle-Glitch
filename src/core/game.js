@@ -510,6 +510,8 @@ export class Game {
 
         // Apply passive metas
         this.economySystem.applyMetaUpgrades();
+        // Re-apply Achievement Rewards (Persistent)
+        this.achievementSystem.applyRewards();
     }
 
     // --- LOGIC ---

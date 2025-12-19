@@ -51,4 +51,17 @@ export class AchievementSystem {
     save() {
         this.game.saveSystem.save('unlocked_achievements', this.unlocked);
     }
+
+    /**
+     * Re-applies rewards for all unlocked achievements.
+     * Should only be called after a stat reset (e.g. Prestige).
+     */
+    applyRewards() {
+        this.unlocked.forEach(id => {
+            const ach = this.achievements.find(a => a.id === id);
+            if (ach && ach.reward) {
+                ach.reward(this.game);
+            }
+        });
+    }
 }

@@ -192,7 +192,7 @@ export const ACHIEVEMENTS = [
         desc: 'Score 300 points in Snake.',
         condition: (game) => game.state.snakeHighScore >= 300,
         reward: (game) => {
-            game.state.multiplier += 0.5;
+            game.state.multiplier += 0.05;
         }
     },
     {

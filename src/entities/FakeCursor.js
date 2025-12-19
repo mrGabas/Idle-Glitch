@@ -106,7 +106,6 @@ export class FakeCursor {
             if (idx !== -1) {
                 popups.splice(idx, 1);
                 this.game.events.emit('play_sound', 'click');
-                this.game.uiManager.chat.addMessage('GHOST', 'Closed that for you.');
             }
             this.targetElement = null;
         }
