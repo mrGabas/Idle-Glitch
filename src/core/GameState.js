@@ -10,7 +10,7 @@ import { UTILS } from './config.js';
 export class GameState {
     constructor() {
         /** @type {number} Current currency amount */
-        this.score = 0;
+        this._score = 0;
         /** @type {number} Currency per click */
         this.clickPower = 1;
         /** @type {number} Currency generated per second */
@@ -47,6 +47,14 @@ export class GameState {
         this.isPurged = false;
         /** @type {number} Timer for the purge debuff */
         this.purgeTimer = 0;
+    }
+
+    get score() {
+        return this._score;
+    }
+
+    set score(val) {
+        this._score = Math.max(0, val);
     }
 
     /**
