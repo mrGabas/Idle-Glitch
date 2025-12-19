@@ -332,7 +332,11 @@ export class SoundEngine {
         }
 
         // 3. Play appropriate track based on rules
-        if (themeId === 'null_void') {
+        if (themeId === 'bios') {
+            // Silence for BIOS / Meta Upgrades
+            return;
+        }
+        else if (themeId === 'null_void') {
             if (this.voidSynth) this.voidSynth.play();
         }
         else if (themeId === 'rainbow_paradise') {

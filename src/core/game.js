@@ -508,6 +508,9 @@ export class Game {
         // Reset to default theme for new run
         this.themeManager.reset();
 
+        // Signal Audio Engine to stop music for BIOS
+        this.events.emit('theme_changed', 'bios');
+
         // Clear entities
         this.entities.clear();
         // Need to add clear method to EntityManager or implementing it via resetting layers?
@@ -693,6 +696,9 @@ export class Game {
         if (ramLevel > 0) {
             this.state.addScore(ramLevel * 500);
         }
+
+        // Resume Music (Sync with current theme)
+        this.events.emit('theme_changed', this.themeManager.currentTheme.id);
     }
 
     /**
