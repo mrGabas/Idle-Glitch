@@ -543,7 +543,7 @@ export class Renderer {
         this.ctx.globalAlpha = 1; // Reset
 
         // Score (Top Center)
-        const scoreText = UTILS.fmt(state.score) + ' ' + theme.currency.symbol;
+        const scoreText = UTILS.fmt(state.score);
         const rateText = `${UTILS.fmt(state.autoRate)} / sec`;
 
         this.ctx.font = CFG.fonts.xl;
@@ -731,7 +731,7 @@ export class Renderer {
                 const canBuy = state.score >= u.cost;
                 this.ctx.fillStyle = canBuy ? colors.accent : '#888';
                 this.ctx.font = `bold ${Math.floor(fontSize * 0.9)}px monospace`;
-                this.ctx.fillText(UTILS.fmt(u.cost) + theme.currency.symbol, textX, uy + cardH * 0.85);
+                this.ctx.fillText(UTILS.fmt(u.cost), textX, uy + cardH * 0.85);
 
                 // Count
                 this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
