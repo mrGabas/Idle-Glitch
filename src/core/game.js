@@ -657,6 +657,12 @@ export class Game {
         this.state.rebootTimer = 0;
         // Reset dynamic values for new run
         this.state.startTime = Date.now();
+
+        // META: RAM_EXPANSION (Start Bonus)
+        const ramLevel = this.metaUpgrades['start_bonus'] || 0;
+        if (ramLevel > 0) {
+            this.state.addScore(ramLevel * 500);
+        }
     }
 
     /**

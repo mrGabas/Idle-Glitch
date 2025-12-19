@@ -25,9 +25,59 @@ export class EconomySystem {
      * @param {number} dt - Delta time in seconds.
      */
     update(dt) {
+        // META: SOURCE_LEAK (Lucky Tick)
+        // 1% chance per second per level.
+        const luckyLevel = this.game.metaUpgrades['lucky_tick'] || 0;
+        if (luckyLevel > 0) {
+            // Chance per frame = (0.01 * level) * dt
+            if (Math.random() < (0.01 * luckyLevel) * dt) {
+                const bonus = this.game.state.autoRate * 10;
+                this.game.state.addScore(bonus);
+                this.game.createFloatingText(this.game.w / 2, this.game.h / 3, "SOURCE LEAK! +" + UTILS.fmt(bonus), "#0f0");
+                this.game.events.emit('play_sound', 'buy');
+            }
+        }
+
+        // META: NEURAL_ENGINE (Auto Buy)
+        if (this.game.metaUpgrades['auto_buy']) {
+            this.handleAutoBuy(dt);
+        }
+
         // Auto score gain
         if (this.game.state.autoRate > 0) {
-            this.game.state.addScore(this.game.state.autoRate * dt);
+            // META: DAEMON_PROCESS (Auto Clicker Efficiency)
+            // We apply it here as a dynamic multiplier to the rate
+            const daemonLevel = this.game.metaUpgrades['daemon_buff'] || 0;
+            const daemonMult = 1 + (daemonLevel * 0.1);
+
+            this.game.state.addScore(this.game.state.autoRate * daemonMult * dt);
+        }
+    }
+
+    handleAutoBuy(dt) {
+        // Simple logic: Buy cheapest affordable upgrade if we have 10x the cost
+        // Throttle check to once per second
+        this.autoBuyTimer = (this.autoBuyTimer || 0) + dt;
+        if (this.autoBuyTimer < 1) return;
+        this.autoBuyTimer = 0;
+
+        if (!this.shopOpen) return; // Only if shop "accessible" (logic-wise, though UI might be closed. Let's allow anytime if unlocked?)
+        // Let's require shop to be unlocked/logic running.
+
+        const upgrades = this.game.themeManager.upgrades;
+        // Find cheapest affordable
+        let best = null;
+        for (let u of upgrades) {
+            const cost = this.getDiscountedCost(u.cost);
+            if (this.game.state.score >= cost * 10) { // Safety margin
+                if (!best || cost < this.getDiscountedCost(best.cost)) {
+                    best = u;
+                }
+            }
+        }
+
+        if (best) {
+            this.buyUpgrade(best);
         }
     }
 
@@ -64,7 +114,10 @@ export class EconomySystem {
 
                 if (mx >= bx && mx <= bx + cardW && my >= by && my <= by + cardH) {
                     shopHit = true;
-                    if (this.game.state.score >= u.cost) {
+                    // META: NETWORK_CARD (Discount)
+                    const cost = this.getDiscountedCost(u.cost);
+
+                    if (this.game.state.score >= cost) {
                         this.buyUpgrade(u);
                     } else {
                         this.game.events.emit('play_sound', 'error');
@@ -106,7 +159,11 @@ export class EconomySystem {
         // Critical Click Check
         const critLevel = this.game.metaUpgrades['critical_click'] || 0;
         if (critLevel > 0 && Math.random() < critLevel * 0.1) {
-            gain *= 5;
+            // META: GPU_DRIVER (Crit Damage)
+            const gpuLevel = this.game.metaUpgrades['gpu_crit'] || 0;
+            const critMult = 5 * (1 + (gpuLevel * 0.2));
+
+            gain *= critMult;
             isCrit = true;
         }
 
@@ -154,7 +211,10 @@ export class EconomySystem {
      * @param {Object} u - The upgrade object.
      */
     buyUpgrade(u) {
-        this.game.state.score -= u.cost;
+        // META: NETWORK_CARD (Discount)
+        const cost = this.getDiscountedCost(u.cost);
+
+        this.game.state.score -= cost;
         u.count++;
         u.cost = Math.floor(u.cost * 1.4);
 
@@ -164,6 +224,17 @@ export class EconomySystem {
         this.game.events.emit('play_sound', 'buy');
         this.game.state.addCorruption(1.5);
         this.game.saveGame();
+    }
+
+    getDiscountedCost(baseCost) {
+        const netLevel = this.game.metaUpgrades['net_card'] || 0;
+        if (netLevel === 0) return baseCost;
+
+        // -2% per level, max 50%
+        let discount = netLevel * 0.02;
+        if (discount > 0.5) discount = 0.5;
+
+        return Math.floor(baseCost * (1 - discount));
     }
 
     /**
@@ -198,7 +269,34 @@ export class EconomySystem {
     applyMetaUpgrades() {
         const boostLevel = this.game.metaUpgrades['prestige_boost'] || 0;
         if (boostLevel > 0) {
+            // Additive multiplier
             this.game.state.setMultiplier(this.game.state.multiplier + (boostLevel * 0.5));
+        }
+
+        // META: SATA_CONTROLLER (Global Production)
+        const sataLevel = this.game.metaUpgrades['sata_boost'] || 0;
+        if (sataLevel > 0) {
+            // Multiplicative or Additive? Let's make it multiplicative with prestige to be strong.
+            // Or additive to the multiplier?
+            // "Global Production Multiplier" implies it boosts the final result.
+            // internal multiplier is already a factor.
+            // Let's add (5% * level) to the multiplier base.
+            // Current logic: multiplier = 1 * prestige.
+            // Let's do: multiplier = (1 * prestige) * (1 + sata * 0.05)
+
+            // BUT `setMultiplier` overrides.
+            // We need to know base.
+            // Assuming this function runs after base set.
+            // Let's apply it as a factor.
+            const current = this.game.state.multiplier;
+            this.game.state.setMultiplier(current * (1 + sataLevel * 0.05));
+        }
+
+        // META: HEAT_SINK (Corruption Resistance)
+        const heatLevel = this.game.metaUpgrades['heat_sink'] || 0;
+        if (heatLevel > 0) {
+            // 5% per level
+            this.game.state.corruptionResistance = heatLevel * 0.05;
         }
     }
 
@@ -221,7 +319,12 @@ export class EconomySystem {
                 if (lastRate > 0) {
                     // Calculate earnings: rate (per sec) * seconds * efficiency
                     // Note: effectiveTime is ms, rate is per second
-                    const earnings = lastRate * (effectiveTime / 1000) * CFG.economy.offlineEfficiency;
+
+                    // META: THREAD_SCHEDULER (Offline Improv)
+                    const threadLevel = this.game.metaUpgrades['offline_buff'] || 0;
+                    const efficiency = Math.min(1.0, CFG.economy.offlineEfficiency + (threadLevel * 0.25));
+
+                    const earnings = lastRate * (effectiveTime / 1000) * efficiency;
 
                     if (earnings > 0) {
                         // Do NOT add score immediately. Show Report.

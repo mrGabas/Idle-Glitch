@@ -92,6 +92,15 @@ export class Renderer {
             return;
         }
 
+        // META: BIOS_PASSWORD (Safe Mode Visual)
+        if (input.metaUpgrades['safe_mode']) {
+            this.ctx.fillStyle = '#0f0';
+            this.ctx.font = "bold 12px monospace";
+            this.ctx.textAlign = "right";
+            this.ctx.fillText("SAFE MODE::ACTIVE", this.w - 10, 20);
+            this.ctx.textAlign = "left"; // Reset
+        }
+
         // --- FALSE CRASH VISUALS ---
         if (state.falseCrash) {
             this.ctx.fillStyle = '#000';

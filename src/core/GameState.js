@@ -19,6 +19,8 @@ export class GameState {
         this.corruption = 0;
         /** @type {number} Prestige multiplier applied to gains */
         this.multiplier = 1;
+        /** @type {number} Corruption gain reduction (0.0 to 1.0) */
+        this.corruptionResistance = 0;
 
         // Session State
         /** @type {number} Timestamp when the current session started */
@@ -83,6 +85,9 @@ export class GameState {
      * @param {number} amount - The amount to change corruption by (can be negative).
      */
     addCorruption(amount) {
+        if (amount > 0 && this.corruptionResistance > 0) {
+            amount *= (1 - this.corruptionResistance);
+        }
         this.corruption = Math.max(0, Math.min(100, this.corruption + amount));
         events.emit('corruption_changed', this.corruption);
         events.emit('state_updated', this);
@@ -133,7 +138,10 @@ export class GameState {
         this.score = 0;
         this.clickPower = 1;
         this.autoRate = 0;
+        this.autoRate = 0;
         this.corruption = 0;
+        // Keep resistance active if set by meta upgrades
+        // this.corruptionResistance = 0; 
         this.startTime = Date.now();
         this.glitchIntensity = 0;
         this.crashed = false;
