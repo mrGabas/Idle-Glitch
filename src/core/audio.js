@@ -43,6 +43,9 @@ export class SoundEngine {
         // Glitch Effects
         this.glitchTimer = null;
         this.glitchIntensity = 0;
+
+        // Listener reference for cleanup
+        this.corruptionListener = (val) => this.handleCorruptionUpdate(val);
     }
 
     init() {
@@ -272,6 +275,24 @@ export class SoundEngine {
         }
     }
 
+    handleCorruptionUpdate(corruption) {
+        // Rule: 0% at 40 corruption, 100% at 100 corruption
+        // Formula: (corruption - 40) / 60
+        const intensity = Math.max(0, (corruption - 40) / 60);
+
+        if (intensity > 0) {
+            if (!this.glitchTimer) {
+                this.startGlitchEffect(intensity);
+            } else {
+                this.glitchIntensity = intensity;
+            }
+        } else {
+            if (this.glitchTimer) {
+                this.stopGlitchEffect();
+            }
+        }
+    }
+
     startGlitchEffect(intensity) {
         this.stopGlitchEffect(); // Clear previous
         this.glitchIntensity = intensity;
@@ -281,23 +302,35 @@ export class SoundEngine {
         const loop = () => {
             if (!this.currentMusic) return;
 
+            // Use CURRENT intensity (dynamic)
+            const currentInt = this.glitchIntensity;
+
             // 1. Playback Rate Wobble (Wow/Flutter)
-            // Base wobble adds 'old tape' feel
-            const wobble = (Math.random() - 0.5) * (0.02 + (intensity * 0.15));
+            // Base wobble adds 'old tape' feel - INCREASED BASE WOBBLE
+            const wobble = (Math.random() - 0.5) * (0.05 + (currentInt * 0.3));
 
             // Occasional severe drop for high intensity
+            // LOWERED THRESHOLDS and INCREASED PROBABILITIES
             let rate = 1.0 + wobble;
-            if (intensity > 0.6 && Math.random() < 0.05) {
-                rate *= 0.5; // Tape drag/slowdown
+            if (currentInt > 0.3 && Math.random() < 0.1) {
+                rate *= 0.5; // Tape drag/slowdown (More frequent)
             }
-            if (intensity > 0.8 && Math.random() < 0.02) {
-                rate *= 2.0; // Fast forward skip
+            if (currentInt > 0.5 && Math.random() < 0.05) {
+                rate *= 2.0; // Fast forward skip (More frequent)
             }
 
             this.currentMusic.playbackRate = Math.max(0.1, Math.min(4.0, rate));
 
+            // 2. Volume Dropouts (New Feature)
+            // Simulates bad connection / loose cable
+            if (currentInt > 0.4 && Math.random() < 0.05) {
+                this.currentMusic.volume = 0; // Silence
+            } else {
+                this.currentMusic.volume = 1.0; // Normal
+            }
+
             // Loop time: random short intervals
-            const nextTime = 50 + Math.random() * 200;
+            const nextTime = 50 + Math.random() * 150; // Slightly faster loop for chaos
             this.glitchTimer = setTimeout(loop, nextTime);
         };
 
@@ -311,6 +344,7 @@ export class SoundEngine {
         }
         if (this.currentMusic) {
             this.currentMusic.playbackRate = 1.0;
+            this.currentMusic.volume = 1.0;
         }
         this.glitchIntensity = 0;
     }
@@ -341,6 +375,14 @@ export class SoundEngine {
         }
         else if (themeId === 'rainbow_paradise') {
             this.playMusicFile(MUSIC_TRACKS.pixel_party);
+
+            // Listen to corruption for progressive glitch
+            events.on('corruption_changed', this.corruptionListener);
+
+            // Initial check
+            if (window.game && window.game.state) {
+                this.handleCorruptionUpdate(window.game.state.corruption);
+            }
         }
         else {
             // All other themes (except Null Void): Digital Drift with Progressive Glitch
