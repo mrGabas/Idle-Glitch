@@ -89,6 +89,19 @@ export class ArchiveWindow extends Window {
         this.currentPath = []; // Stack of folder keys. Empty = Root
         this.selectedFileId = null;
         this.selectedFolderKey = null;
+        this.scrollY = 0;
+        this.maxScroll = 0;
+    }
+
+    onScroll(deltaY) {
+        // Adjust scroll
+        const speed = 50;
+        if (deltaY > 0) this.scrollY += speed;
+        else this.scrollY -= speed;
+
+        // Clamp
+        if (this.scrollY < 0) this.scrollY = 0;
+        if (this.scrollY > this.maxScroll) this.scrollY = this.maxScroll;
     }
 
     wrapText(ctx, text, maxWidth) {
@@ -256,6 +269,15 @@ export class ArchiveWindow extends Window {
         const cellW = 80;
         const cellH = 110; // Increased height for wrapped text
 
+        // Clip Content Area
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(contentX, contentY, contentW, h - 30);
+        ctx.clip();
+
+        // Apply Scroll
+        gy -= this.scrollY;
+
         // If at root, show folders as icons
         const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
         if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA' && this.selectedFolderKey !== 'COLLECTION') {
@@ -369,8 +391,17 @@ export class ArchiveWindow extends Window {
             });
 
             // Back button
+            // Back button
             this.drawIcon(ctx, gx, gy, "..", 'folder', false);
         }
+
+        // Calculate max scroll based on gx/gy relative to start
+        // Last item bottom Y relative to contentY
+        const contentHeight = (gy - contentY) + cellH;
+        const viewHeight = h - 40; // Approx
+        this.maxScroll = Math.max(0, contentHeight - viewHeight + 20);
+
+        ctx.restore(); // Clip
     }
 
     drawIcon(ctx, x, y, label, type, selected, locked, hasNew = false, rarity = null) {
@@ -576,15 +607,16 @@ export class ArchiveWindow extends Window {
         }
 
         // --- FILE GRID CHECK ---
+        // --- FILE GRID CHECK ---
         if (mx > contentX && my > contentY) {
-            // Calculate grid click
+            // Calculate grid click with SCROLL
             const relX = mx - contentX;
-            const relY = my - contentY;
+            const fileGridY = my - contentY + this.scrollY;
             const cellW = 80;
             const cellH = 110;
 
             const col = Math.floor(relX / cellW);
-            const row = Math.floor(relY / cellH);
+            const row = Math.floor(fileGridY / cellH);
             // Content width
             const contentW = this.w - sidebarW - 20;
             const cols = Math.floor(contentW / cellW);
