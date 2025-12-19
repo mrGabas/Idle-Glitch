@@ -144,7 +144,9 @@ export class Game {
 
         // BIOS UI State
         this.biosState = {
-            openDescriptions: new Set()
+            openDescriptions: new Set(),
+            scrollOffset: 0,
+            maxScroll: 0
         };
 
         // NEW: Load Mail Data
@@ -304,6 +306,11 @@ export class Game {
 
         // Scroll / Wheel
         this.input.on('wheel', (e) => {
+            if (this.gameState === 'BIOS') {
+                this.handleBIOSScroll(e.deltaY);
+                return;
+            }
+
             if (this.gameState === 'PLAYING') {
                 // Check Chat
                 const rect = this.renderer.canvas.getBoundingClientRect();
@@ -562,6 +569,15 @@ export class Game {
         }
     }
 
+    handleBIOSScroll(deltaY) {
+        const speed = 20; // Scroll speed
+        if (deltaY > 0) {
+            this.biosState.scrollOffset = Math.min(this.biosState.maxScroll, this.biosState.scrollOffset + speed);
+        } else {
+            this.biosState.scrollOffset = Math.max(0, this.biosState.scrollOffset - speed);
+        }
+    }
+
     handleBIOSAction(index) {
         // Upgrades
         if (index < META_UPGRADES.length) {
@@ -591,8 +607,22 @@ export class Game {
      * @param {number} my - Mouse Y.
      */
     handleBIOSClick(mx, my) {
+        // View Area Check (Clipping)
+        // Renderer draws box from roughly 50 to h-50.
+        const viewTop = 50;
+        const viewBottom = this.h - 50;
+
+        // If click is outside the scrollable content area, ignore (or handle header/footer clicks if any)
+        if (my < viewTop || my > viewBottom) return;
+
         const startY = CFG.game.bios.startY;
-        let currentY = startY;
+        // Apply Scroll Offset to virtual Y
+        // Screen Y = Virtual Y - Scroll
+        // Virtual Y = Screen Y + Scroll
+
+        // However, the loop logic calculates "currentY" as Screen Y.
+        // Let's adjust startY by scrollOffset
+        let currentY = startY - this.biosState.scrollOffset;
 
         // Check Upgrades
         for (let i = 0; i < META_UPGRADES.length; i++) {
@@ -683,12 +713,12 @@ export class Game {
         const mx = this.mouse.x;
         const my = this.mouse.y;
 
-        if (this.uiManager.handleInput(mx, my)) return;
-
         if (this.gameState === 'BIOS') {
             this.handleBIOSClick(mx, my);
             return;
         }
+
+        if (this.uiManager.handleInput(mx, my)) return;
 
         if (this.gameState !== 'PLAYING') return;
 

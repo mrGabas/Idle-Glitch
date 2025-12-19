@@ -828,7 +828,13 @@ export class Renderer {
 
         // Upgrades List
         const startY = 120;
-        let currentY = startY;
+        let currentY = startY - input.biosState.scrollOffset;
+
+        // CLIPPING
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.rect(22, 52, this.w - 44, this.h - 104);
+        this.ctx.clip();
 
         metaList.forEach((u, i) => {
             const owned = metaUpgrades[u.id] || 0;
@@ -928,6 +934,37 @@ export class Renderer {
                 this.ctx.fillStyle = '#0ff';
             }
             this.ctx.fillText(`STARTING THEME: [${input.currentTheme.id.toUpperCase()}]`, 40, themeY + 20);
+        }
+
+        // Calculate Max Scroll dynamically
+        const contentBottomVirtual = currentY + 30 + input.biosState.scrollOffset;
+        const viewH = this.h - 104; // Height of view area
+        const viewBottom = 52 + viewH;
+        // Total height needed = contentBottomVirtual - 120 (start) + padding?
+        // Actually simpler: 
+        // We want the last element (at contentBottomVirtual) to be visible at viewBottom.
+        // maxScroll = contentBottomVirtual - viewBottom + 20 (padding)
+        input.biosState.maxScroll = Math.max(0, contentBottomVirtual - viewBottom + 20);
+
+        this.ctx.restore(); // End Clipping
+
+        // Scrollbar
+        if (input.biosState.maxScroll > 0) {
+            const sbX = this.w - 30;
+            const sbY = 52;
+            const sbH = this.h - 104;
+
+            this.ctx.fillStyle = '#0000aa';
+            this.ctx.fillRect(sbX, sbY, 10, sbH);
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.strokeRect(sbX, sbY, 10, sbH);
+
+            const scrollPct = input.biosState.scrollOffset / input.biosState.maxScroll;
+            const handleH = Math.max(20, sbH * (sbH / (sbH + input.biosState.maxScroll)));
+            const handleY = sbY + (sbH - handleH) * scrollPct;
+
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(sbX + 2, handleY, 6, handleH);
         }
 
         // Explicitly draw cursor on top for BIOS
