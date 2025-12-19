@@ -15,7 +15,7 @@ export const REVIEWS = [
     { user: 'RetroFan99', rating: 5, text: "Reminds me of the old internet. Nostalgia!", type: 'normal', avatar: 'assets/Reviews/7.webp' },
     { user: 'NoobMaster69', rating: 4, text: "Works great on my potato PC. 10/10 optimization.", type: 'normal', avatar: 'assets/Reviews/8.webp' },
     { user: 'Genius', rating: 1, text: "Top", type: 'normal', avatar: 'assets/Reviews/9.webp' },
-    { user: 'LongTester', rating: 5, text: "I’ll be brief: the game starts as “I’ll check it out for 5 minutes” and ends with you forgetting why you even turned on your computer. It doesn’t hold your hand — it almost feels like it doesn’t care about you at all, and that’s exactly why you want to figure it out. The mechanics seem simple at first, but quickly grow into something much deeper than expected.\nBy the way, try typing /felix in the console 🙂", type: 'normal', avatar: 'assets/Reviews/10.webp' },
+    { user: 'Felix', rating: 5, text: "I’ll be brief: the game starts as “I’ll check it out for 5 minutes” and ends with you forgetting why you even turned on your computer. It doesn’t hold your hand — it almost feels like it doesn’t care about you at all, and that’s exactly why you want to figure it out. The mechanics seem simple at first, but quickly grow into something much deeper than expected.\nBy the way, try typing /felix in the console 🙂", type: 'normal', avatar: 'assets/Reviews/10.webp' },
 
     // --- CREEPY / META REVIEWS ---
     {
