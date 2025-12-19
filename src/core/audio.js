@@ -5,12 +5,18 @@
 import { UTILS } from './config.js';
 import { events } from './events.js';
 import { assetLoader } from './AssetLoader.js';
+import { THEME_ORDER } from '../data/themes.js';
 import { VoidSynth } from '../audio/VoidSynth.js';
 import { RainbowSynth } from '../audio/RainbowSynth.js';
 import { CorporateSynth } from '../audio/CorporateSynth.js';
 
 const ASSET_SOUNDS = {
     'purr': 'assets/Audios/felix/purr.mp3'
+};
+
+const MUSIC_TRACKS = {
+    'pixel_party': 'assets/Music/Pixel Party.mp3',
+    'digital_drift': 'assets/Music/Digital Drift.mp3' // Correct path found via search
 };
 
 export class SoundEngine {
@@ -28,8 +34,15 @@ export class SoundEngine {
         // Throttling
         this.lastPlayed = {};
         this.COOLDOWNS = {
-            'click': 0.05 // 50ms limit for clicks (prevents shard explosion volume)
+            'click': 0.05 // 50ms limit for clicks
         };
+
+        this.currentMusic = null; // HTMLAudioElement
+        this.currentMusicNode = null; // MediaElementSourceNode
+
+        // Glitch Effects
+        this.glitchTimer = null;
+        this.glitchIntensity = 0;
     }
 
     init() {
@@ -226,20 +239,128 @@ export class SoundEngine {
         }
     }
 
+    playMusicFile(path) {
+        if (!this.ctx) return;
+
+        // Stop existing music
+        if (this.currentMusic) {
+            this.currentMusic.pause();
+            this.currentMusic.currentTime = 0;
+            this.currentMusic = null;
+        }
+        if (this.currentMusicNode) {
+            try { this.currentMusicNode.disconnect(); } catch (e) { }
+            this.currentMusicNode = null;
+        }
+
+        const audio = new Audio(path);
+        audio.loop = true;
+        audio.volume = 1.0;
+        audio.crossOrigin = "anonymous";
+
+        try {
+            // Re-create source node every time to avoid "source already connected" issues if we were reusing
+            const source = this.ctx.createMediaElementSource(audio);
+            source.connect(this.musicGain);
+
+            this.currentMusic = audio;
+            this.currentMusicNode = source;
+
+            audio.play().catch(e => console.warn("Music play blocked", e));
+        } catch (e) {
+            console.error("Error setting up music source", e);
+        }
+    }
+
+    startGlitchEffect(intensity) {
+        this.stopGlitchEffect(); // Clear previous
+        this.glitchIntensity = intensity;
+
+        if (intensity <= 0 || !this.currentMusic) return;
+
+        const loop = () => {
+            if (!this.currentMusic) return;
+
+            // 1. Playback Rate Wobble (Wow/Flutter)
+            // Base wobble adds 'old tape' feel
+            const wobble = (Math.random() - 0.5) * (0.02 + (intensity * 0.15));
+
+            // Occasional severe drop for high intensity
+            let rate = 1.0 + wobble;
+            if (intensity > 0.6 && Math.random() < 0.05) {
+                rate *= 0.5; // Tape drag/slowdown
+            }
+            if (intensity > 0.8 && Math.random() < 0.02) {
+                rate *= 2.0; // Fast forward skip
+            }
+
+            this.currentMusic.playbackRate = Math.max(0.1, Math.min(4.0, rate));
+
+            // Loop time: random short intervals
+            const nextTime = 50 + Math.random() * 200;
+            this.glitchTimer = setTimeout(loop, nextTime);
+        };
+
+        loop();
+    }
+
+    stopGlitchEffect() {
+        if (this.glitchTimer) {
+            clearTimeout(this.glitchTimer);
+            this.glitchTimer = null;
+        }
+        if (this.currentMusic) {
+            this.currentMusic.playbackRate = 1.0;
+        }
+        this.glitchIntensity = 0;
+    }
+
     handleThemeChange(themeId) {
-        // Stop all synths first
+        // 1. Stop all Procedural Synths (but keep them initialized)
         if (this.voidSynth) this.voidSynth.stop();
         if (this.rainbowSynth) this.rainbowSynth.stop();
         if (this.corporateSynth) this.corporateSynth.stop();
 
+        // 2. Stop current file music
+        if (this.currentMusic) {
+            this.currentMusic.pause();
+            this.currentMusic = null;
+        }
+        if (this.currentMusicNode) {
+            try { this.currentMusicNode.disconnect(); } catch (e) { }
+            this.currentMusicNode = null;
+        }
+
+        // 3. Play appropriate track based on rules
         if (themeId === 'null_void') {
             if (this.voidSynth) this.voidSynth.play();
         }
         else if (themeId === 'rainbow_paradise') {
-            if (this.rainbowSynth) this.rainbowSynth.play();
+            this.playMusicFile(MUSIC_TRACKS.pixel_party);
         }
-        else if (themeId === 'corporate_network' || themeId === 'ad_purgatory') {
-            if (this.corporateSynth) this.corporateSynth.play();
+        else {
+            // All other themes (except Null Void): Digital Drift with Progressive Glitch
+            this.playMusicFile(MUSIC_TRACKS.digital_drift);
+
+            // Calculate Glitch Intensity
+            const index = THEME_ORDER.indexOf(themeId);
+
+            // Glitch starts from Ad Purgatory (index 1) to Legacy System (index 8)
+            // Rainbow (0) is clean. Null Void (9) is VoidSynth.
+            const minGlitchIndex = 1;
+            const maxGlitchIndex = THEME_ORDER.length - 2; // Matches Legacy System
+
+            if (index >= minGlitchIndex && index <= maxGlitchIndex) {
+                // Map index range to 0.0 - 1.0
+                // Ad Purgatory (1) -> 0.0
+                // Legacy System (8) -> 1.0
+                const relativePos = (index - minGlitchIndex) / (maxGlitchIndex - minGlitchIndex);
+
+                // Add base glitchiness so even Ad Purgatory has a little bit? 
+                // User said "gradual transition". Let's stick to 0-1 linear.
+                const intensity = Math.max(0, Math.min(1, relativePos));
+                this.startGlitchEffect(intensity);
+            }
         }
     }
 }
