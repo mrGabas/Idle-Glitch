@@ -91,17 +91,38 @@ export class ArchiveWindow extends Window {
         this.selectedFolderKey = null;
         this.scrollY = 0;
         this.maxScroll = 0;
+
+        // Sidebar Scroll
+        this.sidebarScrollY = 0;
+        this.sidebarMaxScroll = 0;
     }
 
     onScroll(deltaY) {
-        // Adjust scroll
-        const speed = 50;
-        if (deltaY > 0) this.scrollY += speed;
-        else this.scrollY -= speed;
+        // Check mouse position for split scroll
+        const mx = this.game.mouse.x;
+        // Sidebar width is 150 + 4 (padding/bezel offset in drawContent is +4) 
+        // Window x is this.x. Sidebar ends at this.x + 154 theoretically
+        const sidebarEnd = this.x + 154;
 
-        // Clamp
-        if (this.scrollY < 0) this.scrollY = 0;
-        if (this.scrollY > this.maxScroll) this.scrollY = this.maxScroll;
+        const speed = 50;
+
+        if (mx < sidebarEnd) {
+            // Sidebar Scroll
+            if (deltaY > 0) this.sidebarScrollY += speed;
+            else this.sidebarScrollY -= speed;
+
+            // Clamp Sidebar
+            if (this.sidebarScrollY < 0) this.sidebarScrollY = 0;
+            if (this.sidebarScrollY > this.sidebarMaxScroll) this.sidebarScrollY = this.sidebarMaxScroll;
+        } else {
+            // Main Content Scroll
+            if (deltaY > 0) this.scrollY += speed;
+            else this.scrollY -= speed;
+
+            // Clamp Content
+            if (this.scrollY < 0) this.scrollY = 0;
+            if (this.scrollY > this.maxScroll) this.scrollY = this.maxScroll;
+        }
     }
 
     wrapText(ctx, text, maxWidth) {
@@ -226,7 +247,18 @@ export class ArchiveWindow extends Window {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top'; // Easier for multiline
 
-        const layout = this.getSidebarLayout(ctx, x, y);
+        // Save & Clip Sidebar Area
+        ctx.save();
+        ctx.beginPath();
+        // Clip area: x, y+20 (header approx), sidebarW, h-20 (bottom)
+        // Adjust depending on where startY is.
+        // StartY is y + 24 in Window.js for content.
+        // But drawContent receives x, y, w, h which are inner content bounds.
+        // x is this.x + 4, y is this.y + 24
+        ctx.rect(x, y, sidebarW, h);
+        ctx.clip();
+
+        const layout = this.getSidebarLayout(ctx, x, y - this.sidebarScrollY);
 
         layout.forEach(item => {
             const isSelected = item.key !== null && item.key === this.selectedFolderKey;
@@ -247,6 +279,25 @@ export class ArchiveWindow extends Window {
                 ty += item.lineHeight;
             });
         });
+
+        // Calculate Sidebar Max Scroll
+        // Last item bottom
+        if (layout.length > 0) {
+            const lastItem = layout[layout.length - 1];
+            const contentBottom = lastItem.y + lastItem.h + this.sidebarScrollY; // Real bottom relative to y
+            // View height is h
+            // We want contentBottom - h
+            // relative to y: (lastItem.y + this.sidebarScrollY) is approx (y + totalH)
+            // Wait, lastItem.y ALREADY includes -this.sidebarScrollY
+            // So lastItem.y + lastItem.h is the screen coordinate of the bottom.
+            // We need abstract height.
+            // let's re-calculate total height from layout logic or just infer it
+            // Infer: (lastItem.y + this.sidebarScrollY) - y + lastItem.h = totalHeight
+            const totalH = (lastItem.y + this.sidebarScrollY) - y + lastItem.h;
+            this.sidebarMaxScroll = Math.max(0, totalH - h + 20);
+        }
+
+        ctx.restore(); // End Sidebar Clip
 
         // Restore baseline for other draws if needed (though standard is usually alphabetic)
         ctx.textBaseline = 'alphabetic';
@@ -579,6 +630,9 @@ export class ArchiveWindow extends Window {
 
         // 3. If res === 'consumed', click was inside window body.
 
+        // Need Context for measuring text in sidebar click (since we re-run layout)
+        const ctx = this.game.renderer.ctx;
+
         const sidebarW = 150;
         const contentX = this.x + sidebarW + 10;
         const contentY = this.y + 40; // Including address bar
@@ -588,10 +642,20 @@ export class ArchiveWindow extends Window {
         const contentStartY = this.y + 24;
 
         if (mx > contentStartX && mx < contentStartX + sidebarW && my > contentStartY && my < this.y + this.h) {
-            // Use same layout logic
-            const layout = this.getSidebarLayout(this.game.renderer.ctx, contentStartX, contentStartY);
+            // Apply Scroll to click detection
+            // We pass y - scrollY effectively into getSidebarLayout to match draw logic
+            // But getSidebarLayout changes Y. 
+            // We need to match the item.y which will be drawn at (Y_layout - scrollY).
+            // Actually getSidebarLayout is pure.
+            // In draw: getSidebarLayout(..., y - scroll) -> items have y shifted.
+
+            const layout = this.getSidebarLayout(ctx, contentStartX, contentStartY - this.sidebarScrollY);
 
             for (let item of layout) {
+                // Clipping check: is item visible? 
+                // Simple version: if click Y is valid within sidebar view
+                // We already checked my > contentStartY && my < this.y + this.h above.
+
                 if (my >= item.y && my < item.y + item.h) {
                     if (item.type === 'root') {
                         this.currentPath = [];

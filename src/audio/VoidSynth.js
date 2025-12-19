@@ -74,7 +74,7 @@ export class VoidSynth {
         // White Noise -> LowPass Filter
 
         const windGain = this.ctx.createGain();
-        windGain.gain.value = 0.3;
+        windGain.gain.value = 0.7;
         windGain.connect(this.masterGain);
 
         this.createWind(windGain);
