@@ -401,7 +401,7 @@ export class ArchiveWindow extends Window {
             });
 
             // Back button
-            // Back button
+
             this.drawIcon(ctx, gx, gy, "..", 'folder', false);
         }
 
@@ -425,11 +425,6 @@ export class ArchiveWindow extends Window {
         const words = label.split(/(?=[_])|(?<=[_])|\s+/);
         const lines = [];
         let currentLine = words[0] || "";
-
-        const allWords = label.split(/\s+|(?=[_-])/);
-
-        let line = "";
-        const wList = label.match(/[\w\d\.\-]+|\s+/g) || [label];
 
         const fit = (text) => ctx.measureText(text).width <= maxWidth;
 
@@ -617,7 +612,7 @@ export class ArchiveWindow extends Window {
         }
 
         // --- FILE GRID CHECK ---
-        // --- FILE GRID CHECK ---
+
         if (mx > contentX && my > contentY) {
             // Calculate grid click with SCROLL
             const relX = mx - contentX;

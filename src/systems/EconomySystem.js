@@ -129,7 +129,7 @@ export class EconomySystem {
             this.game.shake = 2;
         }
 
-        this.game.createParticles(this.game.w / 2, this.game.h / 2 - 100, this.game.themeManager.currentTheme.colors.accent);
+
         if (this.game.themeManager.currentTheme.id === 'rainbow_paradise') {
             this.game.state.addCorruption(0.05);
         }

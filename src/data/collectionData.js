@@ -20,7 +20,7 @@ export const COLLECTION_DB = {
         // Uncommon
         { id: 'meme_u_bread', name: 'Bread', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Bread.webp' },
         { id: 'meme_u_like', name: 'Like', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Like.webp' },
-        { id: 'meme_u_mega', name: 'MegaTRUCK', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Megatron... no... MegaTRUCK.webp' },
+        { id: 'meme_u_mega', name: 'Megatron... no... MegaTRUCK', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Megatron... no... MegaTRUCK.webp' },
         { id: 'meme_u_panic', name: 'Tiny Panic', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Tiny Panic.webp' },
         { id: 'meme_u_wait', name: 'Wait What', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/Wait What.webp' },
         { id: 'meme_u_saw', name: 'You Saw Nothing', type: 'image', rarity: 'uncommon', src: 'assets/Media/2. Uncommon/You Saw Nothing.webp' },
