@@ -5,6 +5,7 @@
 import { UTILS } from './config.js';
 import { events } from './events.js';
 import { assetLoader } from './AssetLoader.js';
+import { VoidSynth } from '../audio/VoidSynth.js';
 
 const ASSET_SOUNDS = {
     'purr': 'assets/Audios/felix/purr.mp3'
@@ -20,6 +21,7 @@ export class SoundEngine {
 
         // Event Subscription
         events.on('play_sound', (type) => this.play(type));
+        events.on('theme_changed', (id) => this.handleThemeChange(id));
 
         // Throttling
         this.lastPlayed = {};
@@ -45,6 +47,10 @@ export class SoundEngine {
         this.musicGain = this.ctx.createGain();
         this.musicGain.gain.value = 0.5;
         this.musicGain.connect(this.master);
+
+        this.voidSynth = new VoidSynth(this.ctx);
+        // We connect VoidSynth to musicGain so it respects music volume
+        this.voidSynth.connect(this.musicGain);
     }
 
     resume() {
@@ -204,6 +210,16 @@ export class SoundEngine {
             }
         } catch (e) {
             console.warn('Audio playback failed:', e);
+        }
+    }
+
+    handleThemeChange(themeId) {
+        if (!this.voidSynth) return;
+
+        if (themeId === 'null_void') {
+            this.voidSynth.play();
+        } else {
+            this.voidSynth.stop();
         }
     }
 }

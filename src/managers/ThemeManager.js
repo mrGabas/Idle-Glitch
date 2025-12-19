@@ -53,6 +53,7 @@ export class ThemeManager {
             this.currentTheme = THEMES[id];
             this.loadThemeUpgrades();
             if (this.game.fakeUI) this.game.fakeUI.init(this.game.w, this.game.h);
+            this.game.events.emit('theme_changed', id);
         }
     }
 
