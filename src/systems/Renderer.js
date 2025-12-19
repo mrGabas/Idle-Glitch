@@ -543,14 +543,40 @@ export class Renderer {
         this.ctx.globalAlpha = 1; // Reset
 
         // Score (Top Center)
-        this.ctx.fillStyle = colors.text;
-        // Adjust Font Size? Use config or dynamic?
-        // Let's stick to config fonts for text consistency unless requested.
+        const scoreText = UTILS.fmt(state.score) + ' ' + theme.currency.symbol;
+        const rateText = `${UTILS.fmt(state.autoRate)} / sec`;
+
         this.ctx.font = CFG.fonts.xl;
-        this.ctx.fillText(UTILS.fmt(state.score) + ' ' + theme.currency.symbol, cx, this.h * 0.1);
+        const scoreMeasure = this.ctx.measureText(scoreText);
+        this.ctx.font = CFG.fonts.m;
+        const rateMeasure = this.ctx.measureText(rateText);
+
+        const maxWidth = Math.max(scoreMeasure.width, rateMeasure.width);
+        const bgPadding = 20;
+        const bgW = maxWidth + bgPadding * 2;
+        const bgH = this.h * 0.15; // Approximate height coverage
+        const bgX = cx - bgW / 2;
+        const bgY = this.h * 0.02; // Start a bit from top
+
+        // Draw Background
+        this.ctx.save();
+        this.ctx.fillStyle = colors.ui;
+        this.ctx.shadowColor = colors.accent;
+        this.ctx.shadowBlur = 15;
+        this.ctx.fillRect(bgX, bgY, bgW, bgH);
+        this.ctx.shadowBlur = 0;
+        this.ctx.restore();
+
+        this.ctx.strokeStyle = colors.uiBorder;
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(bgX, bgY, bgW, bgH);
+
+        this.ctx.fillStyle = colors.text;
+        this.ctx.font = CFG.fonts.xl;
+        this.ctx.fillText(scoreText, cx, this.h * 0.1);
 
         this.ctx.font = CFG.fonts.m;
-        this.ctx.fillText(`${UTILS.fmt(state.autoRate)} / sec`, cx, this.h * 0.14);
+        this.ctx.fillText(rateText, cx, this.h * 0.14);
 
         // Progress Bar (Bottom Center of Game Area)
         const barW = gameW * 0.8; // 80% Width of Game Area
