@@ -52,7 +52,8 @@ export class TutorialSystem {
                     action: () => {
                         // Keep shop open just in case
                         this.game.economySystem.openShop();
-                    }
+                    },
+                    trigger: () => true
                 }
             ],
             'locked_folder_hint': [
