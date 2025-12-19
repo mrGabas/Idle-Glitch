@@ -799,7 +799,7 @@ export class Renderer {
         this.ctx.fillStyle = '#c0c0c0';
         this.ctx.fillRect(0, this.h - 30, this.w, 30);
         this.ctx.fillStyle = '#000';
-        this.ctx.fillText("ARROWS: Move   CLICK: Select   ENTER: Buy/Toggle   F10: Save & Exit", this.w / 2, this.h - 10);
+        this.ctx.fillText("ARROWS: Move   CLICK NAME: Desc   CLICK BUTTON: Buy   F10: Save & Exit", this.w / 2, this.h - 10);
 
         // Content Box (Double Border)
         this.ctx.strokeStyle = '#fff';
@@ -819,65 +819,106 @@ export class Renderer {
 
         // Upgrades List
         const startY = 120;
-        metaList.forEach((u, i) => {
-            const y = startY + i * 30;
-            const owned = metaUpgrades[u.id] || 0;
-            let label = u.name;
+        let currentY = startY;
 
-            // Handle max level display
-            // Handle max level display
+        metaList.forEach((u, i) => {
+            const owned = metaUpgrades[u.id] || 0;
+            const isExpanded = input.biosState.openDescriptions.has(u.id);
+            const itemHeight = isExpanded ? 60 : 30;
+
+            // BACKGROUND HIGHLIGHT
+            // Helper for mouse hover check over entire ROW
+            if (input.mouse.y >= currentY && input.mouse.y < currentY + itemHeight && input.mouse.x < 380) {
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(38, currentY, 340, itemHeight);
+                this.ctx.fillStyle = '#0000aa'; // Text Color inverted
+            } else {
+                this.ctx.fillStyle = '#0000aa'; // Back to blue? No, text matches bg?
+                // Default text is white. selection bg is white, text is blue.
+                this.ctx.fillStyle = '#fff';
+            }
+
+            // NAME Display
+            let label = u.name;
             if (u.type === 'feature') {
                 label += owned ? " [ENABLED]" : " [DISABLED]";
             } else {
                 label += ` [Lv.${owned}]`;
             }
+            this.ctx.fillText(label, 40, currentY + 20);
 
-            // Selection highlight
-            if (i === input.selectedBIOSIndex || (input.mouse.y >= y - 20 && input.mouse.y < y + 10)) {
-                this.ctx.fillStyle = '#fff';
-                this.ctx.fillRect(38, y - 20, this.w - 78, 30);
-                this.ctx.fillStyle = '#0000aa';
-            } else {
-                this.ctx.fillStyle = '#fff';
+            // DESCRIPTION (If expanded)
+            if (isExpanded) {
+                this.ctx.font = "14px 'Courier New', monospace";
+                this.ctx.fillText(u.desc, 50, currentY + 45);
+                this.ctx.font = "16px 'Courier New', monospace"; // Reset
             }
 
+            // BUY BUTTON (Right Side)
             // Handle Cost Scaling
             let cost = u.baseCost;
             if (u.costScale) {
                 cost = Math.floor(u.baseCost * Math.pow(u.costScale, owned));
             }
 
-            this.ctx.fillText(label, 40, y);
-            this.ctx.fillText(cost + " MB", 400, y);
+            // Button Rect
+            const btnX = 400;
+            const btnW = 200;
+            const btnH = 26;
+            const btnY = currentY + (isExpanded ? 15 : 0); // Center relative to row or sticking to top?
+            // Let's stick it to top aligned with name
+
+            const isHoverBtn = input.mouse.x >= btnX && input.mouse.x <= btnX + btnW && input.mouse.y >= currentY && input.mouse.y <= currentY + btnH;
+            const canAfford = input.glitchData >= cost;
+
+            this.ctx.fillStyle = isHoverBtn ? (canAfford ? '#00ff00' : '#ff0000') : '#ccc';
+            this.ctx.fillRect(btnX, currentY, btnW, btnH);
+
+            // Button Border
+            this.ctx.strokeStyle = '#000';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(btnX, currentY, btnW, btnH);
+
+            // Cost Text
+            this.ctx.fillStyle = '#000';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`BUY: ${cost} MB`, btnX + btnW / 2, currentY + 18);
+
+            // Reset for next item
+            this.ctx.textAlign = 'left';
+            this.ctx.fillStyle = '#fff';
+
+            currentY += itemHeight;
         });
 
         // "BOOT SYSTEM" Option
-        const bootY = startY + metaList.length * 30 + 30;
-        const bootIndex = metaList.length;
+        currentY += 30; // Margin
+        const bootY = currentY;
 
-        if (input.selectedBIOSIndex === bootIndex || (input.mouse.y >= bootY - 20 && input.mouse.y < bootY + 10)) {
+        let bootHover = (input.mouse.y >= bootY && input.mouse.y < bootY + 30);
+        if (bootHover) {
             this.ctx.fillStyle = '#fff';
-            this.ctx.fillRect(38, bootY - 20, this.w - 78, 30);
+            this.ctx.fillRect(38, bootY, this.w - 78, 30);
             this.ctx.fillStyle = '#0000aa';
         } else {
             this.ctx.fillStyle = '#0f0';
         }
-        this.ctx.fillText("> BOOT SYSTEM (START NEW RUN)", 40, bootY);
+        this.ctx.fillText("> BOOT SYSTEM (START NEW RUN)", 40, bootY + 20);
 
-        // Theme Selector (if unlocked)
         // Theme Selector (if unlocked)
         if (metaUpgrades['start_theme']) {
-            const themeY = bootY + 30;
-            const themeIndex = metaList.length + 1;
+            currentY += 40;
+            const themeY = currentY;
 
-            if (input.selectedBIOSIndex === themeIndex || (input.mouse.y >= themeY - 20 && input.mouse.y < themeY + 10)) {
+            let themeHover = (input.mouse.y >= themeY && input.mouse.y < themeY + 30);
+            if (themeHover) {
                 this.ctx.fillStyle = '#fff';
-                this.ctx.fillRect(38, themeY - 20, this.w - 78, 30);
+                this.ctx.fillRect(38, themeY, this.w - 78, 30);
                 this.ctx.fillStyle = '#0000aa';
             } else {
                 this.ctx.fillStyle = '#0ff';
             }
-            this.ctx.fillText(`STARTING THEME: [${input.currentTheme.id.toUpperCase()}]`, 40, themeY);
+            this.ctx.fillText(`STARTING THEME: [${input.currentTheme.id.toUpperCase()}]`, 40, themeY + 20);
         }
 
         // Explicitly draw cursor on top for BIOS

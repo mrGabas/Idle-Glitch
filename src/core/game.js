@@ -142,6 +142,11 @@ export class Game {
         this.lastSaveTime = this.saveSystem.loadNumber('last_save', Date.now());
         this.economySystem.checkOfflineProgress();
 
+        // BIOS UI State
+        this.biosState = {
+            openDescriptions: new Set()
+        };
+
         // NEW: Load Mail Data
         const mailData = this.saveSystem.load('mail_data', null);
         if (this.uiManager && this.uiManager.mail && mailData) {
@@ -587,27 +592,50 @@ export class Game {
      */
     handleBIOSClick(mx, my) {
         const startY = CFG.game.bios.startY;
+        let currentY = startY;
 
         // Check Upgrades
-        META_UPGRADES.forEach((u, i) => {
-            const y = startY + i * CFG.game.bios.lineHeight;
-            // Hitbox approximation
-            if (my >= y - 20 && my < y + 10) {
-                // Clicked Item
-                this.economySystem.buyMetaUpgrade(u);
+        for (let i = 0; i < META_UPGRADES.length; i++) {
+            const u = META_UPGRADES[i];
+            const isExpanded = this.biosState.openDescriptions.has(u.id);
+            const itemHeight = isExpanded ? 60 : 30; // 30px base + 30px desc
+
+            // Check Row Hit
+            if (my >= currentY && my < currentY + itemHeight) {
+                // Check Button Click (Right side)
+                // Renderer draws button at x=400, w=200 (400-600)
+                if (mx >= 400 && mx <= 600) {
+                    this.economySystem.buyMetaUpgrade(u);
+                } else if (mx < 400) {
+                    // Toggle Description (Left side only)
+                    if (this.biosState.openDescriptions.has(u.id)) {
+                        this.biosState.openDescriptions.delete(u.id);
+                    } else {
+                        this.biosState.openDescriptions.add(u.id);
+                    }
+                    this.events.emit('play_sound', 'click');
+                }
+                return; // Handled
             }
-        });
+
+            // Advance Y
+            currentY += itemHeight;
+        }
 
         // Check Boot
-        const bootY = startY + META_UPGRADES.length * CFG.game.bios.lineHeight + 30;
-        if (my >= bootY - 20 && my < bootY + 10) {
+        // Add spacing
+        currentY += 30;
+
+        if (my >= currentY && my < currentY + 30) {
             this.bootSystem();
+            return;
         }
+        currentY += 30;
 
         // Check Theme Select (if unlocked)
         if (this.metaUpgrades['start_theme']) {
-            const themeY = bootY + 30;
-            if (my >= themeY - 20 && my < themeY + 10) {
+            currentY += 10; // Extra spacing
+            if (my >= currentY && my < currentY + 30) {
                 // Cycle Theme
                 const themeIds = Object.keys(THEMES);
                 let idx = themeIds.indexOf(this.themeManager.currentTheme.id);
@@ -956,7 +984,8 @@ export class Game {
             glitchData: this.glitchData,
             selectedBIOSIndex: this.selectedBIOSIndex,
             shopOpen: this.economySystem.shopOpen,
-            activeHighlightTarget: this.tutorialSystem.activeHighlightTarget
+            activeHighlightTarget: this.tutorialSystem.activeHighlightTarget,
+            biosState: this.biosState
         };
 
         const entities = {
