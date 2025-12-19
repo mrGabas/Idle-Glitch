@@ -6,6 +6,8 @@ import { UTILS } from './config.js';
 import { events } from './events.js';
 import { assetLoader } from './AssetLoader.js';
 import { VoidSynth } from '../audio/VoidSynth.js';
+import { RainbowSynth } from '../audio/RainbowSynth.js';
+import { CorporateSynth } from '../audio/CorporateSynth.js';
 
 const ASSET_SOUNDS = {
     'purr': 'assets/Audios/felix/purr.mp3'
@@ -51,6 +53,17 @@ export class SoundEngine {
         this.voidSynth = new VoidSynth(this.ctx);
         // We connect VoidSynth to musicGain so it respects music volume
         this.voidSynth.connect(this.musicGain);
+
+        this.rainbowSynth = new RainbowSynth(this.ctx);
+        this.rainbowSynth.connect(this.musicGain);
+
+        this.corporateSynth = new CorporateSynth(this.ctx);
+        this.corporateSynth.connect(this.musicGain);
+
+        // Sync with current theme immediately
+        if (window.game && window.game.themeManager) {
+            this.handleThemeChange(window.game.themeManager.currentTheme.id);
+        }
     }
 
     resume() {
@@ -214,12 +227,19 @@ export class SoundEngine {
     }
 
     handleThemeChange(themeId) {
-        if (!this.voidSynth) return;
+        // Stop all synths first
+        if (this.voidSynth) this.voidSynth.stop();
+        if (this.rainbowSynth) this.rainbowSynth.stop();
+        if (this.corporateSynth) this.corporateSynth.stop();
 
         if (themeId === 'null_void') {
-            this.voidSynth.play();
-        } else {
-            this.voidSynth.stop();
+            if (this.voidSynth) this.voidSynth.play();
+        }
+        else if (themeId === 'rainbow_paradise') {
+            if (this.rainbowSynth) this.rainbowSynth.play();
+        }
+        else if (themeId === 'corporate_network' || themeId === 'ad_purgatory') {
+            if (this.corporateSynth) this.corporateSynth.play();
         }
     }
 }
