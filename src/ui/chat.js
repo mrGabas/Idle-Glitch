@@ -6,6 +6,7 @@ import { SCRIPT } from '../data/chatScripts.js';
 import { CursedCaptcha } from '../entities/enemies.js';
 import { MinigameWindow } from './MinigameWindow.js';
 import { SnakeGame } from '../minigames/SnakeGame.js';
+import { CFG } from '../core/config.js';
 
 const THEME_AMBIENT_MESSAGES = {
     firewall: [
@@ -231,6 +232,7 @@ export class ChatSystem {
         ctx.clip();
 
         ctx.font = "20px 'VT323', monospace";
+        ctx.textAlign = 'left'; // Reset alignment for text
 
         // Render Messages Bottom-Up
         // Apply Scroll Offset
