@@ -409,7 +409,7 @@ export class ArchiveWindow extends Window {
 
         // Calculate max scroll based on gx/gy relative to start
         // Last item bottom Y relative to contentY
-        const contentHeight = (gy - contentY) + cellH;
+        const contentHeight = (gy - contentY) + cellH + this.scrollY;
         const viewHeight = h - 40; // Approx
         this.maxScroll = Math.max(0, contentHeight - viewHeight + 20);
 
