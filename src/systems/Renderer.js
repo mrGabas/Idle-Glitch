@@ -648,9 +648,20 @@ export class Renderer {
                 this.ctx.fillStyle = state.score >= u.cost ? colors.ui : (theme.id === 'null_void' ? '#fff' : '#333');
                 this.ctx.fillRect(ux, uy, cardW, cardH);
 
+                // TUTORIAL HIGHLIGHT
+                let borderCol = colors.uiBorder;
+                let borderW = 1;
+
+                if (activeHighlightTarget === 'UPGRADE_' + u.id) {
+                    const pulse = (Math.sin(Date.now() / 200) + 1) * 0.5; // 0 to 1
+                    // Interpolate white to accent
+                    borderCol = `rgba(0, 255, 0, ${0.5 + pulse * 0.5})`; // green pulse
+                    borderW = 3;
+                }
+
                 // Border
-                this.ctx.strokeStyle = colors.uiBorder;
-                this.ctx.lineWidth = 1;
+                this.ctx.strokeStyle = borderCol;
+                this.ctx.lineWidth = borderW;
                 this.ctx.strokeRect(ux, uy, cardW, cardH);
 
                 // UI Gaslighting Logic

@@ -40,6 +40,7 @@ export class TutorialSystem {
                     id: 'buy_unicorn',
                     sender: 'SYSTEM',
                     message: "ACTION: Purchase 'Unicorn Friend'.",
+                    targetId: 'UPGRADE_r1',
                     trigger: () => {
                         const u = this.game.themeManager.upgrades.find(u => u.id === 'r1');
                         return u && u.count >= 1;
@@ -190,7 +191,7 @@ export class TutorialSystem {
      * @param {string} id 
      */
     highlightElement(id) {
-        if (id === 'MAIN_BUTTON') {
+        if (id === 'MAIN_BUTTON' || id.startsWith('UPGRADE_')) {
             this.activeHighlightTarget = id;
             return;
         }
