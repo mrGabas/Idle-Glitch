@@ -129,6 +129,9 @@ export class EconomySystem {
             this.game.shake = 2;
         }
 
+        // Track Clicks
+        this.game.state.totalClicks++;
+
 
         if (this.game.themeManager.currentTheme.id === 'rainbow_paradise') {
             this.game.state.addCorruption(0.05);

@@ -800,6 +800,10 @@ export class Game {
         const dt = (t - this.lastTime) / 1000;
         this.lastTime = t;
 
+        // Track Playtime
+        this.state.totalPlayTime += dt;
+        this.lastTime = t;
+
         if (this.gameState !== 'PLAYING' && this.gameState !== 'BIOS' && !this.state.crashed && !this.state.rebooting) {
             // Still draw even if paused, just don't update
             this.draw();

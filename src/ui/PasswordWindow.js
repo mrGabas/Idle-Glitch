@@ -164,6 +164,7 @@ export class PasswordWindow extends Window {
     submit() {
         if (this.inputBuffer === this.targetPassword) {
             this.close();
+            this.game.state.hacksSolved++; // Track Solved
             if (this.onUnlock) this.onUnlock();
         } else {
             this.isError = true;

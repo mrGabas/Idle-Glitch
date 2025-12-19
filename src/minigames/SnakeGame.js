@@ -119,7 +119,13 @@ export class SnakeGame extends Minigame {
     die() {
         this.lost = true;
         this.shake = 20;
-        if (this.game) this.game.events.emit('play_sound', 'error');
+        if (this.game) {
+            this.game.events.emit('play_sound', 'error');
+            // Update High Score
+            if (this.score > this.game.state.snakeHighScore) {
+                this.game.state.snakeHighScore = this.score;
+            }
+        }
     }
 
     // Optional: Raw Key Handler if actions aren't enough (e.g. specialized keys)

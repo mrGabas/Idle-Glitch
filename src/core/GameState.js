@@ -42,6 +42,16 @@ export class GameState {
         /** @type {boolean} Whether click power is currently throttled */
         this.throttled = false;
 
+        // Statistics
+        /** @type {number} Cumulative manual clicks */
+        this.totalClicks = 0;
+        /** @type {number} Cumulative time played in seconds */
+        this.totalPlayTime = 0;
+        /** @type {number} Highest score in Snake */
+        this.snakeHighScore = 0;
+        /** @type {number} Number of hacks/passwords solved */
+        this.hacksSolved = 0;
+
         // System Purge State
         /** @type {boolean} Whether the system is currently purged (debuffed) */
         this.isPurged = false;
@@ -131,8 +141,16 @@ export class GameState {
         this.falseCrash = false;
         this.falseCrash = false;
         this.crashTimer = 0;
+        this.crashTimer = 0;
         this.temperature = 0;
         this.throttled = false;
+        // Do not reset cumulative stats on session reset usually, 
+        // but if this is PRESTIGE, we might want to keep them?
+        // Usually achievements persist across prestiges.
+        // GameState.resetSession() is called on Prestige. 
+        // If these are "Lifetime" stats, we should NOT reset them here.
+        // Leaving them alone.
+
         this.isPurged = false;
         this.purgeTimer = 0;
         events.emit('state_reset', this);
@@ -152,7 +170,12 @@ export class GameState {
             multiplier: this.multiplier,
             startTime: this.startTime,
             isPurged: this.isPurged,
-            temperature: this.temperature
+            temperature: this.temperature,
+            // Stats
+            totalClicks: this.totalClicks,
+            totalPlayTime: this.totalPlayTime,
+            snakeHighScore: this.snakeHighScore,
+            hacksSolved: this.hacksSolved
         };
     }
 
@@ -170,6 +193,11 @@ export class GameState {
         this.startTime = data.startTime || Date.now();
         this.isPurged = data.isPurged || false;
         this.temperature = data.temperature || 0;
+
+        this.totalClicks = data.totalClicks || 0;
+        this.totalPlayTime = data.totalPlayTime || 0;
+        this.snakeHighScore = data.snakeHighScore || 0;
+        this.hacksSolved = data.hacksSolved || 0;
 
         events.emit('state_updated', this);
     }

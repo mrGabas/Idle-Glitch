@@ -37,7 +37,7 @@ export const ACHIEVEMENTS = [
         desc: 'Have an automatic resource generation rate.',
         condition: (game) => game.state.autoRate > 0,
         reward: (game) => {
-            game.state.addScore(500);; // 10% boost
+            game.state.addScore(500);
         }
     },
     {
@@ -137,6 +137,71 @@ export const ACHIEVEMENTS = [
         condition: (game) => game.loreSystem.unlockedFolders.length >= 3,
         reward: (game) => {
             game.state.multiplier += 0.3;
+        }
+    },
+    {
+        id: 'finger_workout',
+        name: 'Finger Workout',
+        desc: 'Click manually 500 times.',
+        condition: (game) => game.state.totalClicks >= 500,
+        reward: (game) => {
+            game.state.clickPower += 5;
+        }
+    },
+    {
+        id: 'mouse_breaker',
+        name: 'Mouse Breaker',
+        desc: 'Click manually 2,500 times.',
+        condition: (game) => game.state.totalClicks >= 2500,
+        reward: (game) => {
+            game.state.clickPower += 25;
+        }
+    },
+    {
+        id: 'carpal_tunnel',
+        name: 'Carpal Tunnel',
+        desc: 'Click manually 5,000 times.',
+        condition: (game) => game.state.totalClicks >= 5000,
+        reward: (game) => {
+            game.state.clickPower += 100;
+        }
+    },
+    {
+        id: 'time_flies',
+        name: 'Time Flies',
+        desc: 'Play for 1 hour total.',
+        condition: (game) => game.state.totalPlayTime >= 3600,
+        reward: (game) => {
+            game.state.multiplier += 0.05;
+        }
+    },
+    {
+        id: 'meme_lord',
+        name: 'Meme Lord',
+        desc: 'Collect 10 Unique Memes.',
+        condition: (game) => game.collectionSystem && game.collectionSystem.collected.length >= 10,
+        reward: (game) => {
+            // Can't easily boost drop rate without complex logic change, 
+            // giving a solid multiplier boost instead as "Meme Magic"
+            game.state.multiplier += 0.2;
+        }
+    },
+    {
+        id: 'snake_charmer',
+        name: 'Snake Charmer',
+        desc: 'Score 300 points in Snake.',
+        condition: (game) => game.state.snakeHighScore >= 300,
+        reward: (game) => {
+            game.state.multiplier += 0.5;
+        }
+    },
+    {
+        id: 'white_hat',
+        name: 'White Hat',
+        desc: 'Solve 5 Security Checks.',
+        condition: (game) => game.state.hacksSolved >= 5,
+        reward: (game) => {
+            game.state.clickPower = Math.ceil(game.state.clickPower * 1.1); // +10%
         }
     }
 ];
