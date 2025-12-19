@@ -278,7 +278,9 @@ export class ArchiveWindow extends Window {
         // Clip Content Area
         ctx.save();
         ctx.beginPath();
-        ctx.rect(contentX, contentY, contentW, h - 30);
+        // Offset Y by 20 to start clip below address bar (which is at -5 to +15 relative to contentY)
+        // Reduce height by 20 to maintain bottom margin
+        ctx.rect(contentX, contentY + 20, contentW, h - 50);
         ctx.clip();
 
         // Apply Scroll
