@@ -347,7 +347,7 @@ export class Renderer {
             this.ctx.textAlign = "left"; // Reset
         }
 
-        this.drawCursor(state, currentTheme, mouse);
+        // this.drawCursor(state, currentTheme, mouse);
 
         // SUBLIMINAL GLITCHES
         if (state.corruption > 40) {

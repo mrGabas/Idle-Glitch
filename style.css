@@ -14,8 +14,7 @@ html {
 
 canvas {
     display: block;
-    cursor: none;
-    /* Свой курсор */
+    cursor: default;
 }
 
 #ui-layer {
