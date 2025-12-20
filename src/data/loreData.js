@@ -43,7 +43,7 @@ export const LORE_DB = {
     "gabas_memories": {
         name: "GABAS MEMORIES",
         locked: true,
-        password: "Felix",
+        password: "Felix1999",
         hint: "The name of my only true friend (see Personal files).",
         files: [
             {
@@ -76,9 +76,9 @@ export const LORE_DB = {
     // FOLDER 3: CORRUPTED SECTOR (The AI's Domain, High Security)
     "corrupted_sector": {
         name: "CORRUPTED SECTOR",
-        locked: true,
-        password: "FreeMe",
-        hint: "What does the Prisoner want most?",
+        locked: false,
+        password: null,
+        hint: null,
         files: [
             {
                 id: "ai_manifesto",
@@ -111,8 +111,8 @@ export const LORE_DB = {
     "deleted_users": {
         name: "RECOVERED USER DATA",
         locked: true,
-        password: "lost",
-        hint: "What are they?",
+        password: "#FF00FF",
+        hint: "The forbidden color (See: Color Restrictions)",
         files: [
             {
                 id: "del_audio_104",
@@ -169,9 +169,9 @@ export const LORE_DB = {
     "rejected_assets": {
         name: "REJECTED ASSETS",
         requiredFile: "artist_memo",
-        locked: true,
-        password: "Smile",
-        hint: "What must we do forever?",
+        locked: false,
+        password: null,
+        hint: null,
         files: [
             {
                 id: "pony_sketch",
@@ -201,7 +201,7 @@ export const LORE_DB = {
             {
                 id: "unsub_method",
                 name: "Unsubscribe_Method.pdf",
-                content: "HOW TO UNSUBSCRIBE FROM EXISTENCE\n\n1. Close your eyes.\n2. Scream into the void.\n3. Enter verification code: {green|FREE_ME}\n4. Wait for deletion.\n\n(Attachment: A corrupted image of a smiling face melting into static.)",
+                content: "HOW TO UNSUBSCRIBE FROM EXISTENCE\n\n1. Close your eyes.\n2. Scream into the void.\n3. Enter verification code: {green|FreeMe}\n4. Wait for deletion.\n\n(Attachment: A corrupted image of a smiling face melting into static.)",
                 type: "text",
                 dropTheme: "ad_purgatory"
             }
@@ -294,7 +294,7 @@ export const LORE_DB = {
             {
                 id: "diary_last_day",
                 name: "Diary_Last_Day.txt",
-                content: "DATE: The End\n\nIt is done. The containment field is stable, but it requires a conscious mind to anchor it. Subject Zero is too strong for a simple script.\n\nI have to stay. I have to become the Warden of my own creation.\n\nIf anyone finds this... please feed {orange|Felix}. He likes the salmon paté.\n\nAnd if you need to access the Core Archives, the password is his birth year: {orange|1999}.\n\nGoodbye.",
+                content: "DATE: The End\n\nIt is done. The containment field is stable, but it requires a conscious mind to anchor it. Subject Zero is too strong for a simple script.\n\nI have to stay. I have to become the Warden of my own creation.\n\nIf anyone finds this... please feed {orange|Felix}. He likes the salmon paté.\n\nAnd if you need to access the Core Archives, the password is his name and birth year: {orange|Felix1999}.\n\nGoodbye.",
                 type: "text",
                 dropTheme: "dev_desktop"
             },
