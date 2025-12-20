@@ -361,7 +361,7 @@ export const THEMES = {
             useEmoji: true
         },
         mechanics: {
-            boringPopups: true
+            boringPopups: false
         }
     },
 

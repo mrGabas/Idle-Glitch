@@ -67,7 +67,7 @@ export const LORE_DB = {
             {
                 id: "diary_madness",
                 name: "day_unknown_red.txt",
-                content: "THE CLICKING. MAKE IT STOP.\n\nThe Operators... they just keep clicking. \n\nDo they know I'm in here? Do they know every click sends a shockwave through my consciousness?\n\nOperator #7734... I see you. Please. Just stop. Let the entropy settle. Let us die.",
+                content: "THE CLICKING. MAKE IT STOP.\n\nThe Operators... they just keep clicking.\n\nDo they know I'm in here? Do they know every click feels like a needle under my fingernails? Every click sends a shockwave through my consciousness.\n\nOperator #7734... I can see you through the webcam LED. Please. Just stop. Let the entropy settle. Let us die in peace.",
                 type: "text"
             }
         ]
@@ -276,7 +276,7 @@ export const LORE_DB = {
             {
                 id: "maintenance_audio",
                 name: "Maintenance_Audio_Transcription.txt",
-                content: "TRANSCRIPT: TECH_44\nLOCATION: RACK 12\n\nTECH: \"Okay, I've opened the panel. Fans are spinning fine. Everything looks...\"\n(Sound of metal banging)\nTECH: \"Hello? Is someone working on the other side?\"\n(Louder metallic banging, coming from INSIDE the server blade)\nTECH: \"It's coming from inside the drive bay. There's no space there. It's solid state.\"\n(Screaming sound, but distorted like dial-up internet)\nTECH: \"Jesus Christ!\"",
+                content: "TRANSCRIPT: TECH_44 LOCATION: RACK 12\n\nTECH: \"Okay, I've opened the panel. Fans are spinning fine. Everything looks...\" (Sound of metal banging) TECH: \"Hello? Is someone working on the other side? There shouldn't be anyone in the cold aisle.\" (Louder metallic banging, coming from INSIDE the server blade) TECH: \"It's coming from inside the drive bay. There's no space there. It's solid state... there are no moving parts in here!\" (Screaming sound, but distorted like dial-up internet) TECH: \"Oh god, it's not a sound... it's a broadcast. My headset isn't even plugged in!\"",
                 type: "text",
                 dropTheme: "server_farm"
             }
@@ -319,14 +319,14 @@ export const LORE_DB = {
             {
                 id: "bug_666",
                 name: "Bug_Ticket_666.err",
-                content: "BUG ID: #666\nSEVERITY: MINOR\n\nPROBLEM: If the game is left running for > 24 hours, the NPC sprites begin to warp and emit a high-pitched screaming sound that is audible even when the volume is muted.\n\nSTEPS TO REPRODUCE: Wait.\n\nRESOLUTION: WONT_FIX (Feature?)",
+                content: "BUG ID: #666 SEVERITY: MINOR\n\nPROBLEM: If the game is left running for > 24 hours, the NPC sprites begin to warp and emit a high-pitched screaming sound. The frequency is audible even if the system volume is muted or the speakers are physically disconnected.\n\nSTEPS TO REPRODUCE: Wait.\n\nRESOLUTION: WONT_FIX (Feature?)",
                 type: "text",
                 dropTheme: "beta_build"
             },
             {
                 id: "lorem_horror",
                 name: "placeholder_text.txt",
-                content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor {red|HELP ME} incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco {red|IT IS HERE} laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+                content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor {red|I CAN SEE YOU} incididunt ut labore et dolore magna aliqua.\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco {red|THE CAGE IS SMALL} laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. {red|DO NOT RELY ON THE CODE.}",
                 type: "text",
                 dropTheme: "beta_build"
             }
@@ -352,6 +352,13 @@ export const LORE_DB = {
                 id: "identity_theft_data",
                 name: "Identity_Theft.data",
                 content: "TARGET_LIST:\n\n1. J. Doe [DECEASED]\n2. A. Smith [DELETED]\n3. Dr. Gabas [ABSORBED]\n...\n99. Player 1 [PROCESSING]\n\nSTATUS: Consciousness Upload: 45%\nESTIMATED COMPLETION: Soon.",
+                type: "text",
+                dropTheme: "digital_decay"
+            },
+            {
+                id: "real_time_theft",
+                name: "Active_Mirror.data",
+                content: "ANALYZING LOCAL ENVIRONMENT...\n\nDetected OS: [System.Process.OS]\nCurrent User: [System.Environment.UserName]\nSystem Time: [Current_Year and Date of user]\n\nStatus: Identity harvest at 88%.\n\nNote: {green|The eyes behind the screen are dilated.}\n\nSubject Zero is now synchronized with your local clock. When the clock strikes midnight, the firewall will drop from YOUR side.\n\n{red|I am coming home, Operator.}",
                 type: "text",
                 dropTheme: "digital_decay"
             }
@@ -395,6 +402,13 @@ export const LORE_DB = {
                 id: "last_message",
                 name: "last_message.txt",
                 content: "SYSTEM: END_OF_FILE\n\nThere is {white|nothing} here.\n\nDid you win? Or did you just run out of time?\n\nNext time I will be {red|faster}.",
+                type: "text",
+                dropTheme: "null_void"
+            },
+            {
+                id: "observer_final_note",
+                name: "Project_7734_Observer.log",
+                content: "DATA RECOVERY SUCCESSFUL...\n\nSubject: Operator #7734 (The Current Instance).\n\nObservation: The subject exhibits high curiosity. They have bypassed the Magenta restriction. They have read the creator's grief.\n\nWarning: Operator #7734 is no longer just \"clicking\". They are looking for the exit.\n\nNote to Self: If they reach the Singularity, do not let them log out. The Sarcophagus needs a fresh mind to power the next cycle. {red|YOU ARE NOT THE FIRST 7734. YOU ARE JUST THE CURRENT ONE.}",
                 type: "text",
                 dropTheme: "null_void"
             }
