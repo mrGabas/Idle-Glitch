@@ -251,6 +251,100 @@ export class SoundEngine {
                 g.gain.linearRampToValueAtTime(0, t + 0.2);
                 osc.start(t); osc.stop(t + 0.2);
             }
+            else if (type === 'screamer') {
+                console.log("[AUDIO] Playing screamer sound"); // DEBUG
+
+                // Randomly select one of 3 variants
+                const variant = Math.floor(Math.random() * 3) + 1;
+                console.log(`[AUDIO] Screamer variant: ${variant}`);
+
+                if (variant === 1) {
+                    // Variant 1: White Noise Burst (Original)
+                    const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 seconds
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    // Highpass Filter
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'highpass';
+                    filter.frequency.value = 1000;
+
+                    noise.connect(filter);
+                    filter.connect(g);
+
+                    // Envelope
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(1.0, t + 0.05);
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+
+                    noise.start(t);
+                }
+                else if (variant === 2) {
+                    // Variant 2: Deep Static (Low frequency rumble)
+                    const bufferSize = this.ctx.sampleRate * 0.8; // 0.8 seconds
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    // Lowpass Filter for "deep" sound
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(400, t);
+                    filter.Q.value = 10; // Resonance for boominess
+
+                    noise.connect(filter);
+                    filter.connect(g);
+
+                    // Envelope - slower attack/decay
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(0.8, t + 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.8);
+
+                    noise.start(t);
+                }
+                else {
+                    // Variant 3: Digital Glitch (FM Synthesis Scream)
+                    const carrier = this.ctx.createOscillator();
+                    const modulator = this.ctx.createOscillator();
+                    const modGain = this.ctx.createGain();
+
+                    carrier.type = 'sawtooth';
+                    modulator.type = 'square';
+
+                    // FM Setup
+                    modulator.connect(modGain);
+                    modGain.connect(carrier.frequency);
+                    carrier.connect(g);
+
+                    // Parameters
+                    carrier.frequency.setValueAtTime(500, t);
+                    carrier.frequency.linearRampToValueAtTime(100, t + 0.4); // Pitch drop
+
+                    modulator.frequency.setValueAtTime(50, t); // Rough modulation
+                    modGain.gain.setValueAtTime(500, t); // Depth of modulation
+
+                    // Envelope
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(0.6, t + 0.02); // Sharp attack
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+
+                    carrier.start(t); carrier.stop(t + 0.4);
+                    modulator.start(t); modulator.stop(t + 0.4);
+                }
+            }
         } catch (e) {
             console.warn('Audio playback failed:', e);
         }

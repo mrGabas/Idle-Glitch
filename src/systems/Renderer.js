@@ -6,6 +6,7 @@
 import { CFG, UTILS } from '../core/config.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 import { assetLoader } from '../core/AssetLoader.js';
+import { events } from '../core/events.js';
 
 export class Renderer {
     constructor(canvasId) {
@@ -363,7 +364,9 @@ export class Renderer {
                     if (rand < 0.1) {
                         this.subliminalType = 'image';
                         this.subliminalContent = UTILS.randArr(this.SubliminalImages);
-                    } else if (rand < 0.05) {
+                        // Only play screamer sound for images
+                        events.emit('play_sound', 'screamer');
+                    } else if (rand < 0.15) { // Fixed probability logic (was unreachable)
                         this.subliminalType = 'text';
                         this.subliminalContent = UTILS.randArr(this.SubliminalMessages);
                     } else {

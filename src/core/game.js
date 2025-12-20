@@ -401,6 +401,8 @@ export class Game {
     }
 
     triggerScareOverlay(text) {
+        console.log("[GAME] Triggering Scare Overlay"); // DEBUG
+        this.events.emit('play_sound', 'screamer');
         this.scareText = text;
         this.scareTimer = 1.5; // Displays for 1.5s
     }

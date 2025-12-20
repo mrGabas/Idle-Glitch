@@ -2,3 +2,13 @@ this.game.state.corruption += 10
 
 game.glitchData += 100
 
+// 1. (Опционально) Установи высокий доход, чтобы увидеть результат
+game.state.autoRate = 1000;
+game.saveGame(); // Сохраняем, чтобы запомнить этот rate для офлайна
+// 2. Включи улучшение офлайн прогресса (если еще не куплено)
+game.metaUpgrades['offline_progress'] = 1;
+// 3. Перемотай время назад (например, на 4 часа)
+// Формула: Сейчас - (часы * минуты * секунды * мс)
+game.lastSaveTime = Date.now() - (4 * 60 * 60 * 1000);
+// 4. Запусти проверку офлайн прогресса
+game.economySystem.checkOfflineProgress();
