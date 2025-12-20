@@ -385,7 +385,7 @@ export class Game {
         this.state.addScore(0); // Updates UI potentially if needed immediately
 
         // Scare
-        this.events.emit('play_sound', 'error');
+        // this.events.emit('play_sound', 'error'); // Removed to avoid generated sound
         this.shake = 10;
         this.state.addCorruption(5);
         this.triggerScareOverlay("WHERE WERE YOU?");
