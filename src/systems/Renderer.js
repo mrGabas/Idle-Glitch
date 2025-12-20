@@ -92,14 +92,7 @@ export class Renderer {
             return;
         }
 
-        // META: BIOS_PASSWORD (Safe Mode Visual)
-        if (input.metaUpgrades['safe_mode']) {
-            this.ctx.fillStyle = '#0f0';
-            this.ctx.font = "bold 12px monospace";
-            this.ctx.textAlign = "right";
-            this.ctx.fillText("SAFE MODE::ACTIVE", this.w - 10, 20);
-            this.ctx.textAlign = "left"; // Reset
-        }
+
 
         // --- FALSE CRASH VISUALS ---
         if (state.falseCrash) {
@@ -263,6 +256,56 @@ export class Renderer {
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
         this.drawCursor(state, currentTheme, mouse);
+
+        // META: BIOS_PASSWORD (Safe Mode Visual)
+        if (input.metaUpgrades['safe_mode']) {
+            // Position: ~55% Width (Between Score and Sidebar)
+            const px = this.w * 0.55;
+            const py = 20;
+
+            this.ctx.fillStyle = '#0f0';
+            this.ctx.font = "bold 12px monospace";
+            this.ctx.textAlign = "left";
+            this.ctx.fillText("SAFE MODE::ACTIVE", px, py - 5);
+
+            // DEBUG PANEL
+            const panelW = 160;
+            const panelH = 40;
+
+            // Panel BG
+            this.ctx.fillStyle = 'rgba(0, 50, 0, 0.8)';
+            this.ctx.strokeStyle = '#0f0';
+            this.ctx.lineWidth = 1;
+            this.ctx.fillRect(px, py, panelW, panelH);
+            this.ctx.strokeRect(px, py, panelW, panelH);
+
+            // Buttons
+            const btnW = 65;
+            const btnH = 25;
+            const btnY = py + 7;
+
+            // -10% COR
+            const b1x = px + 10;
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(b1x, btnY, btnW, btnH);
+            this.ctx.strokeStyle = '#0f0';
+            this.ctx.strokeRect(b1x, btnY, btnW, btnH);
+            this.ctx.fillStyle = '#0f0';
+            this.ctx.textAlign = 'center';
+            this.ctx.font = "10px monospace";
+            this.ctx.fillText("-10% COR", b1x + btnW / 2, btnY + 16);
+
+            // +10% COR
+            const b2x = px + 15 + btnW;
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(b2x, btnY, btnW, btnH);
+            this.ctx.strokeStyle = '#0f0';
+            this.ctx.strokeRect(b2x, btnY, btnW, btnH);
+            this.ctx.fillStyle = '#0f0';
+            this.ctx.fillText("+10% COR", b2x + btnW / 2, btnY + 16);
+
+            this.ctx.textAlign = "left"; // Reset
+        }
 
         // SUBLIMINAL GLITCHES
         if (state.corruption > 40) {

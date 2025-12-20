@@ -726,6 +726,34 @@ export class Game {
 
         if (this.uiManager.handleInput(mx, my)) return;
 
+        // META: BIOS_PASSWORD Click Handling
+        if (this.metaUpgrades['safe_mode']) {
+            const panelW = 160;
+            const px = this.w * 0.55;
+            const py = 20;
+            const btnW = 65;
+            const btnH = 25;
+            const btnY = py + 7;
+
+            // -10% COR
+            const b1x = px + 10;
+            if (mx >= b1x && mx <= b1x + btnW && my >= btnY && my <= btnY + btnH) {
+                this.state.corruption = Math.max(0, this.state.corruption - 10);
+                this.events.emit('play_sound', 'click');
+                this.createFloatingText(mx, my, "-10% COR", "#0f0");
+                return;
+            }
+
+            // +10% COR
+            const b2x = px + 15 + btnW;
+            if (mx >= b2x && mx <= b2x + btnW && my >= btnY && my <= btnY + btnH) {
+                this.state.corruption = Math.min(100, this.state.corruption + 10);
+                this.events.emit('play_sound', 'click');
+                this.createFloatingText(mx, my, "+10% COR", "#f00");
+                return;
+            }
+        }
+
         if (this.gameState !== 'PLAYING') return;
 
         // Mouse updated above

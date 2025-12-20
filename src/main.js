@@ -3,7 +3,7 @@
  * @module main
  */
 import { Game } from './core/game.js';
-import { DebugTools } from './core/debug.js';
+
 import { assetLoader } from './core/AssetLoader.js';
 import { ErrorHandler } from './core/ErrorHandler.js';
 import { ASSETS } from './data/assets.js';
@@ -32,9 +32,7 @@ window.addEventListener('load', () => {
 
         // Init Game
         const game = new Game();
-
-        // Init Debug Tools (which exposes window.game)
-        new DebugTools(game);
+        window.game = game; // Expose for console commands
 
 
     });
