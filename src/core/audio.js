@@ -138,6 +138,23 @@ export class SoundEngine {
 
         // Check for file-based sound
         if (ASSET_SOUNDS[type]) {
+            // SPECIAL CASE: BSOD Error stops music immediately
+            if (type === 'bsod_error') {
+                if (this.currentMusic) {
+                    this.currentMusic.pause();
+                    this.currentMusic = null;
+                }
+                if (this.currentMusicNode) {
+                    try { this.currentMusicNode.disconnect(); } catch (e) { }
+                    this.currentMusicNode = null;
+                }
+                // Stop synths too just in case
+                if (this.voidSynth) this.voidSynth.stop();
+                if (this.rainbowSynth) this.rainbowSynth.stop();
+                if (this.corporateSynth) this.corporateSynth.stop();
+                this.stopGlitchEffect();
+            }
+
             const audio = assetLoader.getAudio(ASSET_SOUNDS[type]);
             if (audio) {
                 // Simple fallback for file-based audio
@@ -146,6 +163,10 @@ export class SoundEngine {
                     audio.currentTime = 0;
                     audio.volume = this.sfxGain ? this.sfxGain.gain.value : 0.5; // Sync volume roughly
                     audio.play().catch(e => console.warn("Autoplay blocked/failed", e));
+
+                    if (type === 'boot') {
+                        this.activeBootAudio = audio;
+                    }
                 } catch (e) { console.warn("File audio error", e); }
             }
             return;
