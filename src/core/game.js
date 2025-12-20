@@ -870,7 +870,7 @@ export class Game {
                     // Global restriction: Needs 60 Corruption to interact
                     if (this.state.corruption < 60) {
                         this.events.emit('play_sound', 'error');
-                        this.createFloatingText(mx, my, "Need 60 happiness <3", "#888");
+                        this.createFloatingText(mx, my, "Need 60 happiness", "#888");
                         return;
                     }
 
