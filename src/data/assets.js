@@ -54,6 +54,9 @@ export const ASSETS = {
         'assets/Audios/Boot.mp3',
         'assets/Audios/error.mp3',
         'assets/Audios/working.mp3',
-        'assets/Audios/archive.mp3'
+        'assets/Audios/archive.mp3',
+        'assets/Audios/Screamer 1.mp3',
+        'assets/Audios/Connect.mp3',
+        'assets/Audios/Disconnect.mp3'
     ]
 };
