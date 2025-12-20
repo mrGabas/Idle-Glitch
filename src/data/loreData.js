@@ -158,7 +158,7 @@ export const LORE_DB = {
             {
                 id: "color_hex_codes",
                 name: "Color_Hex_Codes.doc",
-                content: "OFFICIAL MEMO: COLOR RESTRICTIONS\n\nEFFECTIVE IMMEDIATELY:\n\nThe use of HEX CODE {magenta|#FF00FF}(Magenta) is STRICTLY PROHIBITED.\n\nReason: It appears to trigger aggression in the containment algorithm. \n\nUse #FF00FE instead. It looks the same to humans, but {red|IT} can't taste the difference.",
+                content: "OFFICIAL MEMO: COLOR RESTRICTIONS\n\nEFFECTIVE IMMEDIATELY:\n\nThe use of HEX CODE {magenta|#FF00FF}(Magenta) is STRICTLY PROHIBITED.\n\nReason: It appears to trigger aggression in the containment algorithm. \n\nUse #FF00FE instead. It looks the same to humans, but {red|IT} can taste the difference.",
                 type: "text",
                 dropTheme: "rainbow_paradise"
             }
