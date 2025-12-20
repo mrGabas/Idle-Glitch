@@ -174,17 +174,18 @@ export class LoreSystem {
 
     /**
      * Helper to get a random uncollected file ID.
+     * @param {string[]} excludeIds - IDs to exclude (optional)
      * @returns {string|null} ID or null if all collected
      */
-    getUncollectedFileId() {
+    getUncollectedFileId(excludeIds = []) {
         // Gather all file IDs from DB
         const allFiles = [];
         Object.values(LORE_DB).forEach(folder => {
             folder.files.forEach(f => allFiles.push(f.id));
         });
 
-        // Filter out unlocked
-        const remaining = allFiles.filter(id => !this.unlockedFiles.includes(id));
+        // Filter out unlocked AND excluded
+        const remaining = allFiles.filter(id => !this.unlockedFiles.includes(id) && !excludeIds.includes(id));
 
         if (remaining.length === 0) return null;
         return UTILS.randArr(remaining);

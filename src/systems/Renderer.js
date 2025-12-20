@@ -347,7 +347,7 @@ export class Renderer {
             this.ctx.textAlign = "left"; // Reset
         }
 
-        // this.drawCursor(state, currentTheme, mouse);
+        this.drawCursor(state, currentTheme, mouse);
 
         // SUBLIMINAL GLITCHES
         if (state.corruption > 40) {
@@ -506,28 +506,43 @@ export class Renderer {
     }
 
     drawCursor(state, theme, mouse) {
-        // Simple crosshair or custom cursor
+        // Standard Arrow Shape with Game Effects
         const mx = mouse.x;
         const my = mouse.y;
 
-        this.ctx.strokeStyle = theme.colors.accent;
+        this.ctx.save();
+
+        let strokeColor = theme.colors.accent;
 
         // Visual Cues for Decay
         if (state.corruption > 60) {
-            this.ctx.strokeStyle = '#f00'; // Red warning
+            strokeColor = '#f00'; // Red warning
             if (state.corruption > 85) {
                 // Inversion Strobe
-                this.ctx.strokeStyle = UTILS.randArr(['#f00', '#0ff', '#fff']);
+                strokeColor = UTILS.randArr(['#f00', '#0ff', '#fff']);
             }
         }
 
-        this.ctx.lineWidth = 2;
+        this.ctx.fillStyle = '#fff'; // Standard White
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = 1.5;
+
         this.ctx.beginPath();
-        this.ctx.moveTo(mx - 10, my);
-        this.ctx.lineTo(mx + 10, my);
-        this.ctx.moveTo(mx, my - 10);
-        this.ctx.lineTo(mx, my + 10);
+        this.ctx.moveTo(mx, my);
+        this.ctx.lineTo(mx, my + 18); // Down
+        this.ctx.lineTo(mx + 5, my + 14); // Inner corner
+        this.ctx.lineTo(mx + 12, my + 14); // Right
+        this.ctx.lineTo(mx, my);
+        this.ctx.closePath();
+
+        this.ctx.shadowColor = strokeColor;
+        this.ctx.shadowBlur = 5;
+
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0; // Reset for stroke
         this.ctx.stroke();
+
+        this.ctx.restore();
     }
 
     drawGameUI(state, theme, upgrades, mouse, shopOpen, activeHighlightTarget) {

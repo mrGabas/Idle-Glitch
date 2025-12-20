@@ -168,9 +168,15 @@ export class GlitchSystem {
 
         // Lore Files
         if (state.corruption > 10 && Math.random() < 0.001 && !this.game.uiManager.activeNotepad) {
-            if (this.game.entities.getAll('items').length < 2) {
-                // Get Uncollected ID
-                const fileId = this.game.loreSystem.getUncollectedFileId();
+            const currentItems = this.game.entities.getAll('items');
+            if (currentItems.length < 2) {
+                // Get IDs of currently active lore files
+                const activeIds = currentItems
+                    .filter(i => i instanceof LoreFile && i.id)
+                    .map(i => i.id);
+
+                // Get Uncollected ID, excluding active ones
+                const fileId = this.game.loreSystem.getUncollectedFileId(activeIds);
                 if (fileId) {
                     const fileData = this.game.loreSystem.getFile(fileId);
                     // Pass game instance first
