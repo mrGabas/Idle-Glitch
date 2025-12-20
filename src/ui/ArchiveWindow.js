@@ -165,19 +165,7 @@ export class ArchiveWindow extends Window {
         });
         curY += 20;
 
-        // MEDIA
-        layout.push({
-            type: 'folder',
-            key: 'MEDIA',
-            label: "MEDIA",
-            lineHeight: 16,
-            lines: ["MEDIA"],
-            x: x,
-            y: curY,
-            w: sidebarW,
-            h: 20
-        });
-        curY += 20;
+
 
         // COLLECTION (MEMES)
         layout.push({
@@ -194,8 +182,8 @@ export class ArchiveWindow extends Window {
 
         // Debug: Show count
         const count = COLLECTION_DB.items.length;
-        layout[2].label = `Collection (${count})`;
-        layout[2].lines = [`Collection (${count})`];
+        layout[1].label = `Collection (${count})`;
+        layout[1].lines = [`Collection (${count})`];
 
         curY += 20;
 
@@ -313,9 +301,7 @@ export class ArchiveWindow extends Window {
         ctx.strokeRect(contentX, contentY - 5, contentW, 20);
         ctx.fillStyle = '#000';
         let pathStr = "C:\\Archive";
-        if (this.selectedFolderKey === 'MEDIA') {
-            pathStr += "\\MEDIA";
-        } else if (this.currentPath.length > 0) {
+        if (this.currentPath.length > 0) {
             pathStr += "\\" + LORE_DB[this.currentPath[0]].name;
         }
         ctx.fillText(pathStr, contentX + 5, contentY + 10);
@@ -339,16 +325,8 @@ export class ArchiveWindow extends Window {
 
         // If at root, show folders as icons
         const visibleKeys = Object.keys(LORE_DB).filter(key => this.game.loreSystem.isFolderVisible(key));
-        if (this.currentPath.length === 0 && this.selectedFolderKey !== 'MEDIA' && this.selectedFolderKey !== 'COLLECTION') {
-            // Draw MEDIA folder first
-            this.drawIcon(ctx, gx, gy, "MEDIA", 'folder', false, false); // Never locked
-            gx += cellW;
-            if (gx > x + w - cellW) {
-                gx = contentX;
-                gy += cellH;
-            }
-
-            // Draw COLLECTION folder second
+        if (this.currentPath.length === 0 && this.selectedFolderKey !== 'COLLECTION') {
+            // Draw COLLECTION folder first
             this.drawIcon(ctx, gx, gy, "Collection", 'folder', false, false);
             gx += cellW;
             if (gx > x + w - cellW) {
@@ -373,34 +351,7 @@ export class ArchiveWindow extends Window {
                     gy += cellH;
                 }
             });
-        } else if (this.selectedFolderKey === 'MEDIA') {
-            // Collect all audio/image files from all folders
-            const allMedia = [];
-            Object.keys(LORE_DB).forEach(key => {
-                if (!this.game.loreSystem.isFolderVisible(key)) return;
-                const folder = LORE_DB[key];
-                if (folder.files) {
-                    folder.files.forEach(f => {
-                        if (f.type === 'audio' || f.type === 'image') {
-                            allMedia.push(f);
-                        }
-                    });
-                }
-            });
 
-            allMedia.forEach(file => {
-                const isCollected = this.game.loreSystem.isFileUnlocked(file.id);
-                if (isCollected) {
-                    let icon = file.type === 'image' ? 'image' : 'audio';
-                    this.drawIcon(ctx, gx, gy, file.name, icon, file.id === this.selectedFileId);
-
-                    gx += cellW;
-                    if (gx > x + w - cellW) {
-                        gx = contentX;
-                        gy += cellH;
-                    }
-                }
-            });
         } else if (this.selectedFolderKey === 'COLLECTION') {
             // COLLECTION VIEW
             const allItems = COLLECTION_DB.items;
@@ -660,21 +611,18 @@ export class ArchiveWindow extends Window {
                     if (item.type === 'root') {
                         this.currentPath = [];
                         this.selectedFolderKey = null;
-                        this.game.events.emit('play_sound', 'archive');
-                        return 'consumed';
-                    } else if (item.key === 'MEDIA') {
-                        this.currentPath = [];
-                        this.selectedFolderKey = 'MEDIA';
+                        this.scrollY = 0; // Reset scroll
                         this.game.events.emit('play_sound', 'archive');
                         return 'consumed';
                     } else if (item.key === 'COLLECTION') {
                         this.currentPath = [];
                         this.selectedFolderKey = 'COLLECTION';
+                        this.scrollY = 0; // Reset scroll
                         this.game.events.emit('play_sound', 'archive');
                         return 'consumed';
                     } else if (item.type === 'folder') {
-                        this.selectFolder(item.key);
-                        return 'consumed';
+                        const opened = this.selectFolder(item.key);
+                        return opened ? 'no_focus' : 'consumed';
                     }
                 }
             }
@@ -704,37 +652,19 @@ export class ArchiveWindow extends Window {
 
                 if (targetIdx >= 0 && targetIdx < folder.files.length) {
                     const file = folder.files[targetIdx];
-                    this.handleFileClick(file);
-                    return 'consumed';
+                    const opened = this.handleFileClick(file);
+                    return opened ? 'no_focus' : 'consumed';
                 } else if (targetIdx === folder.files.length) {
                     // ".." button
                     this.currentPath = []; // Go to root
+                    this.selectedFolderKey = null; // Also clear selection to be safe
                     this.selectedFileId = null;
+                    this.scrollY = 0; // Reset scroll
                     this.game.events.emit('play_sound', 'archive');
                     return 'consumed';
                 }
 
-            } else if (this.selectedFolderKey === 'MEDIA') {
-                // Click on media files
-                const allMedia = [];
-                Object.keys(LORE_DB).forEach(key => {
-                    if (!this.game.loreSystem.isFolderVisible(key)) return;
-                    const folder = LORE_DB[key];
-                    if (folder.files) {
-                        folder.files.forEach(f => {
-                            if (f.type === 'audio' || f.type === 'image') {
-                                allMedia.push(f);
-                            }
-                        });
-                    }
-                });
-                // Filter collected
-                const collected = allMedia.filter(f => this.game.loreSystem.isFileUnlocked(f.id));
 
-                if (targetIdx >= 0 && targetIdx < collected.length) {
-                    this.handleFileClick(collected[targetIdx]);
-                    return 'consumed';
-                }
 
             } else if (this.selectedFolderKey === 'COLLECTION') {
                 const allItems = COLLECTION_DB.items;
@@ -747,39 +677,33 @@ export class ArchiveWindow extends Window {
                             src: item.src,
                             name: item.name
                         });
+                        return 'no_focus';
                     } else {
                         this.game.events.emit('play_sound', 'error');
+                        return 'consumed';
                     }
-                    return 'consumed';
                 }
 
             } else {
                 // We are in Root (Root + Media)
 
-                // Check MEDIA (Index 0 now, because we draw it first)
+                // Check COLLECTION (Index 0)
                 if (targetIdx === 0) {
                     this.currentPath = [];
-                    this.selectedFolderKey = 'MEDIA';
-                    this.game.events.emit('play_sound', 'archive');
-                    return 'consumed';
-                }
-
-                // Check COLLECTION (Index 1)
-                if (targetIdx === 1) {
-                    this.currentPath = [];
                     this.selectedFolderKey = 'COLLECTION';
+                    this.scrollY = 0; // Reset scroll
                     this.game.events.emit('play_sound', 'archive');
                     return 'consumed';
                 }
 
-                // Check other folders (Index 2+)
+                // Check other folders (Index 1+)
                 const visibleKeys = Object.keys(LORE_DB).filter(k => this.game.loreSystem.isFolderVisible(k));
-                const folderIdx = targetIdx - 2;
+                const folderIdx = targetIdx - 1;
 
                 if (folderIdx >= 0 && folderIdx < visibleKeys.length) {
                     const key = visibleKeys[folderIdx];
-                    this.selectFolder(key);
-                    return 'consumed';
+                    const opened = this.selectFolder(key);
+                    return opened ? 'no_focus' : 'consumed';
                 }
             }
         }
@@ -799,14 +723,13 @@ export class ArchiveWindow extends Window {
 
             this.game.tutorialSystem.triggerContextual('locked_folder_hint');
 
-            // Check if PasswordWindow for this folder is already open
             const existingWindow = this.game.uiManager.windowManager.windows.find(w =>
                 w instanceof PasswordWindow && w.folderName === folder.name
             );
 
             if (existingWindow) {
                 this.game.uiManager.windowManager.focus(existingWindow);
-                return;
+                return true;
             }
 
             // Instantiate custom PasswordWindow
@@ -821,15 +744,15 @@ export class ArchiveWindow extends Window {
                 this.selectFolder(key);
             });
             this.game.uiManager.windowManager.add(passwordWindow);
-            return; // Stop processing, wait for unlock callback
+            return true; // Stop processing, wait for unlock callback
         }
 
         this.currentPath = [key];
         this.selectedFolderKey = key;
         this.selectedFileId = null;
+        this.scrollY = 0; // Reset scroll
         this.game.events.emit('play_sound', 'archive');
-        this.selectedFolderKey = key;
-        this.selectedFileId = null;
+        return false;
     }
 
     handleFileClick(file) {
@@ -844,7 +767,7 @@ export class ArchiveWindow extends Window {
                     name: file.name,
                     silentOpen: true
                 });
-                return;
+                return true;
             }
 
             // Check if Notepad for this file is already open
@@ -857,15 +780,17 @@ export class ArchiveWindow extends Window {
             if (existingWindow) {
                 this.selectedFileId = file.id;
                 this.game.uiManager.windowManager.focus(existingWindow);
-                return;
+                return true;
             }
 
             this.selectedFileId = file.id;
             this.game.loreSystem.markFileAsViewed(file.id); // Mark as viewed
             this.game.uiManager.openNotepad(file.content, { title: file.name, password: null, silentOpen: true });
+            return true;
         } else {
             this.game.events.emit('play_sound', 'error');
             this.game.uiManager.chat.addMessage('SYSTEM', 'FILE NOT DOWNLOADED OR CORRUPTED.');
+            return false;
         }
     }
 }
