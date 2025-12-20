@@ -726,51 +726,63 @@ export class Game {
 
         if (this.uiManager.handleInput(mx, my)) return;
 
-        // META: BIOS_PASSWORD Click Handling
-        if (this.metaUpgrades['safe_mode']) {
-            const panelW = 90;
-            const px = (this.w * CFG.game.shop.startXRatio) - 100;
+        // META: DEBUG PANEL Click Handling
+        const hasSafeMode = this.metaUpgrades['safe_mode'];
+        const hasAutoBuy = this.metaUpgrades['auto_buy'];
+
+        if (hasSafeMode || hasAutoBuy) {
+            const px = (this.w * CFG.game.shop.startXRatio) - 120;
             const py = 20;
 
-            const btnW = 70;
+            const btnW = 90;
             const btnH = 25;
+            const gap = 5;
+            const padY = 8;
 
-            // Buttons logic
-            const b1x = px + 10;
-            const b1y = py + 8;
-            const b2y = b1y + btnH + 5;
-            const b3y = b2y + btnH + 5;
+            let currentY = py + padY;
 
-            // -10% COR (Top)
-            if (mx >= b1x && mx <= b1x + btnW && my >= b1y && my <= b1y + btnH) {
-                this.state.corruption = Math.max(0, this.state.corruption - 10);
-                this.events.emit('play_sound', 'click');
-                this.createFloatingText(mx, my, "-10% COR", "#0f0");
-                return;
+            // --- SAFE MODE CONTROLS ---
+            if (hasSafeMode) {
+                // -10% COR
+                const b1x = px + 10;
+                const b1y = currentY;
+
+                if (mx >= b1x && mx <= b1x + btnW && my >= b1y && my <= b1y + btnH) {
+                    this.state.corruption = Math.max(0, this.state.corruption - 10);
+                    this.events.emit('play_sound', 'click');
+                    this.createFloatingText(mx, my, "-10% COR", "#0f0");
+                    return;
+                }
+
+                // +10% COR
+                const b2y = b1y + btnH + gap;
+                if (mx >= b1x && mx <= b1x + btnW && my >= b2y && my <= b2y + btnH) {
+                    this.state.corruption = Math.min(100, this.state.corruption + 10);
+                    this.events.emit('play_sound', 'click');
+                    this.createFloatingText(mx, my, "+10% COR", "#f00");
+                    return;
+                }
+
+                // PAUSE/RESUME
+                const b3y = b2y + btnH + gap;
+                if (mx >= b1x && mx <= b1x + btnW && my >= b3y && my <= b3y + btnH) {
+                    this.state.corruptionPaused = !this.state.corruptionPaused;
+                    this.events.emit('play_sound', 'click');
+                    const txt = this.state.corruptionPaused ? "PAUSED" : "RESUMED";
+                    const col = this.state.corruptionPaused ? "#f00" : "#0f0";
+                    this.createFloatingText(mx, my, txt, col);
+                    return;
+                }
+
+                currentY = b3y + btnH + gap;
             }
 
-            // +10% COR (Middle)
-            if (mx >= b1x && mx <= b1x + btnW && my >= b2y && my <= b2y + btnH) {
-                this.state.corruption = Math.min(100, this.state.corruption + 10);
-                this.events.emit('play_sound', 'click');
-                this.createFloatingText(mx, my, "+10% COR", "#f00");
-                return;
-            }
+            // --- AUTO BUY CONTROLS ---
+            if (hasAutoBuy) {
+                const b4x = px + 10;
+                const b4y = currentY;
 
-            // PAUSE/RESUME (Bottom)
-            if (mx >= b1x && mx <= b1x + btnW && my >= b3y && my <= b3y + btnH) {
-                this.state.corruptionPaused = !this.state.corruptionPaused;
-                this.events.emit('play_sound', 'click');
-                const txt = this.state.corruptionPaused ? "PAUSED" : "RESUMED";
-                const col = this.state.corruptionPaused ? "#f00" : "#0f0";
-                this.createFloatingText(mx, my, txt, col);
-                return;
-            }
-
-            // AUTO BUY (Extra Bottom)
-            if (this.metaUpgrades['auto_buy']) {
-                const b4y = b3y + btnH + 5;
-                if (mx >= b1x && mx <= b1x + btnW && my >= b4y && my <= b4y + btnH) {
+                if (mx >= b4x && mx <= b4x + btnW && my >= b4y && my <= b4y + btnH) {
                     this.state.autoBuyEnabled = !this.state.autoBuyEnabled;
                     this.events.emit('play_sound', 'click');
                     const txt = this.state.autoBuyEnabled ? "AUTO: ON" : "AUTO: OFF";

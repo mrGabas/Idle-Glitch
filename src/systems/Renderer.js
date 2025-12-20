@@ -257,21 +257,28 @@ export class Renderer {
 
 
 
-        // META: BIOS_PASSWORD (Safe Mode Visual)
-        if (input.metaUpgrades['safe_mode']) {
+        // META: DEBUG PANEL (Safe Mode / Auto Buy)
+        const hasSafeMode = input.metaUpgrades['safe_mode'];
+        const hasAutoBuy = input.metaUpgrades['auto_buy'];
+
+        if (hasSafeMode || hasAutoBuy) {
             // Anchor to left of Sidebar
-            // Panel Width 90 + Padding 10 = 100 offset
-            const px = (this.w * CFG.game.shop.startXRatio) - 100;
+            const px = (this.w * CFG.game.shop.startXRatio) - 120;
             const py = 20;
 
-            // META: BIOS_PASSWORD Click Handling (Visuals)
+            const btnW = 90;
+            const btnH = 25;
+            const gap = 5;
+            const padY = 8;
 
-            // Check for Auto-Buy
-            const hasAutoBuy = input.metaUpgrades['auto_buy'];
+            // Calculate Total Height
+            let contentH = 0;
+            if (hasSafeMode) contentH += (btnH * 3) + (gap * 2);
+            if (hasSafeMode && hasAutoBuy) contentH += gap; // Gap between sections
+            if (hasAutoBuy) contentH += btnH;
 
-            // DEBUG PANEL
-            const panelW = 90;
-            const panelH = hasAutoBuy ? 130 : 100; // Increase if 4th button needed
+            const panelW = 110;
+            const panelH = contentH + (padY * 2);
 
             // Panel BG
             this.ctx.fillStyle = 'rgba(0, 50, 0, 0.8)';
@@ -280,55 +287,61 @@ export class Renderer {
             this.ctx.fillRect(px, py, panelW, panelH);
             this.ctx.strokeRect(px, py, panelW, panelH);
 
-            // Buttons
-            const btnW = 70;
-            const btnH = 25;
+            let currentY = py + padY;
 
-            // -10% COR (Top)
-            const b1x = px + 10;
-            const b1y = py + 8;
-
-            this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(b1x, b1y, btnW, btnH);
-            this.ctx.strokeStyle = '#0f0';
-            this.ctx.strokeRect(b1x, b1y, btnW, btnH);
-            this.ctx.fillStyle = '#0f0';
+            // Global Text Settings for Panel
             this.ctx.textAlign = 'center';
             this.ctx.font = "10px monospace";
-            this.ctx.fillText("-10% COR", b1x + btnW / 2, b1y + 16);
 
-            // +10% COR (Middle)
-            const b2y = b1y + btnH + 5;
+            // --- SAFE MODE CONTROLS ---
+            if (hasSafeMode) {
+                // -10% COR
+                const b1x = px + 10;
+                const b1y = currentY;
 
-            this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(b1x, b2y, btnW, btnH);
-            this.ctx.strokeStyle = '#0f0';
-            this.ctx.strokeRect(b1x, b2y, btnW, btnH);
-            this.ctx.fillStyle = '#0f0';
-            this.ctx.fillText("+10% COR", b1x + btnW / 2, b2y + 16);
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(b1x, b1y, btnW, btnH);
+                this.ctx.strokeStyle = '#0f0';
+                this.ctx.strokeRect(b1x, b1y, btnW, btnH);
+                this.ctx.fillStyle = '#0f0';
+                this.ctx.fillText("-10% COR", b1x + btnW / 2, b1y + 16);
 
-            // POST/RESUME (Bottom)
-            const b3y = b2y + btnH + 5;
-            const isPaused = state.corruptionPaused; // Access logic from state
+                // +10% COR
+                const b2y = b1y + btnH + gap;
 
-            this.ctx.fillStyle = isPaused ? '#300' : '#000'; // Dim red if paused
-            this.ctx.fillRect(b1x, b3y, btnW, btnH);
-            this.ctx.strokeStyle = isPaused ? '#f00' : '#0f0';
-            this.ctx.strokeRect(b1x, b3y, btnW, btnH);
-            this.ctx.fillStyle = isPaused ? '#f00' : '#0f0';
-            this.ctx.fillText(isPaused ? "RESUME" : "PAUSE COR", b1x + btnW / 2, b3y + 16);
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(b1x, b2y, btnW, btnH);
+                this.ctx.strokeStyle = '#0f0';
+                this.ctx.strokeRect(b1x, b2y, btnW, btnH);
+                this.ctx.fillStyle = '#0f0';
+                this.ctx.fillText("+10% COR", b1x + btnW / 2, b2y + 16);
 
-            // AUTO BUY (Extra Bottom)
+                // PAUSE/RESUME
+                const b3y = b2y + btnH + gap;
+                const isPaused = state.corruptionPaused;
+
+                this.ctx.fillStyle = isPaused ? '#300' : '#000';
+                this.ctx.fillRect(b1x, b3y, btnW, btnH);
+                this.ctx.strokeStyle = isPaused ? '#f00' : '#0f0';
+                this.ctx.strokeRect(b1x, b3y, btnW, btnH);
+                this.ctx.fillStyle = isPaused ? '#f00' : '#0f0';
+                this.ctx.fillText(isPaused ? "RESUME" : "PAUSE COR", b1x + btnW / 2, b3y + 16);
+
+                currentY = b3y + btnH + gap;
+            }
+
+            // --- AUTO BUY CONTROLS ---
             if (hasAutoBuy) {
-                const b4y = b3y + btnH + 5;
+                const b4x = px + 10;
+                const b4y = currentY;
                 const isAuto = state.autoBuyEnabled;
 
                 this.ctx.fillStyle = isAuto ? '#003300' : '#330000';
-                this.ctx.fillRect(b1x, b4y, btnW, btnH);
+                this.ctx.fillRect(b4x, b4y, btnW, btnH);
                 this.ctx.strokeStyle = isAuto ? '#0f0' : '#f00';
-                this.ctx.strokeRect(b1x, b4y, btnW, btnH);
+                this.ctx.strokeRect(b4x, b4y, btnW, btnH);
                 this.ctx.fillStyle = isAuto ? '#0f0' : '#f00';
-                this.ctx.fillText(isAuto ? "AUTO: ON" : "AUTO: OFF", b1x + btnW / 2, b4y + 16);
+                this.ctx.fillText(isAuto ? "AUTO: ON" : "AUTO: OFF", b4x + btnW / 2, b4y + 16);
             }
 
             this.ctx.textAlign = "left"; // Reset
