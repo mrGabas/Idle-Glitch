@@ -136,7 +136,7 @@ export class EconomySystem {
 
         if (Math.hypot(mx - btnX, my - btnY) < btnRadius) {
             this.game.createParticles(mx, my, this.game.themeManager.currentTheme.colors.accent); // Visual tap feedback at actual mouse pos
-            this.handleMainClick(mx, my);
+            this.handleMainClick(mx, my, btnX, btnY);
             return true;
         }
 
@@ -146,7 +146,7 @@ export class EconomySystem {
     /**
      * logic for clicking the main game button.
      */
-    handleMainClick(mx, my) {
+    handleMainClick(mx, my, btnX, btnY) {
         let gain = this.game.state.clickPower;
 
         // System Purge penalty
@@ -179,7 +179,10 @@ export class EconomySystem {
 
         if (isCrit) {
             this.game.events.emit('play_sound', 'buy');
-            this.game.createFloatingText(this.game.w / 2, this.game.h / 2 - 150, "CRITICAL!", "#ff0");
+            // Use btnX (Game Area Center) if provided, else fallback to window center (safeguard)
+            const tx = btnX || this.game.w / 2;
+            const ty = (btnY || this.game.h / 2) - 150;
+            this.game.createFloatingText(tx, ty, "CRITICAL!", "#ff0");
             this.game.shake = 5;
         } else {
             this.game.events.emit('play_sound', 'click');
