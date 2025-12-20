@@ -85,6 +85,8 @@ export class GameState {
      * @param {number} amount - The amount to change corruption by (can be negative).
      */
     addCorruption(amount) {
+        if (this.corruptionPaused && amount > 0) return; // Paused
+
         if (amount > 0 && this.corruptionResistance > 0) {
             amount *= (1 - this.corruptionResistance);
         }

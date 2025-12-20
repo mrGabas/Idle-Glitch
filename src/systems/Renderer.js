@@ -255,22 +255,18 @@ export class Renderer {
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
-        this.drawCursor(state, currentTheme, mouse);
+
 
         // META: BIOS_PASSWORD (Safe Mode Visual)
         if (input.metaUpgrades['safe_mode']) {
-            // Position: ~55% Width (Between Score and Sidebar)
-            const px = this.w * 0.55;
+            // Anchor to left of Sidebar
+            // Panel Width 90 + Padding 10 = 100 offset
+            const px = (this.w * CFG.game.shop.startXRatio) - 100;
             const py = 20;
 
-            this.ctx.fillStyle = '#0f0';
-            this.ctx.font = "bold 12px monospace";
-            this.ctx.textAlign = "left";
-            this.ctx.fillText("SAFE MODE::ACTIVE", px, py - 5);
-
             // DEBUG PANEL
-            const panelW = 160;
-            const panelH = 40;
+            const panelW = 90;
+            const panelH = 100; // Increased for 3rd button
 
             // Panel BG
             this.ctx.fillStyle = 'rgba(0, 50, 0, 0.8)';
@@ -280,32 +276,47 @@ export class Renderer {
             this.ctx.strokeRect(px, py, panelW, panelH);
 
             // Buttons
-            const btnW = 65;
+            const btnW = 70;
             const btnH = 25;
-            const btnY = py + 7;
 
-            // -10% COR
+            // -10% COR (Top)
             const b1x = px + 10;
+            const b1y = py + 8;
+
             this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(b1x, btnY, btnW, btnH);
+            this.ctx.fillRect(b1x, b1y, btnW, btnH);
             this.ctx.strokeStyle = '#0f0';
-            this.ctx.strokeRect(b1x, btnY, btnW, btnH);
+            this.ctx.strokeRect(b1x, b1y, btnW, btnH);
             this.ctx.fillStyle = '#0f0';
             this.ctx.textAlign = 'center';
             this.ctx.font = "10px monospace";
-            this.ctx.fillText("-10% COR", b1x + btnW / 2, btnY + 16);
+            this.ctx.fillText("-10% COR", b1x + btnW / 2, b1y + 16);
 
-            // +10% COR
-            const b2x = px + 15 + btnW;
+            // +10% COR (Middle)
+            const b2y = b1y + btnH + 5;
+
             this.ctx.fillStyle = '#000';
-            this.ctx.fillRect(b2x, btnY, btnW, btnH);
+            this.ctx.fillRect(b1x, b2y, btnW, btnH);
             this.ctx.strokeStyle = '#0f0';
-            this.ctx.strokeRect(b2x, btnY, btnW, btnH);
+            this.ctx.strokeRect(b1x, b2y, btnW, btnH);
             this.ctx.fillStyle = '#0f0';
-            this.ctx.fillText("+10% COR", b2x + btnW / 2, btnY + 16);
+            this.ctx.fillText("+10% COR", b1x + btnW / 2, b2y + 16);
+
+            // POST/RESUME (Bottom)
+            const b3y = b2y + btnH + 5;
+            const isPaused = state.corruptionPaused; // Access logic from state
+
+            this.ctx.fillStyle = isPaused ? '#300' : '#000'; // Dim red if paused
+            this.ctx.fillRect(b1x, b3y, btnW, btnH);
+            this.ctx.strokeStyle = isPaused ? '#f00' : '#0f0';
+            this.ctx.strokeRect(b1x, b3y, btnW, btnH);
+            this.ctx.fillStyle = isPaused ? '#f00' : '#0f0';
+            this.ctx.fillText(isPaused ? "RESUME" : "PAUSE COR", b1x + btnW / 2, b3y + 16);
 
             this.ctx.textAlign = "left"; // Reset
         }
+
+        this.drawCursor(state, currentTheme, mouse);
 
         // SUBLIMINAL GLITCHES
         if (state.corruption > 40) {

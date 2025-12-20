@@ -728,28 +728,42 @@ export class Game {
 
         // META: BIOS_PASSWORD Click Handling
         if (this.metaUpgrades['safe_mode']) {
-            const panelW = 160;
-            const px = this.w * 0.55;
+            const panelW = 90;
+            const px = (this.w * CFG.game.shop.startXRatio) - 100;
             const py = 20;
-            const btnW = 65;
-            const btnH = 25;
-            const btnY = py + 7;
 
-            // -10% COR
+            const btnW = 70;
+            const btnH = 25;
+
+            // Buttons logic
             const b1x = px + 10;
-            if (mx >= b1x && mx <= b1x + btnW && my >= btnY && my <= btnY + btnH) {
+            const b1y = py + 8;
+            const b2y = b1y + btnH + 5;
+            const b3y = b2y + btnH + 5;
+
+            // -10% COR (Top)
+            if (mx >= b1x && mx <= b1x + btnW && my >= b1y && my <= b1y + btnH) {
                 this.state.corruption = Math.max(0, this.state.corruption - 10);
                 this.events.emit('play_sound', 'click');
                 this.createFloatingText(mx, my, "-10% COR", "#0f0");
                 return;
             }
 
-            // +10% COR
-            const b2x = px + 15 + btnW;
-            if (mx >= b2x && mx <= b2x + btnW && my >= btnY && my <= btnY + btnH) {
+            // +10% COR (Middle)
+            if (mx >= b1x && mx <= b1x + btnW && my >= b2y && my <= b2y + btnH) {
                 this.state.corruption = Math.min(100, this.state.corruption + 10);
                 this.events.emit('play_sound', 'click');
                 this.createFloatingText(mx, my, "+10% COR", "#f00");
+                return;
+            }
+
+            // PAUSE/RESUME (Bottom)
+            if (mx >= b1x && mx <= b1x + btnW && my >= b3y && my <= b3y + btnH) {
+                this.state.corruptionPaused = !this.state.corruptionPaused;
+                this.events.emit('play_sound', 'click');
+                const txt = this.state.corruptionPaused ? "PAUSED" : "RESUMED";
+                const col = this.state.corruptionPaused ? "#f00" : "#0f0";
+                this.createFloatingText(mx, my, txt, col);
                 return;
             }
         }
