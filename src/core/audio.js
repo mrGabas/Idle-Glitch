@@ -27,6 +27,9 @@ export class SoundEngine {
         this.musicGain = null;
         this.enabled = false;
 
+        this.sfxVolume = 0.5;
+        this.musicVolume = 0.5;
+
         // Event Subscription
         events.on('play_sound', (type) => this.play(type));
         events.on('theme_changed', (id) => this.handleThemeChange(id));
@@ -53,17 +56,17 @@ export class SoundEngine {
 
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.master = this.ctx.createGain();
-        this.master.gain.value = 0.5; // Master volume
+        this.master.gain.value = 1.0; // Master volume typically 1, we control via sfx/music
         this.master.connect(this.ctx.destination);
 
         // SFX Channel
         this.sfxGain = this.ctx.createGain();
-        this.sfxGain.gain.value = 0.5;
+        this.sfxGain.gain.value = this.sfxVolume;
         this.sfxGain.connect(this.master);
 
         // Music Channel
         this.musicGain = this.ctx.createGain();
-        this.musicGain.gain.value = 0.5;
+        this.musicGain.gain.value = this.musicVolume;
         this.musicGain.connect(this.master);
 
         this.voidSynth = new VoidSynth(this.ctx);
@@ -95,14 +98,18 @@ export class SoundEngine {
     }
 
     setSFXVolume(val) {
+        val = Math.max(0, Math.min(1, val));
+        this.sfxVolume = val;
         if (this.sfxGain) {
-            this.sfxGain.gain.value = Math.max(0, Math.min(1, val));
+            this.sfxGain.gain.value = val;
         }
     }
 
     setMusicVolume(val) {
+        val = Math.max(0, Math.min(1, val));
+        this.musicVolume = val;
         if (this.musicGain) {
-            this.musicGain.gain.value = Math.max(0, Math.min(1, val));
+            this.musicGain.gain.value = val;
         }
     }
 

@@ -52,6 +52,13 @@ export class Game {
         this.input = new InputHandler();
         this.virtualControls = new VirtualControls(this);
         this.audio = new SoundEngine(); // Keep for resume()
+
+        // Load Audio Settings
+        const sfxVol = this.saveSystem.loadNumber('sfx_volume', 0.5);
+        const musicVol = this.saveSystem.loadNumber('music_volume', 0.5);
+        this.audio.setSFXVolume(sfxVol);
+        this.audio.setMusicVolume(musicVol);
+
         this.resize(); // Initialize dimensions early
 
 
@@ -205,7 +212,12 @@ export class Game {
         this.saveSystem.save('lore_data', this.loreSystem.getSaveData());
 
         // Save Tutorial Data
+        // Save Tutorial Data
         this.saveSystem.save('tutorial_data', this.tutorialSystem.getSaveData());
+
+        // Save Audio Settings
+        this.saveSystem.saveNumber('sfx_volume', this.audio.sfxVolume);
+        this.saveSystem.saveNumber('music_volume', this.audio.musicVolume);
     }
 
 
@@ -235,8 +247,14 @@ export class Game {
         const sfx = document.getElementById('vol-sfx');
         const music = document.getElementById('vol-music');
 
-        if (sfx) sfx.oninput = (e) => this.audio.setSFXVolume(e.target.value);
-        if (music) music.oninput = (e) => this.audio.setMusicVolume(e.target.value);
+        if (sfx) {
+            sfx.value = this.audio.sfxVolume;
+            sfx.oninput = (e) => this.audio.setSFXVolume(e.target.value);
+        }
+        if (music) {
+            music.value = this.audio.musicVolume;
+            music.oninput = (e) => this.audio.setMusicVolume(e.target.value);
+        }
 
 
 
