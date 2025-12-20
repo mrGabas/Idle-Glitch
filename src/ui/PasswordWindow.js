@@ -65,7 +65,7 @@ export class PasswordWindow extends Window {
         ctx.textAlign = 'left';
 
         // Mask password
-        let displayStr = "*".repeat(this.inputBuffer.length);
+        let displayStr = this.inputBuffer;
 
         // Cursor
         if (this.active && Math.floor(this.blinkTimer * 3) % 2 === 0) {
