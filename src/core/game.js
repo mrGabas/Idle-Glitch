@@ -378,11 +378,10 @@ export class Game {
     handleTabReturn(seconds) {
         if (this.gameState !== 'PLAYING') return;
 
-        // Penalty: Lose resources instead of gaining
-        // 1.5x penalty simply for being rude
-        const penalty = this.state.autoRate * seconds * 1.5;
-        this.state.addScore(-penalty);
-        this.state.addScore(0); // Updates UI potentially if needed immediately
+        // Penalty removed for retention
+        // const penalty = this.state.autoRate * seconds * 1.5;
+        // this.state.addScore(-penalty);
+        this.state.addScore(0); // Force UI update if needed
 
         // Scare
         // this.events.emit('play_sound', 'error'); // Removed to avoid generated sound
