@@ -832,12 +832,21 @@ export class Renderer {
                 }
 
                 // Rate Text
-                this.ctx.fillStyle = '#ccc';
-                this.ctx.font = `${Math.floor(fontSize * 0.8)}px monospace`;
                 let rateText = "";
                 if (u.type === 'auto') rateText = `+${UTILS.fmt(u.val)}/sec`;
                 else if (u.type === 'click') rateText = `+${UTILS.fmt(u.val)} Click`;
-                this.ctx.fillText(rateText, textX, uy + cardH * 0.55);
+
+                this.ctx.font = `bold ${Math.floor(fontSize * 0.8)}px monospace`;
+                const rateMetrics = this.ctx.measureText(rateText);
+                const rw = rateMetrics.width + 8;
+                const rh = fontSize;
+
+                // High contrast background (User Request)
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                this.ctx.fillRect(textX, uy + cardH * 0.55 - rh * 0.7, rw, rh);
+
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillText(rateText, textX + 4, uy + cardH * 0.55);
 
                 // Cost
                 const canBuy = state.score >= u.cost;

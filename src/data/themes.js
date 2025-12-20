@@ -822,10 +822,10 @@ export const THEMES = {
         },
 
         upgrades: [
-            { id: 'n1', name: ' ', baseCost: 15, type: 'auto', val: 1, desc: '...' },
-            { id: 'n2', name: ' ', baseCost: 50, type: 'click', val: 2, desc: ' ' },
-            { id: 'n3', name: ' ', baseCost: 250, type: 'auto', val: 10, desc: ' ' },
-            { id: 'n4', name: ' ', baseCost: 1000, type: 'click', val: 15, desc: ' ' },
+            { id: 'n1', name: 'Null', baseCost: 15, type: 'auto', val: 1, desc: '...' },
+            { id: 'n2', name: 'Undefined', baseCost: 50, type: 'click', val: 2, desc: ' ' },
+            { id: 'n3', name: 'NaN', baseCost: 250, type: 'auto', val: 10, desc: ' ' },
+            { id: 'n4', name: 'Void^2', baseCost: 1000, type: 'click', val: 15, desc: ' ' },
             { id: 'n5', name: 'Entropy', baseCost: 5000, type: 'auto', val: 80, desc: 'Chaos' },
             { id: 'n6', name: 'Event Horizon', baseCost: 20000, type: 'auto', val: 300, desc: 'No Return' },
             { id: 'n7', name: 'Singularity', baseCost: 100000, type: 'auto', val: 1500, desc: 'Infinite' },
