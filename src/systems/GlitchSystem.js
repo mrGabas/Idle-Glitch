@@ -81,6 +81,7 @@ export class GlitchSystem {
                 state.crashed = false;
                 state.rebooting = true;
                 this.game.rebootTimer = 5.0; // 5s BIOS
+                this.game.events.emit('play_sound', 'boot');
             }
             return;
         }

@@ -11,12 +11,15 @@ import { RainbowSynth } from '../audio/RainbowSynth.js';
 import { CorporateSynth } from '../audio/CorporateSynth.js';
 
 const ASSET_SOUNDS = {
-    'purr': 'assets/Audios/felix/purr.mp3'
+    'purr': 'assets/Audios/felix/purr.mp3',
+    'bsod_error': 'assets/Audios/error.mp3',
+    'boot': 'assets/Audios/Boot.mp3',
+    'bios_loop': 'assets/Audios/working.mp3'
 };
 
 const MUSIC_TRACKS = {
     'pixel_party': 'assets/Music/Pixel Party.mp3',
-    'digital_drift': 'assets/Music/Digital Drift.mp3' // Correct path found via search
+    'digital_drift': 'assets/Music/Digital Drift.mp3'
 };
 
 export class SoundEngine {
@@ -42,6 +45,9 @@ export class SoundEngine {
 
         this.currentMusic = null; // HTMLAudioElement
         this.currentMusicNode = null; // MediaElementSourceNode
+
+        this.ambientLoop = null; // HTMLAudioElement for SFX loops
+        this.ambientLoopNode = null; // MediaElementSourceNode
 
         // Glitch Effects
         this.glitchTimer = null;
@@ -276,7 +282,12 @@ export class SoundEngine {
             this.currentMusic = audio;
             this.currentMusicNode = source;
 
-            audio.play().catch(e => console.warn("Music play blocked", e));
+            audio.play().catch(e => {
+                // Ignore AbortError if it was caused by our own logic skipping tracks quickly
+                if (e.name !== 'AbortError') {
+                    console.warn(`Music play blocked for ${path}`, e);
+                }
+            });
         } catch (e) {
             console.error("Error setting up music source", e);
         }
@@ -372,9 +383,26 @@ export class SoundEngine {
             this.currentMusicNode = null;
         }
 
+        // Stop Boot Audio if active
+        if (this.activeBootAudio) {
+            this.activeBootAudio.pause();
+            this.activeBootAudio.onended = null;
+            this.activeBootAudio = null;
+        }
+
+        // Stop Ambient Loop (SFX)
+        if (this.ambientLoop) {
+            this.ambientLoop.pause();
+            this.ambientLoop = null;
+        }
+        if (this.ambientLoopNode) {
+            try { this.ambientLoopNode.disconnect(); } catch (e) { }
+            this.ambientLoopNode = null;
+        }
+
         // 3. Play appropriate track based on rules
         if (themeId === 'bios') {
-            // Silence for BIOS / Meta Upgrades
+            this.playBiosSequence();
             return;
         }
         else if (themeId === 'null_void') {
@@ -414,6 +442,40 @@ export class SoundEngine {
                 const intensity = Math.max(0, Math.min(1, relativePos));
                 this.startGlitchEffect(intensity);
             }
+        }
+    }
+
+    playBiosSequence() {
+        if (!this.ctx) return;
+
+        // Stop any current music
+        if (this.currentMusic) {
+            this.currentMusic.pause();
+            this.currentMusic = null;
+        }
+
+        // Play Ambience as SFX Loop (using Audio Context for gain control)
+        const path = ASSET_SOUNDS.bios_loop;
+        const audio = new Audio(path);
+        audio.loop = true;
+        audio.volume = 1.0; // Source volume, gain node handles mix
+        audio.crossOrigin = "anonymous";
+
+        try {
+            const source = this.ctx.createMediaElementSource(audio);
+            // CONNECT TO SFX GAIN instead of music
+            source.connect(this.sfxGain);
+
+            this.ambientLoop = audio;
+            this.ambientLoopNode = source;
+
+            audio.play().catch(e => {
+                if (e.name !== 'AbortError') {
+                    console.warn(`Ambience play blocked for ${path}`, e);
+                }
+            });
+        } catch (e) {
+            console.error("Error setting up ambience source", e);
         }
     }
 }

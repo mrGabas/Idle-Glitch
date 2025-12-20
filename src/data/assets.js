@@ -50,6 +50,9 @@ export const ASSETS = {
 
     // Audio files
     audio: [
-        'assets/Audios/felix/purr.mp3'
+        'assets/Audios/felix/purr.mp3',
+        'assets/Audios/Boot.mp3',
+        'assets/Audios/error.mp3',
+        'assets/Audios/working.mp3'
     ]
 };

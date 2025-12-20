@@ -48,12 +48,12 @@ export class ThemeManager {
         };
     }
 
-    setTheme(id) {
+    setTheme(id, silent = false) {
         if (THEMES[id]) {
             this.currentTheme = THEMES[id];
             this.loadThemeUpgrades();
             if (this.game.fakeUI) this.game.fakeUI.init(this.game.w, this.game.h);
-            this.game.events.emit('theme_changed', id);
+            if (!silent) this.game.events.emit('theme_changed', id);
         }
     }
 
@@ -120,11 +120,11 @@ export class ThemeManager {
         this.game.state.crashed = true;
         this.game.gameState = 'CRASH';
         this.game.rebootTimer = 3.0; // 3 seconds BSOD
-        this.game.events.emit('play_sound', 'error');
+        this.game.events.emit('play_sound', 'bsod_error');
     }
 
     reset() {
-        // Reset to default theme
-        this.setTheme('rainbow_paradise');
+        // Reset to default theme silently to avoid triggering audio before BIOS
+        this.setTheme('rainbow_paradise', true);
     }
 }
