@@ -63,7 +63,6 @@ export class Game {
 
 
 
-
         // Save loading
         this.prestigeMult = this.saveSystem.loadNumber('prestige_mult', 1.0);
         this.rebootCount = this.saveSystem.loadNumber('reboot_count', 0);
@@ -93,13 +92,10 @@ export class Game {
         // Load Tutorial Data
         this.tutorialSystem.init(this.saveSystem.load('tutorial_data', []));
 
-        // Recalculate multiplier based on generic prestige + meta upgrades (if we implement that)
-        // For now, prestigeMult is legacy. Let's keep it but maybe add to it.
-
         this.state = new GameState();
-        this.state.multiplier = 1 * this.prestigeMult; // Set initial via property (or method if we want event)
-        // Actually, let's use methods where possible or direct assignment if initializing.
-        // Direct assignment is fine for init.
+
+        this.state.multiplier = 1 * this.prestigeMult;
+
 
         this.economySystem.applyMetaUpgrades();
 
@@ -126,10 +122,6 @@ export class Game {
         }
 
         this.entities = new EntityManager();
-        // this.debris, this.popups, this.captchas, this.loreFiles, this.particles -> managed by this.entities
-        // We can keep references locally if we need direct access or just use getters.
-        // For simplicity and to follow requirements, we should use the manager.
-
 
 
         this.mouse = { x: 0, y: 0, down: false };
@@ -219,7 +211,6 @@ export class Game {
         this.saveSystem.saveNumber('sfx_volume', this.audio.sfxVolume);
         this.saveSystem.saveNumber('music_volume', this.audio.musicVolume);
     }
-
 
 
 
@@ -401,7 +392,7 @@ export class Game {
     }
 
     triggerScareOverlay(text) {
-        console.log("[GAME] Triggering Scare Overlay"); // DEBUG
+
         this.events.emit('play_sound', 'screamer');
         this.scareText = text;
         this.scareTimer = 1.5; // Displays for 1.5s
@@ -531,10 +522,9 @@ export class Game {
         // Signal Audio Engine to stop music for BIOS
         this.events.emit('theme_changed', 'bios');
 
-        // Clear entities
         this.entities.clear();
-        // Need to add clear method to EntityManager or implementing it via resetting layers?
-        // Let's implement reset in Game by making new instance OR iterating layers.
+        // Clear entities
+
         // For now, new instance is safe.
         this.entities = new EntityManager();
 

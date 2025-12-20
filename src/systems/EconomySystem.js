@@ -329,15 +329,10 @@ export class EconomySystem {
                     if (earnings > 0) {
                         // Do NOT add score immediately. Show Report.
                         this.game.uiManager.showOfflineReport(earnings, effectiveTime);
-                    } else {
-                        console.log("Offline: Earnings 0");
                     }
-                } else {
-                    console.log("Offline: Rate 0");
                 }
-            } else {
-                console.log("Offline: Time diff too small", diff);
             }
         }
     }
+
 }

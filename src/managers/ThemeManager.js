@@ -84,8 +84,7 @@ export class ThemeManager {
         const state = this.game.state;
 
         // Dynamic Glitch Intensity based on Corruption
-        // Base formula with slight tweaks per theme can be done here or generically.
-        // Let's use a generic scalable formula + custom tweaks if needed.
+        // Dynamic Glitch Intensity based on Corruption
         let baseIntensity = 0.2 + (state.corruption / 100) * 0.6;
 
         // Custom Intensity Tweaks
@@ -108,12 +107,10 @@ export class ThemeManager {
 
         // --- THEME SPECIFIC UPDATE MECHANICS ---
 
-        // Corporate Network: Boring Popups handled in GlitchSystem but can trigger sound/event here?
-        // kept in GlitchSystem for centralized spawning logic.
+        // Corporate Network: Boring Popups handled in GlitchSystem
 
         // Server Farm: Overheating decay?
-        // Game.js handles input/overheat increase. 
-        // We can handle decay here or in Game.js. Game.js seems better for "mechanics state".
+        // Server Farm: Overheating decay in Game.js
     }
 
     triggerCrash() {

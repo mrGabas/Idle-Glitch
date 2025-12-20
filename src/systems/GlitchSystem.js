@@ -157,8 +157,6 @@ export class GlitchSystem {
             this.fakeCursor.update(dt);
         }
 
-        // Captchas
-        // const enemies = this.game.entities.getAll('enemies'); // Reuse from above
         if (state.corruption > 15 && Math.random() < 0.0005) {
             const caps = enemies.filter(e => e instanceof CursedCaptcha);
             if (caps.length < 1) {
@@ -258,9 +256,7 @@ export class GlitchSystem {
         for (let i = 0; i < enemies.length; i++) {
             const e = enemies[i];
 
-            // Standard Enemies checkClick
             // AntiVirusBot, GlitchHunter, CursedCaptcha, SuddenMeeting all implement checkClick
-            // We can unify this block
 
             const hit = e.checkClick(mx, my);
             if (hit) {
@@ -284,7 +280,6 @@ export class GlitchSystem {
                     return true;
                 }
 
-                // ... rest of existing logic for Hunter/Captcha ...
                 if (e instanceof GlitchHunter) {
                     this.game.events.emit('play_sound', 'click');
                     this.game.createParticles(mx, my, '#f00');
@@ -311,10 +306,7 @@ export class GlitchSystem {
         const loreFiles = this.game.entities.getAll('items');
         for (let i = 0; i < loreFiles.length; i++) {
             if (loreFiles[i].checkClick(mx, my)) {
-                // Specific logic handled inside checkClick now (unlocking/opening)
-                // Just remove from array if handled?
-                // checkClick returns true if handled and should be removed?
-                // LoreFile.checkClick sets active=false.
+                // Specific logic handled inside checkClick (unlocking/opening)
                 loreFiles.splice(i, 1);
                 this.game.events.emit('play_sound', 'click');
                 return true;

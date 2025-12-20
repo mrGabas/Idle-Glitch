@@ -28,8 +28,7 @@ export class UIManager {
 
         // Mail System
         this.mail = new MailSystem(game, this.chat);
-        // Create MailWindow instance but don't add to windowManager yet (until opened)
-        // Actually, let's keep it managed by us and add/remove when toggled.
+        this.mail = new MailSystem(game, this.chat);
         this.mailWindow = new MailWindow(game.w, game.h, this.mail);
 
         this.archiveWindow = new ArchiveWindow(game);
@@ -50,8 +49,7 @@ export class UIManager {
         if (this.archiveWindow) this.archiveWindow.update(0); // Basic recheck if needed, usually window handles itself
         if (this.reviewsTab) this.reviewsTab.resize();
         if (this.achievementsWindow) this.achievementsWindow.resize();
-        // WindowManager windows might need resize too?
-        // Basic windows handle it manually or stay relative.
+        if (this.achievementsWindow) this.achievementsWindow.resize();
     }
 
     update(dt) {
@@ -148,28 +146,13 @@ export class UIManager {
     // Toggle Mail
     toggleMail() {
         if (this.mailWindow.manager) {
-            this.mailWindow.close(); // Calls this.manager.close
-            // If MailWindow active flag logic is inside it? 
-            // We changed MailWindow to extend Window.
-            // If it's already in manager, close() removes it.
-            // If it's not (but active=false), we add it.
-
-            // Wait, logic in MailWindow.draw was 'if (!active) return'.
-            // Now WindowManager controls drawing list.
-            // So 'active' property on Window is slightly redundant if removal from list handles it.
-            // But let's check:
-            // If we use 'active' bool to toggle presence in manager:
-            // This is complex if we use the same instance.
-            // WindowManager.close removes it. So we can add it back.
+            this.mailWindow.close();
         } else {
             this.mailWindow.active = true;
             this.windowManager.add(this.mailWindow);
         }
     }
 
-    // Actually, MailWindow might need special handling because we want to keep the same instance.
-    // WindowManager.close calls onClose.
-    // If we just want to hide/show, we can add/remove.
 
     handleInput(mx, my) {
         // Priority 1: Windows (Top to Bottom)
@@ -210,12 +193,7 @@ export class UIManager {
         // Mail
         if (Math.hypot(mx - mailX, my - iconY) < hitRadius) {
             // Toggle Mail
-            if (this.mailWindow.manager) {
-                this.mailWindow.close();
-            } else {
-                this.mailWindow.active = true;
-                this.windowManager.add(this.mailWindow);
-            }
+            this.toggleMail();
             return true;
         }
 

@@ -8,7 +8,7 @@ export const ACHIEVEMENTS = [
         id: 'first_click',
         name: 'First Click',
         desc: 'Manually generate resources for the first time.',
-        condition: (game) => game.state.score >= 10 || game.mouse.down, // Use game.mouse instead of game.input.mouse
+        condition: (game) => game.state.score >= 10 || game.mouse.down,
         reward: (game) => {
             game.state.addScore(5);
         }

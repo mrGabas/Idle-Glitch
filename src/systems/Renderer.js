@@ -549,7 +549,7 @@ export class Renderer {
     }
 
     drawGameUI(state, theme, upgrades, mouse, shopOpen, activeHighlightTarget) {
-        // const cx = this.w / 2; // Removed (Redeclared below)
+
         const cy = this.h / 2;
         const colors = theme.colors;
 

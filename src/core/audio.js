@@ -140,11 +140,8 @@ export class SoundEngine {
         if (ASSET_SOUNDS[type]) {
             const audio = assetLoader.getAudio(ASSET_SOUNDS[type]);
             if (audio) {
-                // Clone node for overlapping playback not possible with HTMLAudioElement easily without multiple loads
-                // But for simple SFX we can just reset currentTime
-                // Better: Use Web Audio API decodeAudioData but that requires XHR load not Audio tag.
-                // AssetLoader uses Audio tag.
-                // Simple fallback: just play. 
+                // Simple fallback for file-based audio
+
                 try {
                     audio.currentTime = 0;
                     audio.volume = this.sfxGain ? this.sfxGain.gain.value : 0.5; // Sync volume roughly
@@ -252,11 +249,11 @@ export class SoundEngine {
                 osc.start(t); osc.stop(t + 0.2);
             }
             else if (type === 'screamer') {
-                console.log("[AUDIO] Playing screamer sound"); // DEBUG
+
 
                 // Randomly select one of 3 variants
                 const variant = Math.floor(Math.random() * 3) + 1;
-                console.log(`[AUDIO] Screamer variant: ${variant}`);
+
 
                 if (variant === 1) {
                     // Variant 1: White Noise Burst (Original)
