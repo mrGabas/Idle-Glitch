@@ -17,10 +17,10 @@ export class WindowManager {
      * Adds a new window to the stack (focused).
      * @param {import('../ui/Window.js').Window} window 
      */
-    add(window) {
+    add(window, silent = false) {
         window.manager = this;
         this.windows.push(window);
-        this.game.events.emit('play_sound', 'click');
+        if (!silent) this.game.events.emit('play_sound', 'click');
     }
 
     /**

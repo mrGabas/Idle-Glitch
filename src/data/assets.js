@@ -53,6 +53,7 @@ export const ASSETS = {
         'assets/Audios/felix/purr.mp3',
         'assets/Audios/Boot.mp3',
         'assets/Audios/error.mp3',
-        'assets/Audios/working.mp3'
+        'assets/Audios/working.mp3',
+        'assets/Audios/archive.mp3'
     ]
 };

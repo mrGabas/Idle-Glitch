@@ -14,7 +14,8 @@ const ASSET_SOUNDS = {
     'purr': 'assets/Audios/felix/purr.mp3',
     'bsod_error': 'assets/Audios/error.mp3',
     'boot': 'assets/Audios/Boot.mp3',
-    'bios_loop': 'assets/Audios/working.mp3'
+    'bios_loop': 'assets/Audios/working.mp3',
+    'archive': 'assets/Audios/archive.mp3'
 };
 
 const MUSIC_TRACKS = {

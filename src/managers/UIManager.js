@@ -107,8 +107,7 @@ export class UIManager {
             }
         };
 
-        this.windowManager.add(notepad);
-        // this.game.events.emit('play_sound', 'click'); // WindowManager.add plays click
+        this.windowManager.add(notepad, options.silentOpen);
     }
 
     openMinigame(minigame) {
@@ -137,7 +136,7 @@ export class UIManager {
         } else if (data.mediaType === 'image' || data.mediaType === 'video') {
             // Open Media Viewer
             const win = new MediaViewerWindow(this.game.w, this.game.h, data.mediaType, data.src, data.name);
-            this.windowManager.add(win);
+            this.windowManager.add(win, data.silentOpen);
         }
     }
 
@@ -239,7 +238,8 @@ export class UIManager {
             if (this.archiveWindow.manager) {
                 this.archiveWindow.close();
             } else {
-                this.windowManager.add(this.archiveWindow);
+                this.windowManager.add(this.archiveWindow, true);
+                this.game.events.emit('play_sound', 'archive');
                 // Clear flag
                 if (this.game.loreSystem) this.game.loreSystem.hasNew = false;
             }

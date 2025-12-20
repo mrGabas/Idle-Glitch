@@ -660,14 +660,17 @@ export class ArchiveWindow extends Window {
                     if (item.type === 'root') {
                         this.currentPath = [];
                         this.selectedFolderKey = null;
+                        this.game.events.emit('play_sound', 'archive');
                         return 'consumed';
                     } else if (item.key === 'MEDIA') {
                         this.currentPath = [];
                         this.selectedFolderKey = 'MEDIA';
+                        this.game.events.emit('play_sound', 'archive');
                         return 'consumed';
                     } else if (item.key === 'COLLECTION') {
                         this.currentPath = [];
                         this.selectedFolderKey = 'COLLECTION';
+                        this.game.events.emit('play_sound', 'archive');
                         return 'consumed';
                     } else if (item.type === 'folder') {
                         this.selectFolder(item.key);
@@ -707,6 +710,7 @@ export class ArchiveWindow extends Window {
                     // ".." button
                     this.currentPath = []; // Go to root
                     this.selectedFileId = null;
+                    this.game.events.emit('play_sound', 'archive');
                     return 'consumed';
                 }
 
@@ -756,6 +760,7 @@ export class ArchiveWindow extends Window {
                 if (targetIdx === 0) {
                     this.currentPath = [];
                     this.selectedFolderKey = 'MEDIA';
+                    this.game.events.emit('play_sound', 'archive');
                     return 'consumed';
                 }
 
@@ -763,6 +768,7 @@ export class ArchiveWindow extends Window {
                 if (targetIdx === 1) {
                     this.currentPath = [];
                     this.selectedFolderKey = 'COLLECTION';
+                    this.game.events.emit('play_sound', 'archive');
                     return 'consumed';
                 }
 
@@ -821,17 +827,22 @@ export class ArchiveWindow extends Window {
         this.currentPath = [key];
         this.selectedFolderKey = key;
         this.selectedFileId = null;
+        this.game.events.emit('play_sound', 'archive');
+        this.selectedFolderKey = key;
+        this.selectedFileId = null;
     }
 
     handleFileClick(file) {
         if (this.game.loreSystem.isFileUnlocked(file.id)) {
+            this.game.events.emit('play_sound', 'archive');
             // Check for Audio/Image types
             if (file.type === 'audio' || file.type === 'image') {
                 this.game.loreSystem.markFileAsViewed(file.id); // Mark as viewed
                 this.game.uiManager.showMedia({
                     mediaType: file.type,
                     src: file.src || file.content, // Fallback if src not set but content is path
-                    name: file.name
+                    name: file.name,
+                    silentOpen: true
                 });
                 return;
             }
@@ -851,7 +862,7 @@ export class ArchiveWindow extends Window {
 
             this.selectedFileId = file.id;
             this.game.loreSystem.markFileAsViewed(file.id); // Mark as viewed
-            this.game.uiManager.openNotepad(file.content, { title: file.name, password: null });
+            this.game.uiManager.openNotepad(file.content, { title: file.name, password: null, silentOpen: true });
         } else {
             this.game.events.emit('play_sound', 'error');
             this.game.uiManager.chat.addMessage('SYSTEM', 'FILE NOT DOWNLOADED OR CORRUPTED.');
