@@ -180,8 +180,21 @@ export class LoreSystem {
     getUncollectedFileId(excludeIds = []) {
         // Gather all file IDs from DB
         const allFiles = [];
+        const currentThemeId = this.game.themeManager.currentTheme.id;
+
         Object.values(LORE_DB).forEach(folder => {
-            folder.files.forEach(f => allFiles.push(f.id));
+            // Check Theme Requirement logic for DROPPING
+            // If folder has a theme requirement, it only drops in that theme.
+            if (folder.requiredTheme && folder.requiredTheme !== currentThemeId) {
+                return; // Skip this folder
+            }
+            // If folder has NO requiredTheme (generic), it drops everywhere.
+
+            folder.files.forEach(f => {
+                // Check File-specific drop theme override if any (though folder level is primary)
+                if (f.dropTheme && f.dropTheme !== currentThemeId) return;
+                allFiles.push(f.id);
+            });
         });
 
         // Filter out unlocked AND excluded

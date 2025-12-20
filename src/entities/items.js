@@ -89,11 +89,13 @@ export class LoreFile {
                 this.game.loreSystem.unlockFile(this.id);
             }
 
-            // Open Content
-            this.game.uiManager.openNotepad(this.content, {
-                password: this.password,
-                title: this.label
-            });
+            // Open Content -> DISABLED (User Request)
+            // this.game.uiManager.openNotepad(this.content, {
+            //     password: this.password,
+            //     title: this.label
+            // });
+
+            this.game.createFloatingText(this.x + 25, this.y, "ARCHIVED", "#ebb434");
 
             this.active = false; // Disappear after opening
             return true;
@@ -245,12 +247,14 @@ export class MediaFile extends LoreFile {
                 this.game.loreSystem.unlockFile(this.id);
             }
 
-            // Trigger Media Show
-            this.game.uiManager.showMedia({
-                mediaType: this.mediaType,
-                src: this.src,
-                name: this.label
-            });
+            // Trigger Media Show -> DISABLED (User Request)
+            // this.game.uiManager.showMedia({
+            //     mediaType: this.mediaType,
+            //     src: this.src,
+            //     name: this.label
+            // });
+
+            this.game.createFloatingText(this.x + 25, this.y, "ARCHIVED", "#34ebde");
 
             this.active = false;
             return true;
