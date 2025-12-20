@@ -1019,6 +1019,7 @@ export class Game {
 
         this.economySystem.update(dt);
         this.collectionSystem.update(dt);
+        this.achievementSystem.update(dt);
         this.tutorialSystem.update(dt);
         // 5. Update Timer
         this.state.timer += dt;
