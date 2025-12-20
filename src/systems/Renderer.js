@@ -264,9 +264,14 @@ export class Renderer {
             const px = (this.w * CFG.game.shop.startXRatio) - 100;
             const py = 20;
 
+            // META: BIOS_PASSWORD Click Handling (Visuals)
+
+            // Check for Auto-Buy
+            const hasAutoBuy = input.metaUpgrades['auto_buy'];
+
             // DEBUG PANEL
             const panelW = 90;
-            const panelH = 100; // Increased for 3rd button
+            const panelH = hasAutoBuy ? 130 : 100; // Increase if 4th button needed
 
             // Panel BG
             this.ctx.fillStyle = 'rgba(0, 50, 0, 0.8)';
@@ -312,6 +317,19 @@ export class Renderer {
             this.ctx.strokeRect(b1x, b3y, btnW, btnH);
             this.ctx.fillStyle = isPaused ? '#f00' : '#0f0';
             this.ctx.fillText(isPaused ? "RESUME" : "PAUSE COR", b1x + btnW / 2, b3y + 16);
+
+            // AUTO BUY (Extra Bottom)
+            if (hasAutoBuy) {
+                const b4y = b3y + btnH + 5;
+                const isAuto = state.autoBuyEnabled;
+
+                this.ctx.fillStyle = isAuto ? '#003300' : '#330000';
+                this.ctx.fillRect(b1x, b4y, btnW, btnH);
+                this.ctx.strokeStyle = isAuto ? '#0f0' : '#f00';
+                this.ctx.strokeRect(b1x, b4y, btnW, btnH);
+                this.ctx.fillStyle = isAuto ? '#0f0' : '#f00';
+                this.ctx.fillText(isAuto ? "AUTO: ON" : "AUTO: OFF", b1x + btnW / 2, b4y + 16);
+            }
 
             this.ctx.textAlign = "left"; // Reset
         }

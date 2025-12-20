@@ -39,7 +39,7 @@ export class EconomySystem {
         }
 
         // META: NEURAL_ENGINE (Auto Buy)
-        if (this.game.metaUpgrades['auto_buy']) {
+        if (this.game.metaUpgrades['auto_buy'] && this.game.state.autoBuyEnabled) {
             this.handleAutoBuy(dt);
         }
 

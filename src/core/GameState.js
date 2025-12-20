@@ -59,6 +59,10 @@ export class GameState {
         this.isPurged = false;
         /** @type {number} Timer for the purge debuff */
         this.purgeTimer = 0;
+
+        // Toggles
+        this.corruptionPaused = false;
+        this.autoBuyEnabled = true;
     }
 
     get score() {

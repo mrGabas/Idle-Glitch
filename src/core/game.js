@@ -766,6 +766,18 @@ export class Game {
                 this.createFloatingText(mx, my, txt, col);
                 return;
             }
+
+            // AUTO BUY (Extra Bottom)
+            if (this.metaUpgrades['auto_buy']) {
+                const b4y = b3y + btnH + 5;
+                if (mx >= b1x && mx <= b1x + btnW && my >= b4y && my <= b4y + btnH) {
+                    this.state.autoBuyEnabled = !this.state.autoBuyEnabled;
+                    this.events.emit('play_sound', 'click');
+                    const txt = this.state.autoBuyEnabled ? "AUTO: ON" : "AUTO: OFF";
+                    this.createFloatingText(mx, my, txt, "#0f0");
+                    return;
+                }
+            }
         }
 
         if (this.gameState !== 'PLAYING') return;
