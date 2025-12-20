@@ -368,6 +368,12 @@ export class SoundEngine {
     }
 
     handleThemeChange(themeId) {
+        // Guard: If in BIOS, ignore theme previews/changes until actual boot (which changes gameState first)
+        // Exception: If the event is explicitly switching TO bios (e.g. from reset), allow it.
+        if (window.game && window.game.gameState === 'BIOS' && themeId !== 'bios') {
+            return;
+        }
+
         // 1. Stop all Procedural Synths (but keep them initialized)
         if (this.voidSynth) this.voidSynth.stop();
         if (this.rainbowSynth) this.rainbowSynth.stop();
