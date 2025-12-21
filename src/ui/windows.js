@@ -788,3 +788,70 @@ export class NotepadWindow extends Window {
     }
 }
 
+export class ConfirmationWindow extends Window {
+    constructor(gameW, gameH, title, message, onConfirm) {
+        const w = 320;
+        const h = 180;
+        const x = (gameW - w) / 2;
+        const y = (gameH - h) / 2;
+
+        super(x, y, w, h, title || "Confirm");
+
+        this.message = message || "Are you sure?";
+        this.onConfirm = onConfirm;
+    }
+
+    drawContent(ctx, x, y, w, h) {
+        // Message
+        ctx.fillStyle = '#000';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+
+        // Multi-line support
+        const lines = this.message.split('\n');
+        lines.forEach((line, i) => {
+            ctx.fillText(line, x + w / 2, y + 40 + (i * 20));
+        });
+
+        // Buttons
+        const bw = 100;
+        const bh = 30;
+        const gap = 20;
+
+        // Yes/Confirm
+        const by = y + h - 50;
+        const b1x = x + w / 2 - bw - gap / 2;
+        const b2x = x + w / 2 + gap / 2;
+
+        this.drawBevelButton(ctx, b1x, by, bw, bh, "CONFIRM");
+        this.drawBevelButton(ctx, b2x, by, bw, bh, "CANCEL");
+    }
+
+    checkClick(mx, my) {
+        const baseRes = super.checkClick(mx, my);
+        if (baseRes === 'close' || baseRes === 'drag') return baseRes;
+
+        const bw = 100;
+        const bh = 30;
+        const gap = 20;
+        const by = this.y + this.h - 50;
+        const b1x = this.x + this.w / 2 - bw - gap / 2;
+        const b2x = this.x + this.w / 2 + gap / 2;
+
+        // Confirm
+        if (mx >= b1x && mx <= b1x + bw && my >= by && my <= by + bh) {
+            if (this.onConfirm) this.onConfirm();
+            this.close();
+            return 'consumed';
+        }
+
+        // Cancel
+        if (mx >= b2x && mx <= b2x + bw && my >= by && my <= by + bh) {
+            this.close();
+            return 'consumed';
+        }
+
+        return baseRes === 'consumed' ? 'consumed' : null;
+    }
+}
+

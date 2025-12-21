@@ -179,4 +179,15 @@ export class AdsManager {
             console.warn("Request Rewarded Ad Error:", e);
         }
     }
+
+    /**
+     * Watch an ad to trigger Overclock (x2 for 15m)
+     */
+    watchOverclockAd() {
+        this.showRewardedAd(() => {
+            // Reward: 15 minutes (900 seconds)
+            this.game.economySystem.activateOverclock(900);
+            console.log("Overclock Applied");
+        });
+    }
 }

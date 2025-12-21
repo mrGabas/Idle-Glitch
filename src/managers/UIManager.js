@@ -4,7 +4,7 @@
  */
 import { ChatSystem } from '../ui/chat.js';
 import { ReviewsTab } from '../ui/reviewsTab.js';
-import { MailWindow, NotepadWindow } from '../ui/windows.js';
+import { MailWindow, NotepadWindow, ConfirmationWindow } from '../ui/windows.js';
 import { ArchiveWindow, MediaViewerWindow } from '../ui/ArchiveWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { AchievementsWindow } from '../ui/achievementsWindow.js';
@@ -197,6 +197,25 @@ export class UIManager {
             return true;
         }
 
+        // Priority 4.5: Overclock Button (Left of Mail)
+        const ocX = sx - halfStep;
+
+        if (Math.hypot(mx - ocX, my - iconY) < hitRadius) {
+            // Confirmation Popup
+            const msg = "Watch Ad for x2 Production?\n(DURATION: 15 MINUTES)";
+            const win = new ConfirmationWindow(
+                this.game.w, this.game.h,
+                "OVERCLOCK SYSTEM",
+                msg,
+                () => {
+                    this.game.adsManager.watchOverclockAd();
+                }
+            );
+            this.windowManager.add(win, true);
+            this.game.events.emit('play_sound', 'click');
+            return true;
+        }
+
         // Priority 5: HUD Icons (Reviews Icon)
         if (Math.hypot(mx - chatX, my - iconY) < hitRadius) {
             this.reviewsTab.toggle();
@@ -239,6 +258,21 @@ export class UIManager {
 
     // Draw method to be called by Renderer
     draw(ctx) {
+
+        // --- DRAW HUD ICONS (Overclock) ---
+        // Ideally Renderer handles HUD, but UIManager seems to have some drawing resp?
+        // Wait, looking at Renderer.js would confirm if it draws HUD icons.
+        // `UIManager.draw` currently calls sub-systems. 
+        // `handleInput` has HUD logic, but where is HUD draw?
+        // Likely in `Renderer.js`.
+        // I will check Renderer.js. If HUD loop is there, I should modify THAT file instead for drawing.
+        // But if I add it here, I might duplicate or layer issues. 
+        // Let's assume UIManager draws OVERLAYS. 
+        // I should check Renderer.js quickly to be sure where HUD icons are drawn.
+        // For now, I'll assume they are in Renderer.js because UIManager.draw listed only windows/chat.
+        // I will revert this DRAW change here and only keep INPUT.
+        // And then I will update Renderer.js to draw the icon.
+
         // Draw Full-screen / Overlay Systems first (or last depending on desired z-order)
         // Chat is bottom-aligned console
         if (this.chat) this.chat.draw(ctx, this.game.h);

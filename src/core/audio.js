@@ -603,4 +603,20 @@ export class SoundEngine {
             this.voidSynth.play();
         }
     }
+
+    mute() {
+        if (!this.master) return;
+        // Store current volumes if needed, or just set Master gain to 0
+        // But we want to preserve relative levels? 
+        // Simplest: Mute Master.
+        // But wait, user might change volume in settings while muted? 
+        // Better: Set master gain to 0.
+        // We initialize master to 1.0. 
+        this.master.gain.value = 0;
+    }
+
+    unmute() {
+        if (!this.master) return;
+        this.master.gain.value = 1.0;
+    }
 }

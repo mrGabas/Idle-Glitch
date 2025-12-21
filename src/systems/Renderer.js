@@ -292,6 +292,21 @@ export class Renderer {
         const achX = sx + halfStep + iconStep * 2;
         const arcX = sx + halfStep + iconStep * 3;
 
+        // Overclock Button (Left of Mail)
+        const ocX = sx - halfStep;
+        const isOverclocked = state.overclockEndTime > Date.now();
+        // Pulse if active
+        this.drawFeedbackIcon(ocX, iconY, '#00eaff', '⚡', isOverclocked);
+
+        // Show Timer if active
+        if (isOverclocked) {
+            const remaining = Math.ceil((state.overclockEndTime - Date.now()) / 1000);
+            this.ctx.fillStyle = '#00eaff';
+            this.ctx.font = 'bold 10px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`, ocX, iconY + 35);
+        }
+
         // Draw HUD Elements (Mail Icon)
         this.drawHUD(mailX, iconY, uiManager);
 

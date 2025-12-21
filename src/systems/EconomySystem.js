@@ -50,8 +50,35 @@ export class EconomySystem {
             const daemonLevel = this.game.metaUpgrades['daemon_buff'] || 0;
             const daemonMult = 1 + (daemonLevel * 0.1);
 
-            this.game.state.addScore(this.game.state.autoRate * daemonMult * dt);
+            // --- OVERCLOCK CHECK ---
+            if (this.game.state.overclockEndTime > 0) {
+                if (Date.now() < this.game.state.overclockEndTime) {
+                    this.game.state.overclockMultiplier = 2; // Fixed 2x
+                } else {
+                    this.game.state.overclockMultiplier = 1;
+                    this.game.state.overclockEndTime = 0;
+                    this.game.createFloatingText(this.game.w / 2, this.game.h / 2, "OVERCLOCK ENDED", "#f00");
+                }
+            } else {
+                this.game.state.overclockMultiplier = 1;
+            }
+
+            // Apply Multiplier
+            const finalRate = this.game.state.autoRate * daemonMult * this.game.state.overclockMultiplier;
+            this.game.state.addScore(finalRate * dt);
         }
+    }
+
+    /**
+     * Activates the Overclock bonus.
+     * @param {number} durationSeconds 
+     */
+    activateOverclock(durationSeconds) {
+        this.game.state.overclockEndTime = Date.now() + (durationSeconds * 1000);
+        this.game.state.overclockMultiplier = 2;
+        this.game.createFloatingText(this.game.w / 2, this.game.h / 2, "OVERCLOCK ACTIVE! (x2)", "#0ff");
+        this.game.events.emit('play_sound', 'buy');
+        this.game.events.emit('state_updated', this.game.state);
     }
 
     handleAutoBuy(dt) {
