@@ -67,7 +67,10 @@ export class EndingSequence {
         this.step = 0;
         this.alpha = 0;
         this.timer = 0;
+        this.timer = 0;
         this.eyes.open = 0;
+        this.eyes.pupilScale = 0.4; // Reset pupil size
+        this.initialMusicVolume = (this.game.audio && typeof this.game.audio.musicVolume !== 'undefined') ? this.game.audio.musicVolume : 0.5;
         this.text = "";
         this.targetText = "";
         this.transitioning = false; // Reset transition flag
@@ -215,23 +218,46 @@ export class EndingSequence {
         // --- STEP 5: FINAL FADE ---
         if (this.step === 5) {
             // Eyes Expand to cover screen (black pupil)
-            // We use alpha for black overlay over white?
-            // Actually, user wants "Eyes expand, turning screen 100% black"
-            // So we draw eyes bigger and bigger until pupil covers output.
-            // Or simply fade to black.
+            this.eyes.blink = 1; // Force eyes open
 
-            // Let's expand eyes radius
-            this.eyes.left.r += dt * 300;
-            this.eyes.right.r += dt * 300;
+            // Target radius to cover screen mostly
+            const targetRadius = this.game.w * 1.5;
+            const currentRadius = this.eyes.pupilScale * this.eyes.left.r;
+
+            // Calculate speed to reach target in 10 seconds
+            // pupilScale starts at 0.4.
+            const targetScale = targetRadius / this.eyes.left.r;
+            const duration = 10.0;
+            const speed = (targetScale - 0.4) / duration;
+
+            // Expand pupil scale
+            this.eyes.pupilScale += dt * speed;
+
+            // Audio Fade Out
+            if (this.game.audio) {
+                // Calculate progress (0 to 1)
+                const progress = Math.min(1, Math.max(0, currentRadius / targetRadius));
+
+                // Apply fade
+                this.game.audio.setMusicVolume(this.initialMusicVolume * (1 - progress));
+            }
 
             // Also fade in a Black overlay on top of everything
-            if (this.eyes.left.r > this.game.w) {
+            // Check if pupil covers screen (roughly)
+            if (currentRadius >= targetRadius) {
                 const finalMsg = "I'm leaving the keys with you. Don't forget to feed Felix... if you can find him.";
                 if (this.targetText !== finalMsg) {
                     this.startTypewriter(finalMsg);
                 }
 
-                // Fade text out after reading? Or just stay black.
+                // Trigger end immediately if text is done? 
+                // Actually the prompt said "game thinks it's not [black]".
+                // User wants immediate trigger. 
+                // But handleInput triggers the crash.
+                // We should probably auto-trigger here if user doesn't click?
+                // Or just ensure handleInput works instantly. 
+                // The condition `currentRadius >= targetRadius` fixes the logic gap.
+                // I will leave auto-trigger out unless requested, but ensure the visual matches the logic.
             }
         }
     }
@@ -290,7 +316,7 @@ export class EndingSequence {
 
             // Pupil
             ctx.beginPath();
-            ctx.arc(this.eyes.pupilOffset.x, this.eyes.pupilOffset.y, eye.r * 0.4, 0, Math.PI * 2);
+            ctx.arc(this.eyes.pupilOffset.x, this.eyes.pupilOffset.y, eye.r * this.eyes.pupilScale, 0, Math.PI * 2);
             ctx.fillStyle = '#000';
             ctx.fill();
 
@@ -301,6 +327,17 @@ export class EndingSequence {
             ctx.fill();
 
             ctx.restore();
+
+            // Draw Expanding Void (Unclipped)
+            if (this.step === 5) {
+                ctx.save();
+                ctx.translate(eye.x, eye.y);
+                ctx.beginPath();
+                ctx.arc(this.eyes.pupilOffset.x, this.eyes.pupilOffset.y, eye.r * this.eyes.pupilScale, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.restore();
+            }
         });
 
         // 3. Draw Text
@@ -316,7 +353,7 @@ export class EndingSequence {
 
         if (this.step === 5) { // Ending Black Screen
             // Check if eyes expanded fully
-            if (this.eyes.left.r > w) {
+            if (this.eyes.pupilScale * this.eyes.left.r >= w * 1.5) {
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, w, h);
                 textColor = '#fff'; // Text becomes white
@@ -432,7 +469,8 @@ export class EndingSequence {
         }
 
         // Step 5: Final Click -> Reset/BIOS
-        if (this.step === 5 && this.finishedTyping && this.eyes.left.r > this.game.w) {
+        // Check exact condition used in update/draw
+        if (this.step === 5 && this.finishedTyping && this.eyes.pupilScale * this.eyes.left.r >= this.game.w * 1.5) {
             this.game.state.endingSeen = true; // Mark as seen
             this.game.saveGame(); // Save immediately
 
