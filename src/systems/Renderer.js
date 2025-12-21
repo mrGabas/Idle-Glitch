@@ -68,9 +68,9 @@ export class Renderer {
 
     generateCircuitLines() {
         this.circuitLines = [];
-        const count = 20; // Number of traces
+        const count = 60; // Increased from 20
         // Grid based generation
-        const gridSize = 40;
+        const gridSize = 30; // Smaller grid for more density
         const gw = Math.ceil(this.w / gridSize);
         const gh = Math.ceil(this.h / gridSize);
 
@@ -80,16 +80,26 @@ export class Renderer {
             let y = Math.floor(Math.random() * gh) * gridSize;
             const points = [{ x, y }];
 
-            // Generate path (Manhattan)
+            // Generate path (Manhattan + Diagonals)
             const segments = Math.floor(Math.random() * 5) + 3;
             for (let j = 0; j < segments; j++) {
-                if (Math.random() < 0.5) {
+                const len = (Math.floor(Math.random() * 4) + 2) * gridSize;
+                const dir = Math.random();
+
+                if (dir < 0.4) {
                     // Vertical
-                    y += (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 2) * gridSize;
-                } else {
+                    y += (Math.random() < 0.5 ? -1 : 1) * len;
+                } else if (dir < 0.8) {
                     // Horizontal
-                    x += (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 2) * gridSize;
+                    x += (Math.random() < 0.5 ? -1 : 1) * len;
+                } else {
+                    // Diagonal (45 degrees)
+                    const dx = (Math.random() < 0.5 ? -1 : 1) * len;
+                    const dy = (Math.random() < 0.5 ? -1 : 1) * len;
+                    x += dx;
+                    y += dy;
                 }
+
                 // Clamp
                 x = Math.max(0, Math.min(this.w, x));
                 y = Math.max(0, Math.min(this.h, y));
