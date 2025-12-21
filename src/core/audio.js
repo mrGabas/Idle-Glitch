@@ -274,13 +274,16 @@ export class SoundEngine {
                 osc.start(t); osc.stop(t + 0.2);
             }
             else if (type === 'screamer') {
-                // Randomly select one of 3 file variants
-                const variant = Math.floor(Math.random() * 3) + 1;
-                let soundKey = 'screamer_1';
-                if (variant === 2) soundKey = 'screamer_2';
-                if (variant === 3) soundKey = 'screamer_3';
+                // Randomly Decide if sound should play (10% chance)
+                if (Math.random() < 0.1) {
+                    // Randomly select one of 3 file variants
+                    const variant = Math.floor(Math.random() * 3) + 1;
+                    let soundKey = 'screamer_1';
+                    if (variant === 2) soundKey = 'screamer_2';
+                    if (variant === 3) soundKey = 'screamer_3';
 
-                this.play(soundKey);
+                    this.play(soundKey);
+                }
             }
         } catch (e) {
             console.warn('Audio playback failed:', e);
