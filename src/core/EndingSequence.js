@@ -108,6 +108,27 @@ export class EndingSequence {
 
         this.timer += dt;
 
+        // --- DYNAMIC LAYOUT ---
+        // Center everything around a vertical anchor
+        const cx = this.game.w / 2;
+        const anchorY = this.game.h / 3; // The "Face" center
+
+        // 1. Update Eyes Positions
+        // If eyes are exploding (step 5), we let them expand, but generally keep position
+        this.eyes.left.x = cx - 100;
+        this.eyes.left.y = anchorY;
+        this.eyes.right.x = cx + 100;
+        this.eyes.right.y = anchorY;
+
+        // 2. Update Choices Positions (Relative to anchor)
+        if (this.step === 3 && this.choices.length > 0) {
+            const choicesStartY = anchorY + 150; // Text is usually around anchorY + 80
+            this.choices.forEach((c, i) => {
+                c.x = cx;
+                c.y = choicesStartY + (i * 50);
+            });
+        }
+
         // --- STEP 0: FADE TO WHITE ---
         if (this.step === 0) {
             this.alpha += dt * 0.5;
@@ -123,12 +144,10 @@ export class EndingSequence {
         // Track mouse slightly
         const mx = this.game.mouse.x;
         const my = this.game.mouse.y;
-        const cx = this.game.w / 2;
-        const cy = this.game.h / 3; // Match start pos
 
         // Calculate pupil offset direction
         const dx = mx - cx;
-        const dy = my - cy;
+        const dy = my - anchorY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const maxOffset = 15;
 
@@ -187,7 +206,7 @@ export class EndingSequence {
             this.transitioning = true; // Prevent multiple triggers
             setTimeout(() => {
                 this.step = 3;
-                this.setupChoices();
+                this.setupChoices(); // Will init choices, positions updated in next frame loop
                 this.transitioning = false;
             }, 2000);
         }
@@ -206,9 +225,9 @@ export class EndingSequence {
 
             // Also fade in a Black overlay on top of everything
             if (this.eyes.left.r > this.game.w) {
-                this.targetText = "I'm leaving the keys with you. Don't forget to feed Felix... if you can find him.";
-                if (this.text !== this.targetText && !this.finishedTyping) {
-                    this.startTypewriter(this.targetText);
+                const finalMsg = "I'm leaving the keys with you. Don't forget to feed Felix... if you can find him.";
+                if (this.targetText !== finalMsg) {
+                    this.startTypewriter(finalMsg);
                 }
 
                 // Fade text out after reading? Or just stay black.
@@ -225,11 +244,12 @@ export class EndingSequence {
     }
 
     setupChoices() {
+        // Initial setup, positions will be overwritten in update() for dynamic layout
         this.choices = this.questions.map((q, i) => {
             return {
                 ...q,
-                x: this.game.w / 2,
-                y: this.game.h / 2 + 50 + (i * 50),
+                x: 0,
+                y: 0,
                 w: 600,
                 h: 40
             };
@@ -289,7 +309,8 @@ export class EndingSequence {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top'; // Easier for wrapping
 
-        let textY = h / 2 - 120;
+        const anchorY = h / 3;
+        let textY = anchorY + 80;
         let textColor = '#000';
 
         if (this.step === 5) { // Ending Black Screen
@@ -298,7 +319,7 @@ export class EndingSequence {
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, w, h);
                 textColor = '#fff'; // Text becomes white
-                textY = h / 2 - 50;
+                textY = anchorY + 80;
             }
         }
 
