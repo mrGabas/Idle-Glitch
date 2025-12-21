@@ -427,10 +427,7 @@ export const THEMES = {
         },
         startText: 'BOOTING RACK...',
         parallax: {
-            layers: [
-                { src: 'assets/Levels/Server Farm/parallax/layer 1.webp', speed: 0 },
-                { src: 'assets/Levels/Server Farm/parallax/layer 2.webp', speed: 15 }
-            ]
+            layers: []
         },
         particles: {
             emoji: ['❄️', '🔥', '⚡', '💾'],

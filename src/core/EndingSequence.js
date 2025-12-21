@@ -212,9 +212,9 @@ export class EndingSequence {
 
             // Also fade in a Black overlay on top of everything
             if (this.eyes.left.r > this.game.w) {
-                this.targetText = "I'm leaving the keys with you. Don't forget to feed Felix... if you can find him.";
-                if (this.text !== this.targetText && !this.finishedTyping) {
-                    this.startTypewriter(this.targetText);
+                const finalMsg = "I'm leaving the keys with you. Don't forget to feed Felix... if you can find him.";
+                if (this.targetText !== finalMsg) {
+                    this.startTypewriter(finalMsg);
                 }
 
                 // Fade text out after reading? Or just stay black.
