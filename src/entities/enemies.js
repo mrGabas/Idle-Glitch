@@ -256,6 +256,22 @@ export class AntiVirusBot extends GlitchHunter {
         super(w, h);
         this.color = '#00ffff'; // Cyan
         this.auraColor = 'rgba(0, 255, 255, 0.3)';
+        this.patchTimer = 0;
+        this.patchMax = 1.0; // 1 Second to patch
+    }
+
+    update(dt, context) {
+        super.update(dt, context);
+
+        // Reset timer if moved away
+        const mx = context.mouse.x;
+        const my = context.mouse.y;
+        const dist = Math.hypot(mx - this.x, my - this.y);
+
+        // Threshold match GlitchHunter.update (size + 10)
+        if (dist >= this.size + 10) {
+            this.patchTimer = 0;
+        }
     }
 
     // Override draw to look different
@@ -279,16 +295,31 @@ export class AntiVirusBot extends GlitchHunter {
         ctx.fillRect(-15, -5, 30, 10);
         ctx.fillRect(-5, -15, 10, 30);
 
+        // Progress Bar (if charging)
+        if (this.patchTimer > 0) {
+            ctx.fillStyle = '#0f0';
+            const pct = Math.min(1, this.patchTimer / this.patchMax);
+            ctx.fillRect(-20, -35, 40 * pct, 4);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-20, -35, 40, 4);
+        }
+
         ctx.restore();
     }
 
     // Override update to heal (reduce corruption) on hit
     onReachTarget(context, dt) {
-        // "Heal" the system -> Reduce corruption
-        context.state.addCorruption(-5); // Penalize progress
-        context.createFloatingText(this.x, this.y, "PATCHED!", "#00ffff");
-        context.events.emit('play_sound', 'error'); // Bad sound
-        this.active = false; // Die after patching
+        // Charge up patch
+        this.patchTimer += dt;
+
+        if (this.patchTimer >= this.patchMax) {
+            // "Heal" the system -> Reduce corruption
+            context.state.addCorruption(-5); // Penalize progress
+            context.createFloatingText(this.x, this.y, "PATCHED!", "#00ffff");
+            context.events.emit('play_sound', 'error'); // Bad sound
+            this.active = false; // Die after patching
+        }
     }
 
     // Rely on base checkClick implementation
