@@ -31,6 +31,7 @@ import { VirtualControls } from '../ui/VirtualControls.js';
 import { TutorialSystem } from '../systems/TutorialSystem.js';
 import { CollectionSystem } from '../systems/CollectionSystem.js';
 import { EndingSequence } from './EndingSequence.js';
+import { AdsManager } from '../managers/AdsManager.js';
 
 /**
  * @typedef {Object} GameState
@@ -62,21 +63,8 @@ export class Game {
 
         // --- CrazyGames SDK Init ---
         this.playerName = "Unknown Operator";
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-            try {
-                window.CrazyGames.SDK.user.getUser().then((user) => {
-                    if (user) {
-                        this.playerName = user.username;
-                        console.log("CrazyGames User Detected:", this.playerName);
-                    }
-                }).catch(e => {
-                    console.warn("CrazyGames SDK User Fetch Error (likely local env):", e);
-                });
-            } catch (err) {
-                console.warn("CrazyGames SDK Init Error (likely local env):", err);
-            }
-        }
-
+        this.adsManager = new AdsManager(this);
+        this.adsManager.init();
 
         this.resize(); // Initialize dimensions early
 
@@ -383,6 +371,7 @@ export class Game {
         this.input.on('visibilitychange', () => {
             if (document.hidden) {
                 // Player left
+                this.adsManager.gameplayStop();
                 awayStartTime = Date.now();
                 let i = 0;
                 titleInterval = setInterval(() => {
@@ -391,6 +380,7 @@ export class Game {
                 }, 2000);
             } else {
                 // Player returned
+                this.adsManager.gameplayStart();
                 document.title = originalTitle;
                 if (titleInterval) clearInterval(titleInterval);
 
@@ -433,6 +423,9 @@ export class Game {
         this.setScreen(null);
         this.gameState = 'PLAYING';
 
+        // SDK Hook
+        this.adsManager.gameplayStart();
+
         // Check Tutorial
         if (!this.tutorialSystem.completedTutorials.has('intro')) {
             this.tutorialSystem.startSequence('intro');
@@ -449,9 +442,11 @@ export class Game {
         if (this.gameState === 'PLAYING') {
             this.gameState = 'PAUSED';
             this.setScreen('pause-menu');
+            this.adsManager.gameplayStop();
         } else if (this.gameState === 'PAUSED') {
             this.gameState = 'PLAYING';
             this.setScreen(null);
+            this.adsManager.gameplayStart();
         }
     }
 
