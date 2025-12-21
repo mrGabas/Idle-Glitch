@@ -1,4 +1,4 @@
-this.game.state.corruption += 10
+this.game.state.corruption += 100
 
 game.glitchData += 100
 

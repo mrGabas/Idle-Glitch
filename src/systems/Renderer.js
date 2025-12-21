@@ -21,6 +21,9 @@ export class Renderer {
         this.matrixFontSize = 16;
         this.matrixColumns = 0;
         this.matrixDrops = [];
+        this.fireParticles = [];
+        this.circuitLines = [];
+        this.circuitPulses = [];
 
         // Caches
         this.timeString = "";
@@ -60,6 +63,40 @@ export class Renderer {
         this.mainButtonGrad = null; // Invalidate cache
         this.vignetteGrad = null; // Invalidate vignette cache
         this.matrixDrops = []; // Reset matrix
+        this.circuitLines = []; // Reset circuits
+    }
+
+    generateCircuitLines() {
+        this.circuitLines = [];
+        const count = 20; // Number of traces
+        // Grid based generation
+        const gridSize = 40;
+        const gw = Math.ceil(this.w / gridSize);
+        const gh = Math.ceil(this.h / gridSize);
+
+        for (let i = 0; i < count; i++) {
+            // Start point
+            let x = Math.floor(Math.random() * gw) * gridSize;
+            let y = Math.floor(Math.random() * gh) * gridSize;
+            const points = [{ x, y }];
+
+            // Generate path (Manhattan)
+            const segments = Math.floor(Math.random() * 5) + 3;
+            for (let j = 0; j < segments; j++) {
+                if (Math.random() < 0.5) {
+                    // Vertical
+                    y += (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 2) * gridSize;
+                } else {
+                    // Horizontal
+                    x += (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 4) + 2) * gridSize;
+                }
+                // Clamp
+                x = Math.max(0, Math.min(this.w, x));
+                y = Math.max(0, Math.min(this.h, y));
+                points.push({ x, y });
+            }
+            this.circuitLines.push({ points, pulseTimer: Math.random() * 100 });
+        }
     }
 
     /**
@@ -132,6 +169,10 @@ export class Renderer {
         } else {
             this.ctx.fillStyle = currentTheme.colors.bg;
             this.ctx.fillRect(0, 0, this.w, this.h);
+
+            if (currentTheme.id === 'server_farm') {
+                this.drawServerFarmEffect();
+            }
         }
 
         // PARALLAX
@@ -1273,6 +1314,148 @@ export class Renderer {
         }
 
         return originalUpgrade;
+    }
+
+    drawServerFarmEffect() {
+        this.drawCircuitEffect();
+
+        // 1. Spawn new particles
+        if (this.w > 0) {
+            const spawnCount = Math.ceil(this.w / 600) + 1; // 2-4
+            for (let k = 0; k < spawnCount; k++) {
+                if (Math.random() < 0.4) {
+                    const fromTop = Math.random() < 0.5;
+                    const randomY = Math.random() < 0.3; // 30% chance to spawn in middle
+
+                    let y = this.h + 10;
+                    let speedY = Math.random() * 3 + 1; // Moving Up
+
+                    if (fromTop) {
+                        y = -10;
+                        speedY = -(Math.random() * 3 + 1); // Moving Down
+                    }
+                    if (randomY) {
+                        y = Math.random() * this.h;
+                        // Random direction if spawning in middle
+                        speedY = (Math.random() * 3 + 1) * (Math.random() < 0.5 ? 1 : -1);
+                    }
+
+                    this.fireParticles.push({
+                        x: Math.random() * this.w,
+                        y: y,
+                        size: Math.random() * 4 + 1,
+                        velocity: speedY, // Positive = Up (in draw logic y -= velocity)
+                        // Wait, standard is y += velocity.
+                        // Previous code: p.y -= p.speedY. So positive speedY moved UP.
+                        // Let's stick to that: Positive = UP. Negative = DOWN.
+                        color: UTILS.randArr(['#ff0000', '#ff4400', '#ff8800', '#ffcc00']),
+                        alpha: 1,
+                        decay: Math.random() * 0.01 + 0.005
+                    });
+                }
+            }
+        }
+
+        // 2. Update and Draw
+        this.ctx.save();
+        for (let i = this.fireParticles.length - 1; i >= 0; i--) {
+            const p = this.fireParticles[i];
+
+            p.y -= p.velocity; // Positive velocity moves UP
+            p.alpha -= p.decay;
+
+            // Wobble effect
+            p.x += Math.sin(Date.now() / 200 + p.y * 0.05) * 0.5;
+
+            if (p.alpha <= 0 || p.y < -50 || p.y > this.h + 50) {
+                this.fireParticles.splice(i, 1);
+                continue;
+            }
+
+            this.ctx.globalAlpha = p.alpha;
+            this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+        }
+        this.ctx.restore();
+    }
+
+    drawCircuitEffect() {
+        // Init if needed
+        if (this.circuitLines.length === 0) this.generateCircuitLines();
+
+        this.ctx.save();
+        this.ctx.lineWidth = 2;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        // Draw Static Lines (Dark Red/Brown)
+        this.ctx.strokeStyle = '#441100';
+        for (let line of this.circuitLines) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(line.points[0].x, line.points[0].y);
+            for (let i = 1; i < line.points.length; i++) {
+                this.ctx.lineTo(line.points[i].x, line.points[i].y);
+            }
+            this.ctx.stroke();
+        }
+
+        // Draw Pulses (Bright Orange)
+        this.ctx.strokeStyle = '#ffcc00';
+        this.ctx.shadowColor = '#ff4400';
+        this.ctx.shadowBlur = 10;
+        this.ctx.lineWidth = 3;
+
+        // Logic: active pulses list? Or just traverse lines?
+        // Let's use simple walker
+        // Each line has a pulse that travels along it
+        for (let line of this.circuitLines) {
+            line.pulseTimer += 2; // Speed
+
+            // Calculate total length to map timer
+            // For simplicity, just walk segments based on approximate length or step
+            // Let's calculate total path length
+            let totalLen = 0;
+            const lengths = [];
+            for (let i = 0; i < line.points.length - 1; i++) {
+                const dist = Math.abs(line.points[i].x - line.points[i + 1].x) + Math.abs(line.points[i].y - line.points[i + 1].y);
+                lengths.push(dist);
+                totalLen += dist;
+            }
+
+            let distTravelled = line.pulseTimer % (totalLen + 200); // +200 gap
+
+            if (distTravelled > totalLen) continue; // Gap phase
+
+            // Find current pos
+            let currentDist = 0;
+            let px = line.points[0].x;
+            let py = line.points[0].y;
+
+            for (let i = 0; i < lengths.length; i++) {
+                if (distTravelled >= currentDist && distTravelled <= currentDist + lengths[i]) {
+                    // On this segment
+                    const segmentProgress = distTravelled - currentDist;
+                    const p1 = line.points[i];
+                    const p2 = line.points[i + 1];
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const len = lengths[i];
+
+                    px = p1.x + (dx / len) * segmentProgress;
+                    py = p1.y + (dy / len) * segmentProgress;
+
+                    // Draw pulse head
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(px, py);
+                    // Trail? hard with canvas path... just draw dot/short line
+                    this.ctx.lineTo(px - (dx / len) * 10, py - (dy / len) * 10);
+                    this.ctx.stroke();
+                    break;
+                }
+                currentDist += lengths[i];
+            }
+        }
+        this.ctx.restore();
     }
 
 

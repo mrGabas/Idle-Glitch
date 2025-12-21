@@ -30,6 +30,7 @@ import { AchievementPopup } from '../ui/notifications.js';
 import { VirtualControls } from '../ui/VirtualControls.js';
 import { TutorialSystem } from '../systems/TutorialSystem.js';
 import { CollectionSystem } from '../systems/CollectionSystem.js';
+import { EndingSequence } from './EndingSequence.js';
 
 /**
  * @typedef {Object} GameState
@@ -94,6 +95,7 @@ export class Game {
         this.loreSystem = new LoreSystem(this);
         this.tutorialSystem = new TutorialSystem(this);
         this.collectionSystem = new CollectionSystem(this);
+        this.endingSequence = new EndingSequence(this);
 
         this.events.on('achievement_unlocked', (ach) => {
             this.entities.add('ui', new AchievementPopup(this, ach));
@@ -751,6 +753,11 @@ export class Game {
             return;
         }
 
+        if (this.gameState === 'ENDING') {
+            this.endingSequence.handleInput(mx, my);
+            return;
+        }
+
         if (this.uiManager.handleInput(mx, my)) return;
 
         // META: DEBUG PANEL Click Handling
@@ -996,6 +1003,11 @@ export class Game {
      * @param {number} dt - Delta time in seconds.
      */
     update(dt) {
+        if (this.gameState === 'ENDING') {
+            this.endingSequence.update(dt);
+            return;
+        }
+
         this.handleGlobalInput();
 
         // Update Virtual Controls Context
@@ -1139,6 +1151,10 @@ export class Game {
         };
 
         this.renderer.draw(this.state, entities, inputData, this.uiManager);
+
+        if (this.gameState === 'ENDING') {
+            this.endingSequence.draw(this.renderer.ctx);
+        }
     }
 
 }
