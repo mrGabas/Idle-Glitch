@@ -84,10 +84,14 @@ export class EndingSequence {
         this.eyes.right = { x: cx + 100, y: cy, r: 40 };
 
         // Stop Music
-        if (this.game.audio && this.game.audio.stopMusic) {
-            this.game.audio.stopMusic();
+        try {
+            if (this.game.audio && this.game.audio.stopMusic) {
+                this.game.audio.stopMusic();
+            }
+            this.game.events.emit('play_sound', 'glitch_long'); // Or some transition sound
+        } catch (e) {
+            console.error("ENDING SEQUENCE: Audio Error", e);
         }
-        this.game.events.emit('play_sound', 'glitch_long'); // Or some transition sound
     }
 
     update(dt) {
@@ -98,7 +102,9 @@ export class EndingSequence {
         // --- STEP 0: FADE TO WHITE ---
         if (this.step === 0) {
             this.alpha += dt * 0.5;
+            // console.log("ENDING DEBUG: Alpha:", this.alpha, "DT:", dt); // Uncomment if needed, spammy
             if (this.alpha >= 1) {
+                console.log("ENDING DEBUG: Fade complete. Switching to Step 1.");
                 this.alpha = 1;
                 this.step = 1;
                 this.timer = 0;
@@ -233,6 +239,8 @@ export class EndingSequence {
         // 1. Draw White Screen (Base)
         ctx.fillStyle = `rgba(255, 255, 255, ${this.step > 0 ? 1 : this.alpha})`;
         ctx.fillRect(0, 0, w, h);
+
+        if (Math.random() < 0.01) console.log("ENDING DEBUG: Drawing frame. Alpha:", this.alpha);
 
         if (this.step < 1) return;
 
@@ -401,9 +409,10 @@ export class EndingSequence {
         if (this.step === 5 && this.finishedTyping && this.eyes.left.r > this.game.w) {
             this.game.state.endingSeen = true; // Mark as seen
             this.game.saveGame(); // Save immediately
-            this.game.events.emit('play_sound', 'bsod_error'); // Use bsod_error for impact
+
+            // Trigger Standard Crash Sequence (BSOD -> Reboot -> BIOS)
+            this.game.themeManager.triggerCrash();
             this.active = false;
-            this.game.hardReset();
         }
     }
 

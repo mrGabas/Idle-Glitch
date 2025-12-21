@@ -99,9 +99,20 @@ export class ThemeManager {
                 // Transition to next theme
                 const nextThemeId = THEME_ORDER[currentIndex + 1];
                 this.switchTheme(nextThemeId);
-            } else if (currentId === 'null_void' && !state.crashed && !state.rebooting) {
-                // End of the line
-                this.triggerCrash();
+            } else if (currentId === 'null_void' && !state.crashed && !state.rebooting && this.game.gameState !== 'ENDING') {
+                // Check if we've already seen the ending
+                if (state.endingSeen) {
+                    // Standard Crash behavior (Prestige loop)
+                    this.triggerCrash();
+                } else {
+                    // First time? Trigger True Ending
+                    this.game.gameState = 'ENDING';
+                    try {
+                        this.game.endingSequence.start();
+                    } catch (e) {
+                        console.error("THEME MANAGER: Error starting EndingSequence:", e);
+                    }
+                }
             }
         }
 
