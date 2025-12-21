@@ -33,6 +33,7 @@ export class EndingSequence {
         this.choices = [];
         this.hoveredChoice = -1;
         this.currentResponse = null;
+        this.visitedChoices = new Set(); // Track visited questions
 
         // Flag for final sequence
         this.isFinal = false;
@@ -72,6 +73,8 @@ export class EndingSequence {
         this.eyes.pupilScale = 0.4; // Reset pupil size
         this.initialMusicVolume = (this.game.audio && typeof this.game.audio.musicVolume !== 'undefined') ? this.game.audio.musicVolume : 0.5;
         this.text = "";
+        this.visitedChoices.clear(); // Reset visited
+
         this.targetText = "";
         this.transitioning = false; // Reset transition flag
 
@@ -277,8 +280,18 @@ export class EndingSequence {
     }
 
     setupChoices() {
+        // Check if all non-final questions are visited
+        const nonFinal = this.questions.filter(q => !q.isFinal);
+        const allVisited = nonFinal.every(q => this.visitedChoices.has(q.id));
+
+        // Filter valid questions
+        const validQuestions = this.questions.filter(q => {
+            if (q.isFinal) return allVisited;
+            return true;
+        });
+
         // Initial setup, positions will be overwritten in update() for dynamic layout
-        this.choices = this.questions.map((q, i) => {
+        this.choices = validQuestions.map((q, i) => {
             return {
                 ...q,
                 x: 0,
@@ -393,17 +406,34 @@ export class EndingSequence {
 
             this.choices.forEach((c, i) => {
                 const isHover = (i === this.hoveredChoice);
+                const isVisited = this.visitedChoices.has(c.id);
+
+                // Colors
+                // Unvisited: Yellow Accent
+                // Visited: Standard Grey/White
+
+                let borderColor = isVisited ? '#aaa' : '#FFD700'; // Yellow for unvisited
+                let textColor = isVisited ? '#aaa' : '#FFD700';
+                let fillColor = 'rgba(0,0,0,0.6)';
+
+                if (isHover) {
+                    fillColor = borderColor; // Fill with accent
+                    textColor = '#000'; // Text becomes black
+                } else if (isVisited) {
+                    borderColor = '#555'; // Dim border for visited
+                }
+
                 // Box
-                ctx.fillStyle = isHover ? '#000' : 'rgba(255,255,255,0.8)';
+                ctx.fillStyle = fillColor;
                 ctx.fillRect(c.x - c.w / 2, c.y - c.h / 2, c.w, c.h);
 
                 // Border
-                ctx.strokeStyle = '#000';
+                ctx.strokeStyle = borderColor;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(c.x - c.w / 2, c.y - c.h / 2, c.w, c.h);
 
                 // Text
-                ctx.fillStyle = isHover ? '#fff' : '#000';
+                ctx.fillStyle = textColor;
                 ctx.fillText(c.text, c.x, c.y);
             });
             ctx.restore();
@@ -469,6 +499,7 @@ export class EndingSequence {
                 this.startTypewriter(""); // Clear text, wait for expand
             } else {
                 this.step = 3; // Back to choices
+                this.setupChoices(); // Re-calc visibility (Final might appear now)
                 this.startTypewriter("Anything else?");
                 this.finishedTyping = true; // Show immediately? Or type it.
             }
@@ -491,6 +522,9 @@ export class EndingSequence {
     }
 
     selectChoice(choice) {
+        if (!choice.isFinal) {
+            this.visitedChoices.add(choice.id);
+        }
         this.currentResponse = choice.response;
         this.isFinal = choice.isFinal || false;
 
