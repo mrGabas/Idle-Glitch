@@ -785,7 +785,15 @@ export class ArchiveWindow extends Window {
 
             this.selectedFileId = file.id;
             this.game.loreSystem.markFileAsViewed(file.id); // Mark as viewed
-            this.game.uiManager.openNotepad(file.content, { title: file.name, password: null, silentOpen: true });
+
+            let content = file.content;
+            if (typeof content === 'string') {
+                content = content.replace('[System.Process.OS]', navigator.platform)
+                    .replace('[System.Environment.UserName]', this.game.playerName) // Uses CrazyGames username or default
+                    .replace('[Current_Year and Date of user]', new Date().toLocaleString());
+            }
+
+            this.game.uiManager.openNotepad(content, { title: file.name, password: null, silentOpen: true });
             return true;
         } else {
             this.game.events.emit('play_sound', 'error');

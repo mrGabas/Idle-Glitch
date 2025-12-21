@@ -59,6 +59,24 @@ export class Game {
         this.audio.setSFXVolume(sfxVol);
         this.audio.setMusicVolume(musicVol);
 
+        // --- CrazyGames SDK Init ---
+        this.playerName = "Unknown Operator";
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+            try {
+                window.CrazyGames.SDK.user.getUser().then((user) => {
+                    if (user) {
+                        this.playerName = user.username;
+                        console.log("CrazyGames User Detected:", this.playerName);
+                    }
+                }).catch(e => {
+                    console.warn("CrazyGames SDK User Fetch Error (likely local env):", e);
+                });
+            } catch (err) {
+                console.warn("CrazyGames SDK Init Error (likely local env):", err);
+            }
+        }
+
+
         this.resize(); // Initialize dimensions early
 
 
