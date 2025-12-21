@@ -100,11 +100,6 @@ export class EndingSequence {
     update(dt) {
         if (!this.active) return;
 
-        // Force Mouse Cleanup (Disable glitches/inversion)
-        if (this.game.realMouse) {
-            this.game.mouse.x = this.game.realMouse.x;
-            this.game.mouse.y = this.game.realMouse.y;
-        }
 
         // Force System Cursor Visibility on CANVAS (overriding CSS)
         if (this.game.renderer.canvas.style.cursor !== 'default') {
