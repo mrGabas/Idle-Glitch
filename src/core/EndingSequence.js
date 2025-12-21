@@ -99,6 +99,10 @@ export class EndingSequence {
 
         // Use System Cursor on Canvas
         this.game.renderer.canvas.style.cursor = 'default';
+
+        // Mute SFX to prevent lingering error/buy sounds during transition
+        this.savedSFXVolume = (this.game.audio && typeof this.game.audio.sfxVolume !== 'undefined') ? this.game.audio.sfxVolume : 0.5;
+        if (this.game.audio) this.game.audio.setSFXVolume(0);
     }
 
     update(dt) {
@@ -140,6 +144,8 @@ export class EndingSequence {
                 this.alpha = 1;
                 this.step = 1;
                 this.timer = 0;
+                // Restore SFX for dialogue
+                if (this.game.audio) this.game.audio.setSFXVolume(this.savedSFXVolume);
             }
             return;
         }
@@ -472,6 +478,10 @@ export class EndingSequence {
         // Check exact condition used in update/draw
         if (this.step === 5 && this.finishedTyping && this.eyes.pupilScale * this.eyes.left.r >= this.game.w * 1.5) {
             this.game.state.endingSeen = true; // Mark as seen
+
+            // Restore Music Volume before saving (so we don't save the faded 0 volume)
+            if (this.game.audio) this.game.audio.setMusicVolume(this.initialMusicVolume);
+
             this.game.saveGame(); // Save immediately
 
             // Trigger Standard Crash Sequence (BSOD -> Reboot -> BIOS)
