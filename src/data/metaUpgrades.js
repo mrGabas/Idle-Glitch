@@ -36,7 +36,7 @@ export const META_UPGRADES = [
         baseCost: 2000,
         maxLevel: 999, // Infinite
         type: 'stat',
-        costScale: 1.5,
+        costScale: 1.05,
         effectPerLevel: 0.5
     },
     // --- NEW HARDWARE UPGRADES ---
@@ -56,7 +56,7 @@ export const META_UPGRADES = [
         baseCost: 350,
         maxLevel: 25,
         type: 'stat',
-        costScale: 1.4,
+        costScale: 1.1,
         effectPerLevel: 0.02
     },
     {

@@ -270,30 +270,26 @@ export class EconomySystem {
      * Applies effects of purchased meta-upgrades.
      */
     applyMetaUpgrades() {
+        // Reset to base prestige multiplier to ensure idempotency
+        let newMultiplier = 1 * this.game.prestigeMult;
+
         const boostLevel = this.game.metaUpgrades['prestige_boost'] || 0;
         if (boostLevel > 0) {
-            // Additive multiplier
-            this.game.state.setMultiplier(this.game.state.multiplier + (boostLevel * 0.5));
+            // META: CPU_VOLTAGE_MOD (Prestige Boost)
+            // +0.5x Passive Multiplier per level.
+            newMultiplier += (boostLevel * 0.5);
         }
 
         // META: SATA_CONTROLLER (Global Production)
         const sataLevel = this.game.metaUpgrades['sata_boost'] || 0;
         if (sataLevel > 0) {
-            // Multiplicative or Additive? Let's make it multiplicative with prestige to be strong.
-            // Or additive to the multiplier?
-            // "Global Production Multiplier" implies it boosts the final result.
-            // internal multiplier is already a factor.
-            // Let's add (5% * level) to the multiplier base.
-            // Current logic: multiplier = 1 * prestige.
-            // Let's do: multiplier = (1 * prestige) * (1 + sata * 0.05)
-
-            // BUT `setMultiplier` overrides.
-            // We need to know base.
-            // Assuming this function runs after base set.
-            // Let's apply it as a factor.
-            const current = this.game.state.multiplier;
-            this.game.state.setMultiplier(current * (1 + sataLevel * 0.05));
+            // Apply as a % boost to the total multiplier
+            // +5% per level
+            newMultiplier *= (1 + sataLevel * 0.05);
         }
+
+        // Apply final calculated multiplier
+        this.game.state.setMultiplier(newMultiplier);
 
         // META: HEAT_SINK (Corruption Resistance)
         const heatLevel = this.game.metaUpgrades['heat_sink'] || 0;

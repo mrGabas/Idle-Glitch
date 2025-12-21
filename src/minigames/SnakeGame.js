@@ -93,7 +93,11 @@ export class SnakeGame extends Minigame {
         // Eat Food
         if (head.x === this.food.x && head.y === this.food.y) {
             this.score += 10;
-            if (this.game) this.game.state.addScore(10); // Reward Real Currency
+            if (this.game) {
+                // Reward: 10s of auto-income + 10 flat
+                const bonus = (this.game.state.autoRate * 10) + 10;
+                this.game.state.addScore(bonus);
+            }
 
             this.foodEaten++;
             this.food = this.spawnFood();

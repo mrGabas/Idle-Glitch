@@ -404,7 +404,7 @@ export class Game {
         // Scare
         // this.events.emit('play_sound', 'error'); // Removed to avoid generated sound
         this.shake = 10;
-        this.state.addCorruption(5);
+        this.state.addCorruption(1);
         this.triggerScareOverlay("WHERE WERE YOU?");
     }
 

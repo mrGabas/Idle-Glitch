@@ -127,7 +127,8 @@ export class GlitchSystem {
             }
         }
 
-        // 2. Boring Popups / Sudden Meeting (Corporate)
+        /*
+        // 2. Boring Popups / Sudden Meeting (Corporate) - REMOVED per user request
         if (mechanics.boringPopups) {
             if (Math.random() < 0.0005) { // Occasional
                 const enemies = this.game.entities.getAll('enemies');
@@ -138,6 +139,7 @@ export class GlitchSystem {
                 }
             }
         }
+        */
 
         // Hunter Spawn
         const enemies = this.game.entities.getAll('enemies');
@@ -222,7 +224,7 @@ export class GlitchSystem {
                     this.game.uiManager.windowManager.close(activeMinigameWindow);
                 } else if (mg.lost) {
                     this.game.events.emit('play_sound', 'error');
-                    this.game.state.addCorruption(5);
+                    // Removed corruption penalty for hack failure
                     this.game.shake = 20;
                     this.game.uiManager.chat.addMessage('SYSTEM', 'OVERRIDE FAILED. SYSTEM UNSTABLE.');
                     this.game.uiManager.windowManager.close(activeMinigameWindow);
@@ -237,12 +239,6 @@ export class GlitchSystem {
             // Spawn Chance
             // Corruption > 40
             if (state.corruption > 40 && !state.crashed && !state.rebooting && Math.random() < 0.0005) {
-                // Check if we already have one open? (Handled by activeMinigameWindow check above, kind of)
-                // But we need to make sure we don't open multiple.
-                // The loop above finds ANY, so if one exists, we won't enter this 'else'.
-                // Wait! The logic structure was 'if (active) ... else { spawn }'.
-                // So if any minigame is active, we don't spawn another. Correct.
-
                 this.game.uiManager.openMinigame(new TerminalHack());
                 this.game.events.emit('play_sound', 'error');
                 this.game.uiManager.chat.addMessage('SYSTEM', 'WARNING: INTRUSION DETECTED. OVERRIDE REQUIRED.');
@@ -293,7 +289,7 @@ export class GlitchSystem {
                 if (e instanceof CursedCaptcha) {
                     this.game.events.emit('play_sound', 'buy');
                     this.game.state.addScore(this.game.state.autoRate * 120 + 1000);
-                    this.game.state.addCorruption(-5);
+                    this.game.state.addCorruption(5); // Success now adds corruption (feeds glitch)
                     this.game.createParticles(mx, my, '#0f0');
                     this.game.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION SUCCESSFUL');
                     enemies.splice(i, 1);

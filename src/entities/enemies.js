@@ -139,7 +139,7 @@ export class CursedCaptcha {
             if (context.state.score < 0) context.state.score = 0;
             context.shake = 5;
             context.uiManager.chat.addMessage('SYSTEM', 'VERIFICATION FAILED: ACCESS DENIED');
-            context.state.addCorruption(5); // Was manually adding
+            context.state.addCorruption(-5); // Timeout now reduces corruption (bad for player if they want glitch)
             return 'timeout';
         }
         // Check distance to checkbox center (absolute coords)
