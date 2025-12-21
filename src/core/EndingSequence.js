@@ -173,8 +173,7 @@ export class EndingSequence {
 
                 // Play typing sound (very subtle)
                 if (this.text.length % 3 === 0) {
-                    // Random pitch click if possible, or silence
-                    // this.game.events.emit('play_sound', 'click'); // Too loud?
+                    this.game.events.emit('play_sound', 'typewriter');
                 }
 
                 if (this.text.length === this.targetText.length) {

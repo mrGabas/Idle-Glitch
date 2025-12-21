@@ -273,6 +273,21 @@ export class SoundEngine {
                 g.gain.linearRampToValueAtTime(0, t + 0.2);
                 osc.start(t); osc.stop(t + 0.2);
             }
+            else if (type === 'typewriter') {
+                // Soft, short blip for text
+                osc.type = 'sine';
+                // Slight random pitch for natural feel
+                const freq = 600 + (Math.random() * 50);
+
+                osc.frequency.setValueAtTime(freq, t);
+
+                // Very short envelope
+                g.gain.setValueAtTime(0.15, t); // Quiet
+                g.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+
+                osc.start(t);
+                osc.stop(t + 0.05);
+            }
             else if (type === 'screamer') {
                 // Randomly Decide if sound should play (10% chance)
                 if (Math.random() < 0.1) {
