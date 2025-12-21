@@ -510,8 +510,14 @@ export class EndingSequence {
         if (this.step === 5 && this.finishedTyping && this.eyes.pupilScale * this.eyes.left.r >= this.game.w * 1.5) {
             this.game.state.endingSeen = true; // Mark as seen
 
-            // Restore Music Volume before saving (so we don't save the faded 0 volume)
-            if (this.game.audio) this.game.audio.setMusicVolume(this.initialMusicVolume);
+            // Stop music explicitly to prevent "burst" when volume is restored
+            if (this.game.audio) this.game.audio.stopMusic();
+
+            // Restore Music Volume PROPERTY only (so we don't save the faded 0 volume)
+            // We do NOT call setMusicVolume() because that would spike the gain node back up.
+            // By setting the property directly, saveGame() picks up the correct value, 
+            // but the actual audio engine remains silent/faded for this session.
+            if (this.game.audio) this.game.audio.musicVolume = this.initialMusicVolume;
 
             this.game.saveGame(); // Save immediately
 
