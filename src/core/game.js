@@ -545,6 +545,9 @@ export class Game {
         // Reset to default theme for new run
         this.themeManager.reset();
 
+        // Reset Cursor (Hide system cursor, use game cursor)
+        this.renderer.canvas.style.cursor = 'none';
+
         // Restore Volume (Fixes fade out from Ending)
         this.audio.setMusicVolume(this.audio.musicVolume);
         this.audio.setSFXVolume(this.audio.sfxVolume);
