@@ -545,6 +545,10 @@ export class Game {
         // Reset to default theme for new run
         this.themeManager.reset();
 
+        // Restore Volume (Fixes fade out from Ending)
+        this.audio.setMusicVolume(this.audio.musicVolume);
+        this.audio.setSFXVolume(this.audio.sfxVolume);
+
         // Signal Audio Engine to stop music for BIOS
         this.events.emit('theme_changed', 'bios');
 
