@@ -92,19 +92,31 @@ export class EndingSequence {
         } catch (e) {
             console.error("ENDING SEQUENCE: Audio Error", e);
         }
+
+        // Use System Cursor on Canvas
+        this.game.renderer.canvas.style.cursor = 'default';
     }
 
     update(dt) {
         if (!this.active) return;
+
+        // Force Mouse Cleanup (Disable glitches/inversion)
+        if (this.game.realMouse) {
+            this.game.mouse.x = this.game.realMouse.x;
+            this.game.mouse.y = this.game.realMouse.y;
+        }
+
+        // Force System Cursor Visibility on CANVAS (overriding CSS)
+        if (this.game.renderer.canvas.style.cursor !== 'default') {
+            this.game.renderer.canvas.style.cursor = 'default';
+        }
 
         this.timer += dt;
 
         // --- STEP 0: FADE TO WHITE ---
         if (this.step === 0) {
             this.alpha += dt * 0.5;
-            // console.log("ENDING DEBUG: Alpha:", this.alpha, "DT:", dt); // Uncomment if needed, spammy
             if (this.alpha >= 1) {
-                console.log("ENDING DEBUG: Fade complete. Switching to Step 1.");
                 this.alpha = 1;
                 this.step = 1;
                 this.timer = 0;
@@ -239,8 +251,6 @@ export class EndingSequence {
         // 1. Draw White Screen (Base)
         ctx.fillStyle = `rgba(255, 255, 255, ${this.step > 0 ? 1 : this.alpha})`;
         ctx.fillRect(0, 0, w, h);
-
-        if (Math.random() < 0.01) console.log("ENDING DEBUG: Drawing frame. Alpha:", this.alpha);
 
         if (this.step < 1) return;
 
@@ -450,6 +460,4 @@ export class EndingSequence {
     }
 }
 
-// Monkey-patch draw to handle wrapping?
-// Better to just implement wrap in draw.
-// I'll modify the draw method in the file content.
+
