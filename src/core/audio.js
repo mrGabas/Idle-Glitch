@@ -535,9 +535,9 @@ export class SoundEngine {
         }
     }
 
-    stopMusic() {
+    stopMusic(except = null) {
         // 1. Stop all Procedural Synths
-        if (this.voidSynth) this.voidSynth.stop();
+        if (this.voidSynth && except !== 'void') this.voidSynth.stop();
         if (this.rainbowSynth) this.rainbowSynth.stop();
         if (this.corporateSynth) this.corporateSynth.stop();
 
@@ -572,8 +572,12 @@ export class SoundEngine {
     }
 
     playEndingMood() {
-        this.stopMusic();
+        // Stop everything EXCEPT the VoidSynth (which might be playing from Null Void)
+        this.stopMusic('void');
+
         if (this.voidSynth) {
+            // If it's already playing, play() usually returns early, but let's be explicitly safe 
+            // relying on internal check is fine too.
             this.voidSynth.play();
         }
     }
