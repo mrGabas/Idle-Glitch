@@ -63,6 +63,9 @@ export class GameState {
         // Toggles
         this.corruptionPaused = false;
         this.autoBuyEnabled = true;
+
+        /** @type {boolean} Whether the player has seen the true ending */
+        this.endingSeen = false;
     }
 
     get score() {
@@ -189,7 +192,10 @@ export class GameState {
             totalClicks: this.totalClicks,
             totalPlayTime: this.totalPlayTime,
             snakeHighScore: this.snakeHighScore,
-            hacksSolved: this.hacksSolved
+            totalPlayTime: this.totalPlayTime,
+            snakeHighScore: this.snakeHighScore,
+            hacksSolved: this.hacksSolved,
+            endingSeen: this.endingSeen
         };
     }
 
@@ -211,7 +217,9 @@ export class GameState {
         this.totalClicks = data.totalClicks || 0;
         this.totalPlayTime = data.totalPlayTime || 0;
         this.snakeHighScore = data.snakeHighScore || 0;
+        this.snakeHighScore = data.snakeHighScore || 0;
         this.hacksSolved = data.hacksSolved || 0;
+        this.endingSeen = data.endingSeen || false;
 
         events.emit('state_updated', this);
     }

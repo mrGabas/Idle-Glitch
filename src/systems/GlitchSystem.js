@@ -20,9 +20,20 @@ export class GlitchSystem {
 
         // ENDING TRIGGER: 100% Corruption in Null Void
         if (currentTheme.id === 'null_void' && state.corruption >= 100) {
-            this.game.gameState = 'ENDING';
-            this.game.endingSequence.start();
-            return;
+            // Only trigger Ending Sequence ONCE
+            if (!state.endingSeen) {
+                this.game.gameState = 'ENDING';
+                this.game.endingSequence.start();
+                return;
+            } else {
+                // If ending seen, treat as standard fatal crash/loop
+                if (!state.crashed && !state.rebooting) {
+                    state.crashed = true;
+                    this.game.rebootTimer = 2.0; // Shorter reboot
+                    this.game.events.emit('play_sound', 'bsod_error');
+                    return;
+                }
+            }
         }
 
         const mechanics = currentTheme.mechanics || {};

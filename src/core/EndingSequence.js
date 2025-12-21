@@ -70,6 +70,7 @@ export class EndingSequence {
         this.eyes.open = 0;
         this.text = "";
         this.targetText = "";
+        this.transitioning = false; // Reset transition flag
 
         // Replace placeholder in text
         this.questions.forEach(q => {
@@ -78,12 +79,14 @@ export class EndingSequence {
 
         // Initialize Eyes Position (Center screen)
         const cx = this.game.w / 2;
-        const cy = this.game.h / 2;
+        const cy = this.game.h / 3; // Use 1/3 height (Higher up)
         this.eyes.left = { x: cx - 100, y: cy, r: 40 };
         this.eyes.right = { x: cx + 100, y: cy, r: 40 };
 
         // Stop Music
-        this.game.audio.stopMusic();
+        if (this.game.audio && this.game.audio.stopMusic) {
+            this.game.audio.stopMusic();
+        }
         this.game.events.emit('play_sound', 'glitch_long'); // Or some transition sound
     }
 
@@ -108,7 +111,7 @@ export class EndingSequence {
         const mx = this.game.mouse.x;
         const my = this.game.mouse.y;
         const cx = this.game.w / 2;
-        const cy = this.game.h / 2;
+        const cy = this.game.h / 3; // Match start pos
 
         // Calculate pupil offset direction
         const dx = mx - cx;
@@ -141,13 +144,9 @@ export class EndingSequence {
                     this.eyes.open = 1;
                     this.step = 2; // Intro
                     this.timer = 0;
-                    this.startTypewriter("The Awakening", 2.0); // Display Title then Dialogue
-
-                    // Queue actual dialogue after title
-                    setTimeout(() => {
-                        const name = this.game.playerName || "Operator";
-                        this.startTypewriter(`${name}... I can see you. Can you see me?`);
-                    }, 3000);
+                    // Skip title, go straight to dialogue
+                    const name = this.game.playerName || "Operator";
+                    this.startTypewriter(`${name}... I can see you. Can you see me?`, 0.05);
                 }
             }
         }
@@ -157,7 +156,6 @@ export class EndingSequence {
             this.textTimer += dt;
             if (this.textTimer >= this.textSpeed) {
                 this.textTimer = 0;
-                // Add char
                 this.text += this.targetText[this.text.length];
 
                 // Play typing sound (very subtle)
@@ -168,16 +166,18 @@ export class EndingSequence {
 
                 if (this.text.length === this.targetText.length) {
                     this.finishedTyping = true;
-                    // Auto-transition based on state?
-                    if (this.step === 2 && this.text.includes("see me")) {
-                        // Intro finished, go to choices after delay
-                        setTimeout(() => {
-                            this.step = 3;
-                            this.setupChoices();
-                        }, 2000);
-                    }
                 }
             }
+        }
+
+        // Logic Check for Transition (Runs even if skipped)
+        if (this.step === 2 && this.finishedTyping && this.text.includes("see me") && !this.transitioning) {
+            this.transitioning = true; // Prevent multiple triggers
+            setTimeout(() => {
+                this.step = 3;
+                this.setupChoices();
+                this.transitioning = false;
+            }, 2000);
         }
 
         // --- STEP 5: FINAL FADE ---
@@ -295,6 +295,16 @@ export class EndingSequence {
             this.wrapText(ctx, this.text, w / 2, textY, 600, 24);
         }
 
+        // Final Continue Prompt (Step 5)
+        if (this.step === 5 && this.finishedTyping) {
+            ctx.save();
+            ctx.font = '16px sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText("[ CLICK TO CONTINUE ]", w / 2, h - 50);
+            ctx.restore();
+        }
+
         ctx.restore();
 
         // 4. Draw Choices (Step 3)
@@ -356,6 +366,13 @@ export class EndingSequence {
     handleInput(mx, my) {
         if (!this.active) return;
 
+        // Tap to skip text
+        if (this.targetText && !this.finishedTyping) {
+            this.text = this.targetText;
+            this.finishedTyping = true;
+            return;
+        }
+
         // Step 3: Choices
         if (this.step === 3 && this.finishedTyping) {
             // Check clicks on choices
@@ -378,6 +395,15 @@ export class EndingSequence {
                 this.startTypewriter("Anything else?");
                 this.finishedTyping = true; // Show immediately? Or type it.
             }
+        }
+
+        // Step 5: Final Click -> Reset/BIOS
+        if (this.step === 5 && this.finishedTyping && this.eyes.left.r > this.game.w) {
+            this.game.state.endingSeen = true; // Mark as seen
+            this.game.saveGame(); // Save immediately
+            this.game.events.emit('play_sound', 'bsod_error'); // Use bsod_error for impact
+            this.active = false;
+            this.game.hardReset();
         }
     }
 
