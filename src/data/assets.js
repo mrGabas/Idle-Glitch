@@ -50,13 +50,14 @@ export const ASSETS = {
 
     // Audio files
     audio: [
-        'assets/Audios/felix/purr.mp3',
-        'assets/Audios/Boot.mp3',
-        'assets/Audios/error.mp3',
-        'assets/Audios/working.mp3',
-        'assets/Audios/archive.mp3',
-        'assets/Audios/Screamer 1.mp3',
-        'assets/Audios/Connect.mp3',
-        'assets/Audios/Disconnect.mp3'
+        'assets/Audios/Terminal comands/felix/purr.mp3',
+        'assets/Audios/BIOS/Boot.mp3',
+        'assets/Audios/BIOS/error.mp3',
+        'assets/Audios/BIOS/working.mp3',
+        'assets/Audios/General/archive.mp3',
+        'assets/Audios/Screamer sounds/Screamer 1.mp3',
+        'assets/Audios/Screamer sounds/Connect.mp3',
+        'assets/Audios/Screamer sounds/Disconnect.mp3',
+        'assets/Audios/Terminal comands/0xdead/I AM ALIVE.MP3'
     ]
 };

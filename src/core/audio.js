@@ -11,14 +11,15 @@ import { RainbowSynth } from '../audio/RainbowSynth.js';
 import { CorporateSynth } from '../audio/CorporateSynth.js';
 
 const ASSET_SOUNDS = {
-    'purr': 'assets/Audios/felix/purr.mp3',
-    'bsod_error': 'assets/Audios/error.mp3',
-    'boot': 'assets/Audios/Boot.mp3',
-    'bios_loop': 'assets/Audios/working.mp3',
-    'archive': 'assets/Audios/archive.mp3',
-    'screamer_1': 'assets/Audios/Screamer 1.mp3',
-    'screamer_2': 'assets/Audios/Connect.mp3',
-    'screamer_3': 'assets/Audios/Disconnect.mp3'
+    'purr': 'assets/Audios/Terminal comands/felix/purr.mp3',
+    'bsod_error': 'assets/Audios/BIOS/error.mp3',
+    'boot': 'assets/Audios/BIOS/Boot.mp3',
+    'bios_loop': 'assets/Audios/BIOS/working.mp3',
+    'archive': 'assets/Audios/General/archive.mp3',
+    'screamer_1': 'assets/Audios/Screamer sounds/Screamer 1.mp3',
+    'screamer_2': 'assets/Audios/Screamer sounds/Connect.mp3',
+    'screamer_3': 'assets/Audios/Screamer sounds/Disconnect.mp3',
+    'i_am_alive': 'assets/Audios/Terminal comands/0xdead/I AM ALIVE.MP3'
 };
 
 const MUSIC_TRACKS = {

@@ -503,6 +503,11 @@ export class ChatSystem {
                 this.addMessage('SYSTEM', 'THE EYE IS OPEN.');
                 break;
 
+            case '/0xdead':
+                this.addMessage('SYSTEM', '...');
+                this.game.events.emit('play_sound', 'i_am_alive');
+                break;
+
             default:
                 this.addMessage('SYSTEM', `Unknown command: ${command}`);
                 break;
