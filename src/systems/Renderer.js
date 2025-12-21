@@ -707,18 +707,37 @@ export class Renderer {
         this.ctx.fillStyle = theme.progressBar.bgColor;
         this.ctx.fillRect(bx, by, barW, barH);
 
+        // 1. Draw Base Text (Color = Fill Color)
+        this.ctx.fillStyle = theme.progressBar.color;
+        this.ctx.font = "bold 12px Arial";
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(theme.progressBar.label, cx, by + barH / 2);
+
+        // 2. Draw Fill & Top Text (Clipped)
+        this.ctx.save();
+
         let pct = state.corruption;
         if (theme.progressBar.invert) pct = 100 - pct;
+        const fillW = barW * (pct / 100);
 
+        // Clip to the Filled Area
+        this.ctx.beginPath();
+        this.ctx.rect(bx, by, fillW, barH);
+        this.ctx.clip();
+
+        // Draw Fill
         this.ctx.fillStyle = theme.progressBar.color;
-        this.ctx.fillRect(bx, by, barW * (pct / 100), barH);
+        this.ctx.fillRect(bx, by, fillW, barH);
+
+        // Draw Key Text (Color = Bg Color) - "Inverted" look
+        this.ctx.fillStyle = theme.progressBar.bgColor;
+        this.ctx.fillText(theme.progressBar.label, cx, by + barH / 2);
+
+        this.ctx.restore();
+        this.ctx.textBaseline = 'alphabetic';
 
         this.ctx.strokeStyle = colors.uiBorder;
         this.ctx.strokeRect(bx, by, barW, barH);
-
-        this.ctx.fillStyle = colors.text;
-        this.ctx.font = "bold 14px Arial";
-        this.ctx.fillText(theme.progressBar.label, cx, by - 10);
 
         this.ctx.globalAlpha = 1;
 
