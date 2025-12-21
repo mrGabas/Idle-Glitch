@@ -30,7 +30,7 @@ export class GlitchSystem {
                 if (!state.crashed && !state.rebooting) {
                     state.crashed = true;
                     this.game.rebootTimer = 2.0; // Shorter reboot
-                    this.game.events.emit('play_sound', 'bsod_error');
+                    // this.game.events.emit('play_sound', 'bsod_error');
                     return;
                 }
             }

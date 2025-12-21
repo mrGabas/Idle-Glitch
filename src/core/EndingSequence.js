@@ -90,7 +90,6 @@ export class EndingSequence {
             } else if (this.game.audio && this.game.audio.stopMusic) {
                 this.game.audio.stopMusic();
             }
-            this.game.events.emit('play_sound', 'glitch_long'); // Or some transition sound
         } catch (e) {
             console.error("ENDING SEQUENCE: Audio Error", e);
         }

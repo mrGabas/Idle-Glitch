@@ -424,79 +424,96 @@ export class SoundEngine {
             return;
         }
 
-        // 1. Stop all Procedural Synths (but keep them initialized)
-        if (this.voidSynth) this.voidSynth.stop();
-        if (this.rainbowSynth) this.rainbowSynth.stop();
-        if (this.corporateSynth) this.corporateSynth.stop();
+        // Determine Target Track & Intensity
+        let targetTrack = null;
+        let targetIntensity = 0;
+        let isVoid = false;
+        let isBios = false;
 
-        // 2. Stop current file music
-        if (this.currentMusic) {
-            this.currentMusic.pause();
-            this.currentMusic = null;
-        }
-        if (this.currentMusicNode) {
-            try { this.currentMusicNode.disconnect(); } catch (e) { }
-            this.currentMusicNode = null;
-        }
-
-        // Stop Boot Audio if active
-        if (this.activeBootAudio) {
-            this.activeBootAudio.pause();
-            this.activeBootAudio.onended = null;
-            this.activeBootAudio = null;
-        }
-
-        // Stop Ambient Loop (SFX)
-        if (this.ambientLoop) {
-            this.ambientLoop.pause();
-            this.ambientLoop = null;
-        }
-        if (this.ambientLoopNode) {
-            try { this.ambientLoopNode.disconnect(); } catch (e) { }
-            this.ambientLoopNode = null;
-        }
-
-        // 3. Play appropriate track based on rules
         if (themeId === 'bios') {
-            this.playBiosSequence();
-            return;
-        }
-        else if (themeId === 'null_void') {
-            if (this.voidSynth) this.voidSynth.play();
-        }
-        else if (themeId === 'rainbow_paradise') {
-            this.playMusicFile(MUSIC_TRACKS.pixel_party);
-
+            isBios = true;
+        } else if (themeId === 'null_void') {
+            isVoid = true;
+        } else if (themeId === 'rainbow_paradise') {
+            targetTrack = MUSIC_TRACKS.pixel_party;
             // Listen to corruption for progressive glitch
             events.on('corruption_changed', this.corruptionListener);
-
-            // Initial check
             if (window.game && window.game.state) {
-                this.handleCorruptionUpdate(window.game.state.corruption);
+                // specific handling for rainbow intensity usually handled by listener, 
+                // but we can init here if needed.
+                // For now, let's stick to the existing logic re: intensity
             }
-        }
-        else {
-            // All other themes (except Null Void): Digital Drift with Progressive Glitch
-            this.playMusicFile(MUSIC_TRACKS.digital_drift);
+        } else {
+            // All others: Digital Drift
+            targetTrack = MUSIC_TRACKS.digital_drift;
 
             // Calculate Glitch Intensity
             const index = THEME_ORDER.indexOf(themeId);
-
-            // Glitch starts from Ad Purgatory (index 1) to Legacy System (index 8)
-            // Rainbow (0) is clean. Null Void (9) is VoidSynth.
             const minGlitchIndex = 1;
-            const maxGlitchIndex = THEME_ORDER.length - 2; // Matches Legacy System
+            const maxGlitchIndex = THEME_ORDER.length - 2;
 
             if (index >= minGlitchIndex && index <= maxGlitchIndex) {
-                // Map index range to 0.0 - 1.0
-                // Ad Purgatory (1) -> 0.0
-                // Legacy System (8) -> 1.0
                 const relativePos = (index - minGlitchIndex) / (maxGlitchIndex - minGlitchIndex);
+                targetIntensity = Math.max(0, Math.min(1, relativePos));
+            }
+        }
 
-                // Add base glitchiness so even Ad Purgatory has a little bit? 
-                // User said "gradual transition". Let's stick to 0-1 linear.
-                const intensity = Math.max(0, Math.min(1, relativePos));
-                this.startGlitchEffect(intensity);
+        // CHECK: Is the target track already playing?
+        let isSameTrack = false;
+        if (targetTrack && this.currentMusic && this.currentMusic.src) {
+            // Simple check if src contains the target path (handling full URLs)
+            // MUSIC_TRACKS values are relative paths e.g. "assets/Music/..."
+            // src will be "file:///..." or "http://..."
+            // We encodeURI to be safe if needed, but usually strictly string match on suffix is enough?
+            // actually standard includes might fail on URL encoding spaces (%20).
+            // Let's try decodeURI on src.
+            const currentSrc = decodeURI(this.currentMusic.src);
+            if (currentSrc.endsWith(targetTrack)) {
+                isSameTrack = true;
+            }
+        }
+
+        // EXECUTE CHANGE
+        if (isBios) {
+            this.stopMusic();
+            this.playBiosSequence();
+            return;
+        }
+
+        if (isVoid) {
+            this.stopMusic('void'); // Don't stop void if playing
+            if (this.voidSynth) this.voidSynth.play();
+            return;
+        }
+
+        // File-based tracks
+        if (isSameTrack) {
+            // seamlessly continue!
+            // Just update effects
+            if (themeId === 'rainbow_paradise') {
+                // Update rainbow logic if needed (it uses listener)
+                if (window.game && window.game.state) {
+                    this.handleCorruptionUpdate(window.game.state.corruption);
+                }
+            } else {
+                // Update glitch intensity
+                this.startGlitchEffect(targetIntensity);
+            }
+        } else {
+            // Different track, full switch
+            this.stopMusic();
+
+            if (targetTrack) {
+                this.playMusicFile(targetTrack);
+
+                if (themeId === 'rainbow_paradise') {
+                    events.on('corruption_changed', this.corruptionListener);
+                    if (window.game && window.game.state) {
+                        this.handleCorruptionUpdate(window.game.state.corruption);
+                    }
+                } else {
+                    this.startGlitchEffect(targetIntensity);
+                }
             }
         }
     }
