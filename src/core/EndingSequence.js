@@ -85,7 +85,9 @@ export class EndingSequence {
 
         // Stop Music
         try {
-            if (this.game.audio && this.game.audio.stopMusic) {
+            if (this.game.audio && this.game.audio.playEndingMood) {
+                this.game.audio.playEndingMood();
+            } else if (this.game.audio && this.game.audio.stopMusic) {
                 this.game.audio.stopMusic();
             }
             this.game.events.emit('play_sound', 'glitch_long'); // Or some transition sound

@@ -570,4 +570,11 @@ export class SoundEngine {
 
         this.stopGlitchEffect();
     }
+
+    playEndingMood() {
+        this.stopMusic();
+        if (this.voidSynth) {
+            this.voidSynth.play();
+        }
+    }
 }

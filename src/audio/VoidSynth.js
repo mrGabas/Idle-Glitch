@@ -14,7 +14,21 @@ export class VoidSynth {
     }
 
     play() {
-        if (this.isPlaying || !this.ctx) return;
+        if (!this.ctx) return;
+
+        // If stopping, cancel the stop to restart
+        if (this.stopTimer) {
+            clearTimeout(this.stopTimer);
+            this.stopTimer = null;
+            // Also need to cancel fade out on masterGain...
+            // But we recreate masterGain below. 
+            // If we are "stopping" (fading out), we should probably cleanup old nodes first 
+            // OR just reuse them if we were advanced. 
+            // Simpler: Force full stop then start.
+            this.forceStop();
+        }
+
+        if (this.isPlaying) return;
         this.isPlaying = true;
 
         const t = this.ctx.currentTime;
@@ -127,17 +141,25 @@ export class VoidSynth {
             this.masterGain.gain.linearRampToValueAtTime(0, t + 2);
         } catch (e) { /* ignore cleanup errors */ }
 
-        setTimeout(() => {
-            this.nodes.forEach(node => {
-                try {
-                    node.stop ? node.stop() : null;
-                    node.disconnect();
-                } catch (e) { }
-            });
-            this.nodes = [];
-            this.isPlaying = false;
-            this.masterGain = null;
+        this.stopTimer = setTimeout(() => {
+            this.forceStop();
         }, 2100); // Wait for fade
+    }
+
+    forceStop() {
+        if (this.stopTimer) {
+            clearTimeout(this.stopTimer);
+            this.stopTimer = null;
+        }
+        this.nodes.forEach(node => {
+            try {
+                node.stop ? node.stop() : null;
+                node.disconnect();
+            } catch (e) { }
+        });
+        this.nodes = [];
+        this.isPlaying = false;
+        this.masterGain = null;
     }
 
     setVolume(val) {
