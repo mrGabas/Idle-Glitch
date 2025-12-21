@@ -289,6 +289,11 @@ export class SoundEngine {
                 osc.stop(t + 0.05);
             }
             else if (type === 'screamer') {
+                // BLOCK SCREAMERS DURING ENDING
+                if (window.game && window.game.gameState === 'ENDING') {
+                    return;
+                }
+
                 // Randomly Decide if sound should play (10% chance)
                 if (Math.random() < 0.1) {
                     // Randomly select one of 3 file variants
