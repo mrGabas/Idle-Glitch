@@ -17,6 +17,14 @@ export class GlitchSystem {
     update(dt) {
         const state = this.game.state;
         const currentTheme = this.game.themeManager.currentTheme;
+
+        // ENDING TRIGGER: 100% Corruption in Null Void
+        if (currentTheme.id === 'null_void' && state.corruption >= 100) {
+            this.game.gameState = 'ENDING';
+            this.game.endingSequence.start();
+            return;
+        }
+
         const mechanics = currentTheme.mechanics || {};
 
         // --- SYSTEM PURGE LOGIC ---

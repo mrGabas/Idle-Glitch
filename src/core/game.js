@@ -305,6 +305,13 @@ export class Game {
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
 
+            if (this.gameState === 'ENDING') {
+                this.mouse.x = mx;
+                this.mouse.y = my;
+                this.endingSequence.handleMouseMove(mx, my);
+                return;
+            }
+
             if (this.uiManager.handleMouseMove(mx, my)) return;
 
             if (this.gameState === 'PLAYING' || this.gameState === 'BIOS') { // Allow mouse in BIOS

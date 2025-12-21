@@ -519,4 +519,40 @@ export class SoundEngine {
             console.error("Error setting up ambience source", e);
         }
     }
+
+    stopMusic() {
+        // 1. Stop all Procedural Synths
+        if (this.voidSynth) this.voidSynth.stop();
+        if (this.rainbowSynth) this.rainbowSynth.stop();
+        if (this.corporateSynth) this.corporateSynth.stop();
+
+        // 2. Stop current file music
+        if (this.currentMusic) {
+            this.currentMusic.pause();
+            this.currentMusic = null;
+        }
+        if (this.currentMusicNode) {
+            try { this.currentMusicNode.disconnect(); } catch (e) { }
+            this.currentMusicNode = null;
+        }
+
+        // Stop Boot Audio if active
+        if (this.activeBootAudio) {
+            this.activeBootAudio.pause();
+            this.activeBootAudio.onended = null;
+            this.activeBootAudio = null;
+        }
+
+        // Stop Ambient Loop (SFX)
+        if (this.ambientLoop) {
+            this.ambientLoop.pause();
+            this.ambientLoop = null;
+        }
+        if (this.ambientLoopNode) {
+            try { this.ambientLoopNode.disconnect(); } catch (e) { }
+            this.ambientLoopNode = null;
+        }
+
+        this.stopGlitchEffect();
+    }
 }
