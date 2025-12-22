@@ -203,7 +203,8 @@ export class ChatSystem {
         ctx.fillStyle = '#0f0';
         ctx.font = "12px 'Courier New', monospace";
         ctx.textAlign = 'left';
-        ctx.fillText("> DEBUG_CONSOLE_V.0.9 [USER: GUEST]", x + 5, y + 14);
+        const displayUser = (this.game.playerName || "GUEST").toUpperCase();
+        ctx.fillText(`> DEBUG_CONSOLE_V.0.9 [USER: ${displayUser}]`, x + 5, y + 14);
 
         // Collapse/Expand Button
         const btnX = x + boxW - 20;
