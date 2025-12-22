@@ -1536,6 +1536,13 @@ export class Renderer {
 
                 // Physics Transform for this layer
                 let dx = 0, dy = 0, rot = 0;
+
+                // FIX: Persistence check
+                // If broken but no physics (reload), do NOT draw (assume fallen into void)
+                if (state.bgBroken && (!state.bgLayerPhysics || !state.bgLayerPhysics[i])) {
+                    return;
+                }
+
                 if (state && state.bgBroken && state.bgLayerPhysics && state.bgLayerPhysics[i]) {
                     const p = state.bgLayerPhysics[i];
                     dx = p.x;
