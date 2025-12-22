@@ -1028,9 +1028,19 @@ export class Renderer {
         const adBtnW = 200;
         const adBtnH = 26;
 
-        const isHoverAd = input.mouse.x >= adBtnX && input.mouse.x <= adBtnX + adBtnW && input.mouse.y >= adBtnY && input.mouse.y <= adBtnY + adBtnH;
+        const now = Date.now();
+        const cooldown = (input.lastBiosAdTime || 0) + 120000;
+        const remaining = Math.max(0, cooldown - now);
+        const onCooldown = remaining > 0;
 
-        this.ctx.fillStyle = isHoverAd ? '#00ff00' : '#ffff55';
+        const isHoverAd = !onCooldown && input.mouse.x >= adBtnX && input.mouse.x <= adBtnX + adBtnW && input.mouse.y >= adBtnY && input.mouse.y <= adBtnY + adBtnH;
+
+        if (onCooldown) {
+            this.ctx.fillStyle = '#888';
+        } else {
+            this.ctx.fillStyle = isHoverAd ? '#00ff00' : '#ffff55';
+        }
+
         this.ctx.fillRect(adBtnX, adBtnY, adBtnW, adBtnH);
         this.ctx.strokeStyle = '#000';
         this.ctx.strokeRect(adBtnX, adBtnY, adBtnW, adBtnH);
@@ -1038,7 +1048,15 @@ export class Renderer {
         this.ctx.fillStyle = '#000';
         this.ctx.textAlign = 'center';
         this.ctx.font = "bold 14px Arial"; // Slightly smaller fit
-        this.ctx.fillText("WATCH AD (+300 MB)", adBtnX + adBtnW / 2, adBtnY + 18);
+
+        if (onCooldown) {
+            const min = Math.floor(remaining / 60000);
+            const sec = Math.floor((remaining % 60000) / 1000);
+            this.ctx.fillText(`WAIT: ${min}:${sec.toString().padStart(2, '0')}`, adBtnX + adBtnW / 2, adBtnY + 18);
+        } else {
+            this.ctx.fillText("WATCH AD (+300 MB)", adBtnX + adBtnW / 2, adBtnY + 18);
+        }
+
         this.ctx.textAlign = 'left'; // Reset
         this.ctx.font = "16px 'Courier New', monospace"; // Reset
 

@@ -91,6 +91,7 @@ export class Game {
         // META DATA
         this.glitchData = this.saveSystem.loadNumber('glitch_data', 0);
         this.lifetimeGlitchData = this.saveSystem.loadNumber('lifetime_glitch_data', 0);
+        this.lastBiosAdTime = this.saveSystem.loadNumber('last_bios_ad_time', 0);
         this.metaUpgrades = this.saveSystem.load('meta_upgrades', {});
 
         // Load Lore Data
@@ -190,6 +191,7 @@ export class Game {
         this.saveSystem.saveNumber('reboot_count', this.rebootCount);
         this.saveSystem.saveNumber('glitch_data', this.glitchData);
         this.saveSystem.saveNumber('lifetime_glitch_data', this.lifetimeGlitchData);
+        this.saveSystem.saveNumber('last_bios_ad_time', this.lastBiosAdTime);
         this.saveSystem.save('meta_upgrades', this.metaUpgrades);
         this.saveSystem.saveNumber('last_save', Date.now());
         // Save rate for offline calc
@@ -659,6 +661,13 @@ export class Game {
         const startY = CFG.game.bios.startY;
         // Check Header Button (Watch Ad)
         if (my >= 60 && my <= 86 && mx >= 400 && mx <= 600) {
+            // Check Cooldown
+            const now = Date.now();
+            if (now - this.lastBiosAdTime < 120000) { // 2 Minutes
+                this.events.emit('play_sound', 'error');
+                return;
+            }
+
             const win = new ConfirmationWindow(
                 this.w,
                 this.h,
@@ -667,6 +676,7 @@ export class Game {
                 () => {
                     this.adsManager.watchBIOSAd(() => {
                         this.glitchData += 300;
+                        this.lastBiosAdTime = Date.now();
                         this.saveGame();
                         this.events.emit('play_sound', 'success');
                     });
@@ -1164,7 +1174,8 @@ export class Game {
             selectedBIOSIndex: this.selectedBIOSIndex,
             shopOpen: this.economySystem.shopOpen,
             activeHighlightTarget: this.tutorialSystem.activeHighlightTarget,
-            biosState: this.biosState
+            biosState: this.biosState,
+            lastBiosAdTime: this.lastBiosAdTime
         };
 
         const entities = {
