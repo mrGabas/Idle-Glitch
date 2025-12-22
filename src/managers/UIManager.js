@@ -200,7 +200,7 @@ export class UIManager {
                     this.game.w,
                     this.game.h,
                     "ACTIVATE OVERCLOCK",
-                    "Watch an ad to boost production\nby 2x for 15 minutes?",
+                    "Watch an ad to boost production\nby 2x for 10 minutes?",
                     () => {
                         this.game.adsManager.watchOverclockAd();
                     }

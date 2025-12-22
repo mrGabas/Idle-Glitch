@@ -300,10 +300,23 @@ export class Renderer {
         // Show Timer if active
         if (isOverclocked) {
             const remaining = Math.ceil((state.overclockEndTime - Date.now()) / 1000);
-            this.ctx.fillStyle = '#00eaff';
+            const timeText = `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+
             this.ctx.font = 'bold 10px monospace';
+            const tw = this.ctx.measureText(timeText).width + 8;
+            const th = 14;
+
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Dark semi-transparent background
+            this.ctx.fillRect(ocX - tw / 2, iconY + 25, tw, th);
+            this.ctx.strokeStyle = '#00eaff';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(ocX - tw / 2, iconY + 25, tw, th);
+
+            this.ctx.fillStyle = '#00eaff';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText(`${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`, ocX, iconY + 35);
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(timeText, ocX, iconY + 32);
+            this.ctx.textBaseline = 'alphabetic'; // Reset
         }
 
         // Draw HUD Elements (Mail Icon - 2nd Position)

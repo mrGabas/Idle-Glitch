@@ -181,12 +181,12 @@ export class AdsManager {
     }
 
     /**
-     * Watch an ad to trigger Overclock (x2 for 15m)
+     * Watch an ad to trigger Overclock (x2 for 10m)
      */
     watchOverclockAd() {
         this.showRewardedAd(() => {
-            // Reward: 15 minutes (900 seconds)
-            this.game.economySystem.activateOverclock(900);
+            // Reward: 10 minutes (600 seconds)
+            this.game.economySystem.activateOverclock(600);
             console.log("Overclock Applied");
         });
     }
