@@ -4,11 +4,39 @@
  * @module data/assets
  */
 
-export const ASSETS = {
-    // Parallax Background Layers & UI Images
+/**
+ * CORE ASSETS
+ * Required for the initial boot and first theme (Rainbow Paradise)
+ */
+export const CORE_ASSETS = {
     images: [
-        // Main Buttons
+        // Rainbow Paradise (Theme 1)
         'assets/Levels/Rainbow Paradise/main button.webp',
+        'assets/Levels/Rainbow Paradise/parallax/layer 1.webp',
+        'assets/Levels/Rainbow Paradise/parallax/layer 2.webp',
+        'assets/Levels/Rainbow Paradise/parallax/layer 3.webp',
+
+        // Glitch Effects
+        'assets/25fps/Larry.webp',
+        'assets/25fps/Scarycat.webp',
+        'assets/25fps/Scarycat2.webp'
+    ],
+    audio: [
+        //Core UI
+        'assets/Audios/General/archive.mp3',
+
+        // Theme 1 Music
+        'assets/Music/Pixel Party.mp3'
+    ]
+};
+
+/**
+ * LAZY ASSETS
+ * Loaded in background after game starts
+ */
+export const LAZY_ASSETS = {
+    images: [
+        // Other Level Buttons
         'assets/Levels/Ad Purgatory/main button.webp',
         'assets/Levels/Firewall/main button.webp',
         'assets/Levels/Corporate/main button.webp',
@@ -18,11 +46,6 @@ export const ASSETS = {
         'assets/Levels/Digital Decay/main button.webp',
         'assets/Levels/Legacy System/main button.webp',
         'assets/Levels/Null Void/main button.webp',
-
-        // Rainbow Paradise
-        'assets/Levels/Rainbow Paradise/parallax/layer 1.webp',
-        'assets/Levels/Rainbow Paradise/parallax/layer 2.webp',
-        'assets/Levels/Rainbow Paradise/parallax/layer 3.webp',
 
         // Ad Purgatory
         'assets/Levels/Ad Purgatory/parallax/layer 1.webp',
@@ -54,11 +77,6 @@ export const ASSETS = {
         'assets/Levels/Null Void/parallax/layer 2.webp',
         'assets/Levels/Null Void/parallax/layer 3.webp',
 
-        // Subliminal / 25fps images
-        'assets/25fps/Larry.webp',
-        'assets/25fps/Scarycat.webp',
-        'assets/25fps/Scarycat2.webp',
-
         // Review Avatars
         'assets/Reviews/1.webp',
         'assets/Reviews/2.webp',
@@ -77,7 +95,7 @@ export const ASSETS = {
         'assets/Reviews/15.webp',
         'assets/Reviews/16.webp',
 
-        // Common Collection Items (Memes)
+        // Common Collection Items
         'assets/Media/1. Common/AAAAAAAA.webp',
         'assets/Media/1. Common/Bug Report.webp',
         'assets/Media/1. Common/Chill Guy.webp',
@@ -95,13 +113,11 @@ export const ASSETS = {
         'assets/Audios/BIOS/Boot.mp3',
         'assets/Audios/BIOS/error.mp3',
         'assets/Audios/BIOS/working.mp3',
-        'assets/Audios/General/archive.mp3',
         'assets/Audios/Screamer sounds/Screamer 1.mp3',
         'assets/Audios/Screamer sounds/Connect.mp3',
         'assets/Audios/Screamer sounds/Disconnect.mp3',
 
         // Background Music
-        'assets/Music/Pixel Party.mp3',
         'assets/Music/Digital Drift.mp3'
     ]
 };
