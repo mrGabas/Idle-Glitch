@@ -622,6 +622,9 @@ export class Game {
         this.state.rebooting = false;
         this.gameState = 'BIOS';
 
+        // SDK Hook: Stop gameplay metrics for BIOS/Prestige menu
+        this.adsManager.gameplayStop();
+
         // We need to RESET game state but KEEP meta data
         // Ideally we re-instantiate Game but that's messy.
         // Let's soft-reset state.
