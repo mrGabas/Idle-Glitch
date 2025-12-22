@@ -396,7 +396,9 @@ export class ChatSystem {
                 this.addMessage('SYSTEM', 'Available commands:');
                 this.addMessage('SYSTEM', '/help - Show this list');
                 this.addMessage('SYSTEM', '/snake - Launch SNAKE.EXE');
-                this.addMessage('SYSTEM', '/reset - Reboot system');
+                if (this.game.state.endingSeen) {
+                    this.addMessage('SYSTEM', '/reset - Reboot system');
+                }
                 this.addMessage('SYSTEM', '/clear - Clear console');
                 this.addMessage('SYSTEM', '/verify <code_id> - Bypass captcha manually');
                 break;
@@ -406,10 +408,14 @@ export class ChatSystem {
                 this.game.events.emit('play_sound', 'click');
                 break;
             case '/reset':
-                this.addMessage('SYSTEM', 'INITIATING SYSTEM REBOOT...');
-                setTimeout(() => {
-                    this.game.triggerCrash(); // Or soft reset
-                }, 1000);
+                if (this.game.state.endingSeen) {
+                    this.addMessage('SYSTEM', 'INITIATING SYSTEM REBOOT...');
+                    setTimeout(() => {
+                        this.game.triggerCrash(); // Or soft reset
+                    }, 1000);
+                } else {
+                    this.addMessage('SYSTEM', `Unknown command: ${command}`);
+                }
                 break;
             case '/clear':
                 this.messages = [];

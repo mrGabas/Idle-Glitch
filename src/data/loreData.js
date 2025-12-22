@@ -351,7 +351,7 @@ export const LORE_DB = {
             {
                 id: "identity_theft_data",
                 name: "Identity_Theft.data",
-                content: "TARGET_LIST:\n\n1. J. Doe [DECEASED]\n2. A. Smith [DELETED]\n3. Dr. Gabas [ABSORBED]\n...\n99. Player 1 [PROCESSING]\n\nSTATUS: Consciousness Upload: 45%\nESTIMATED COMPLETION: Soon.",
+                content: "TARGET_LIST:\n\n1. J. Doe [DECEASED]\n2. A. Smith [DELETED]\n3. Dr. Gabas [ABSORBED]\n...\n99. [System.Environment.UserName] [PROCESSING]\n\nSTATUS: Consciousness Upload: 45%\nESTIMATED COMPLETION: Soon.",
                 type: "text",
                 dropTheme: "digital_decay"
             },
