@@ -880,10 +880,14 @@ export class Renderer {
                 // PHYSICS TRANSFORM (Falling)
                 this.ctx.save();
                 if (u.isBroken) {
-                    const cx = ux + cardW / 2 + (u.x_off || 0);
-                    const cy = uy + cardH / 2 + (u.y_off || 0);
-                    this.ctx.translate(cx, cy);
+                    const cx = ux + cardW / 2; // STATIC Center
+                    const cy = uy + cardH / 2;
+
+                    // Move to NEW position
+                    this.ctx.translate(cx + (u.x_off || 0), cy + (u.y_off || 0));
                     this.ctx.rotate(u.rot || 0);
+
+                    // Map local origin back to global coordinates so (ux, uy) draws correctly
                     this.ctx.translate(-cx, -cy);
 
                     // Fade out
