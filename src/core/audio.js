@@ -35,7 +35,7 @@ export class SoundEngine {
         this.musicGain = null;
         this.enabled = false;
 
-        this.sfxVolume = 0.5;
+        this.sfxVolume = 0.3;
         this.musicVolume = 0.1;
 
         // Event Subscription

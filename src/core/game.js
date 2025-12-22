@@ -55,7 +55,7 @@ export class Game {
         this.audio = new SoundEngine(); // Keep for resume()
 
         // Load Audio Settings
-        const sfxVol = this.saveSystem.loadNumber('sfx_volume', 0.5);
+        const sfxVol = this.saveSystem.loadNumber('sfx_volume', 0.3);
         const musicVol = this.saveSystem.loadNumber('music_volume', 0.1);
         this.audio.setSFXVolume(sfxVol);
         this.audio.setMusicVolume(musicVol);
