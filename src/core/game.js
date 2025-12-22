@@ -13,7 +13,7 @@ import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFakes } from '../ui/ui.js';
 import { Particle, Debris, FloatingText } from '../entities/particles.js';
 
-import { Popup, NotepadWindow, ConfirmationWindow } from '../ui/windows.js';
+import { Popup, NotepadWindow, ConfirmationWindow, CongratulationsWindow } from '../ui/windows.js';
 import { PasswordWindow } from '../ui/PasswordWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { InputHandler } from './Input.js';
@@ -768,6 +768,18 @@ export class Game {
 
         // Resume Music (Sync with current theme)
         this.events.emit('theme_changed', this.themeManager.currentTheme.id);
+
+        // Check for Ending Congratulation
+        if (this.state.endingSeen && !this.state.congratsShown) {
+            setTimeout(() => {
+                const win = new CongratulationsWindow(this.w, this.h, () => { });
+                this.uiManager.windowManager.add(win);
+                this.events.emit('play_sound', 'success');
+
+                this.state.congratsShown = true;
+                this.saveGame();
+            }, 1000);
+        }
     }
 
     /**

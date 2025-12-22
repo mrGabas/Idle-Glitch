@@ -66,6 +66,8 @@ export class GameState {
 
         /** @type {boolean} Whether the player has seen the true ending */
         this.endingSeen = false;
+        /** @type {boolean} Whether the post-game congratulatory message has been shown */
+        this.congratsShown = false;
 
         // Overclock State
         /** @type {number} Timestamp when overclock effect ends */
@@ -201,7 +203,9 @@ export class GameState {
             totalPlayTime: this.totalPlayTime,
             snakeHighScore: this.snakeHighScore,
             hacksSolved: this.hacksSolved,
+            hacksSolved: this.hacksSolved,
             endingSeen: this.endingSeen,
+            congratsShown: this.congratsShown,
             overclockEndTime: this.overclockEndTime
         };
     }
@@ -226,7 +230,9 @@ export class GameState {
         this.snakeHighScore = data.snakeHighScore || 0;
         this.snakeHighScore = data.snakeHighScore || 0;
         this.hacksSolved = data.hacksSolved || 0;
+        this.hacksSolved = data.hacksSolved || 0;
         this.endingSeen = data.endingSeen || false;
+        this.congratsShown = data.congratsShown || false;
         this.overclockEndTime = data.overclockEndTime || 0;
 
         events.emit('state_updated', this);

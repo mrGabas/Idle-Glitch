@@ -789,7 +789,7 @@ export class NotepadWindow extends Window {
 }
 
 export class ConfirmationWindow extends Window {
-    constructor(gameW, gameH, title, message, onConfirm, style = 'default') {
+    constructor(gameW, gameH, title, message, onConfirm, style = 'default', buttonLabels = ['CONFIRM', 'CANCEL']) {
         const w = 320;
         const h = 180;
         const x = (gameW - w) / 2;
@@ -800,6 +800,7 @@ export class ConfirmationWindow extends Window {
         this.message = message || "Are you sure?";
         this.onConfirm = onConfirm;
         this.style = style; // 'default' or 'bios'
+        this.buttonLabels = buttonLabels;
     }
 
     draw(ctx) {
@@ -859,23 +860,28 @@ export class ConfirmationWindow extends Window {
         const bh = 30;
         const gap = 20;
 
-        // Yes/Confirm
-        // Calculate Relative bottom
-        // With override draw, we pass specific content area.
-        // In default, draw passes this.y + 24.
-        // In BIOS, we pass this.y + 40.
-        // So let's align buttons to bottom of H.
+        const by = y + h - 40; // 40px from bottom
 
-        const by = y + h - 40; // 40px from bottom of content area
-        const b1x = x + w / 2 - bw - gap / 2;
-        const b2x = x + w / 2 + gap / 2;
-
-        if (this.style === 'bios') {
-            this.drawBiosButton(ctx, b1x, by, bw, bh, "CONFIRM");
-            this.drawBiosButton(ctx, b2x, by, bw, bh, "CANCEL");
+        if (this.buttonLabels.length === 1) {
+            // Single Button Centered
+            const bx = x + w / 2 - bw / 2;
+            if (this.style === 'bios') {
+                this.drawBiosButton(ctx, bx, by, bw, bh, this.buttonLabels[0]);
+            } else {
+                this.drawBevelButton(ctx, bx, by, bw, bh, this.buttonLabels[0]);
+            }
         } else {
-            this.drawBevelButton(ctx, b1x, by, bw, bh, "CONFIRM");
-            this.drawBevelButton(ctx, b2x, by, bw, bh, "CANCEL");
+            // Two Buttons (Standard)
+            const b1x = x + w / 2 - bw - gap / 2;
+            const b2x = x + w / 2 + gap / 2;
+
+            if (this.style === 'bios') {
+                this.drawBiosButton(ctx, b1x, by, bw, bh, this.buttonLabels[0]);
+                this.drawBiosButton(ctx, b2x, by, bw, bh, this.buttonLabels[1]);
+            } else {
+                this.drawBevelButton(ctx, b1x, by, bw, bh, this.buttonLabels[0]);
+                this.drawBevelButton(ctx, b2x, by, bw, bh, this.buttonLabels[1]);
+            }
         }
     }
 
@@ -928,23 +934,161 @@ export class ConfirmationWindow extends Window {
         }
 
         const by = contentY + contentH - 40;
-        const b1x = contentX + contentW / 2 - bw - gap / 2;
-        const b2x = contentX + contentW / 2 + gap / 2;
 
-        // Confirm
-        if (mx >= b1x && mx <= b1x + bw && my >= by && my <= by + bh) {
+        if (this.buttonLabels.length === 1) {
+            const bx = contentX + contentW / 2 - bw / 2;
+            if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+                if (this.onConfirm) this.onConfirm();
+                this.close();
+                return 'consumed';
+            }
+        } else {
+            const b1x = contentX + contentW / 2 - bw - gap / 2;
+            const b2x = contentX + contentW / 2 + gap / 2;
+
+            // Confirm (Left)
+            if (mx >= b1x && mx <= b1x + bw && my >= by && my <= by + bh) {
+                if (this.onConfirm) this.onConfirm();
+                this.close();
+                return 'consumed';
+            }
+
+            // Cancel (Right)
+            if (mx >= b2x && mx <= b2x + bw && my >= by && my <= by + bh) {
+                this.close();
+                return 'consumed';
+            }
+        }
+
+        return baseRes === 'consumed' ? 'consumed' : null;
+    }
+}
+
+export class CongratulationsWindow extends Window {
+    constructor(gameW, gameH, onConfirm) {
+        super(0, 0, gameW, gameH, "CONGRATULATIONS");
+        this.onConfirm = onConfirm;
+
+        // Animation
+        this.alpha = 0;
+        this.particles = [];
+        for (let i = 0; i < 50; i++) {
+            this.particles.push({
+                x: Math.random() * gameW,
+                y: Math.random() * gameH,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                color: Math.random() > 0.5 ? '#00eaff' : '#ff00ea',
+                size: Math.random() * 3
+            });
+        }
+    }
+
+    update(dt) {
+        if (this.alpha < 1) this.alpha += dt * 2;
+
+        // Update particles
+        this.particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0) p.x = this.w;
+            if (p.x > this.w) p.x = 0;
+            if (p.y < 0) p.y = this.h;
+            if (p.y > this.h) p.y = 0;
+        });
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        ctx.save();
+
+        // Background - Dark Gradient
+        const grad = ctx.createRadialGradient(this.w / 2, this.h / 2, 0, this.w / 2, this.h / 2, this.w);
+        grad.addColorStop(0, 'rgba(20, 20, 30, 0.95)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0.98)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, this.w, this.h);
+
+        // Particles
+        ctx.globalAlpha = 0.5 * this.alpha;
+        this.particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.globalAlpha = this.alpha;
+
+        // Content Container
+        const cx = this.w / 2;
+        const cy = this.h / 2;
+
+        // Title
+        ctx.shadowColor = '#00eaff';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 48px Arial'; // Simplified font, assuming available
+        ctx.textAlign = 'center';
+        ctx.fillText("CONGRATULATIONS", cx, cy - 100);
+
+        // Subtitle
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ccc';
+        ctx.font = '24px "Courier New", monospace';
+        ctx.fillText("Through the noise, you found the signal.", cx, cy - 40);
+
+        // Command Info
+        ctx.fillStyle = '#00eaff';
+        ctx.font = 'bold 28px "Courier New", monospace';
+        ctx.fillText("COMMAND UNLOCKED: /reset", cx, cy + 30);
+
+        ctx.fillStyle = '#aaa';
+        ctx.font = '18px Arial';
+        ctx.fillText("Use it in the terminal to enter the BIOS.", cx, cy + 70);
+
+        // Button
+        const bw = 200;
+        const bh = 50;
+        const by = cy + 150;
+        const bx = cx - bw / 2;
+
+        // Button Glow
+        ctx.shadowColor = '#00eaff';
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = '#00eaff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx, by, bw, bh);
+
+        // Button Text
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#00eaff';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText("CONTINUE", cx, by + 32);
+
+        ctx.restore();
+    }
+
+    checkClick(mx, my) {
+        if (!this.active) return null;
+
+        const cx = this.w / 2;
+        const cy = this.h / 2;
+        const bw = 200;
+        const bh = 50;
+        const by = cy + 150;
+        const bx = cx - bw / 2;
+
+        if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
             if (this.onConfirm) this.onConfirm();
             this.close();
             return 'consumed';
         }
 
-        // Cancel
-        if (mx >= b2x && mx <= b2x + bw && my >= by && my <= by + bh) {
-            this.close();
-            return 'consumed';
-        }
-
-        return baseRes === 'consumed' ? 'consumed' : null;
+        return 'consumed'; // Consume all clicks to block background
     }
 }
 
