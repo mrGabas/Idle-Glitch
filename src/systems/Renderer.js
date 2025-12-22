@@ -877,6 +877,19 @@ export class Renderer {
                     }
                 }
 
+                // PHYSICS TRANSFORM (Falling)
+                this.ctx.save();
+                if (u.isBroken) {
+                    const cx = ux + cardW / 2 + (u.x_off || 0);
+                    const cy = uy + cardH / 2 + (u.y_off || 0);
+                    this.ctx.translate(cx, cy);
+                    this.ctx.rotate(u.rot || 0);
+                    this.ctx.translate(-cx, -cy);
+
+                    // Fade out
+                    alpha *= 1.0;
+                }
+
                 this.ctx.globalAlpha = alpha;
 
                 // BG
@@ -887,7 +900,7 @@ export class Renderer {
                 let borderCol = colors.uiBorder;
                 let borderW = 1;
 
-                if (activeHighlightTarget === 'UPGRADE_' + u.id) {
+                if (!u.isBroken && activeHighlightTarget === 'UPGRADE_' + u.id) {
                     const pulse = (Math.sin(Date.now() / 200) + 1) * 0.5; // 0 to 1
                     // Interpolate white to accent
                     borderCol = `rgba(0, 255, 0, ${0.5 + pulse * 0.5})`; // green pulse
@@ -957,7 +970,7 @@ export class Renderer {
                 this.ctx.font = `bold ${Math.floor(fontSize * 1.2)}px Arial`;
                 this.ctx.fillText(u.count, ux + cardW - 10, uy + cardH * 0.85);
 
-                this.ctx.globalAlpha = 1; // Reset
+                this.ctx.restore(); // END TRANSFORM
             });
         }
     }

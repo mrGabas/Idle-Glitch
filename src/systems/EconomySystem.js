@@ -26,6 +26,33 @@ export class EconomySystem {
      * @param {number} dt - Delta time in seconds.
      */
     update(dt) {
+        // 0. Update Physics for Broken Upgrades (Falling)
+        // We iterate backwards to safely handle potential removals if we decide to splice them later,
+        // though currently we just let them fall forever until garbage collected.
+        if (this.shopOpen) { // Only update if shop could be visible? Actually need to update always if they are falling and visible.
+            // But if shop is closed, renderer doesn't draw them.
+            // Let's update always to be safe so they don't "freeze" if you toggle shop.
+            const upgrades = this.game.themeManager.upgrades;
+            if (upgrades) {
+                for (let i = upgrades.length - 1; i >= 0; i--) {
+                    const u = upgrades[i];
+                    if (u.isBroken) {
+                        u.vy += 2000 * dt; // Gravity
+                        u.y_off += u.vy * dt;
+                        u.x_off += u.vx * dt;
+                        u.rot += u.vr * dt;
+
+                        // Garbage Collect (below screen)
+                        if (u.y_off > 2000) {
+                            // Now we can safely remove or just leave it.
+                            // If we remove, the index shifts.
+                            // Since we iterate backwards, it is safe.
+                            upgrades.splice(i, 1);
+                        }
+                    }
+                }
+            }
+        }
         // META: SOURCE_LEAK (Lucky Tick)
         // 1% chance per second per level.
         const luckyLevel = this.game.metaUpgrades['lucky_tick'] || 0;
@@ -146,14 +173,23 @@ export class EconomySystem {
                     shopHit = true;
 
                     // UNIVERSAL DESTRUCTION: Shop Item
-                    if (this.game.canTriggerDestruction) {
+                    if (this.game.canTriggerDestruction && !upgrades[i].isBroken) {
                         this.game.events.emit('play_sound', 'break');
+
+                        // Mark as broken (Falling Physics)
+                        const u = upgrades[i];
+                        u.isBroken = true;
+                        u.vy = -500; // Initial pop up
+                        u.vr = (Math.random() - 0.5) * 5; // Rotation speed
+                        u.y_off = 0;
+                        u.rot = 0;
+                        u.x_off = 0;
+                        u.vx = (Math.random() - 0.5) * 500; // Horizontal scatter
+
                         // Spawn Debris
                         for (let k = 0; k < 5; k++) {
                             this.game.entities.add('debris', new Debris(bx + cardW / 2, by + cardH / 2, '#0f0'));
                         }
-                        // Remove Upgrade (Permanently for this session until reset)
-                        upgrades.splice(i, 1);
                         return true;
                     }
 
