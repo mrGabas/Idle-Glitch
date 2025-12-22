@@ -28,9 +28,13 @@ export class AdsManager {
             // Fetch User
             this.fetchUser();
 
-            // Listen for adblock detection if available (optional/mocked)
-            // this.sdk.ad.hasAdblock().then(result => this.hasAdblock = result);
-
+            // Listen for adblock detection
+            if (this.sdk.ad && typeof this.sdk.ad.hasAdblock === 'function') {
+                this.hasAdblock = await this.sdk.ad.hasAdblock();
+                if (this.hasAdblock) {
+                    console.log("SDK: Adblock detected.");
+                }
+            }
         } catch (error) {
             console.error("CrazyGames SDK Init Error:", error);
         }

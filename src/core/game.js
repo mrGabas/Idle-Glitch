@@ -496,6 +496,22 @@ export class Game {
         // SDK Hook
         this.adsManager.gameplayStart();
 
+        // Adblock Notification
+        if (this.adsManager.hasAdblock) {
+            setTimeout(() => {
+                const win = new ConfirmationWindow(
+                    this.w,
+                    this.h,
+                    "ADBLOCK DETECTED",
+                    "We noticed you have Adblock active.\nDisabling it helps support the game\nand unlocks special bonuses!\n\n(The game remains fully playable)",
+                    null, // No confirm action needed
+                    'default',
+                    ['I UNDERSTAND']
+                );
+                this.uiManager.windowManager.add(win);
+            }, 1000);
+        }
+
         // Check Tutorial
         if (!this.tutorialSystem.completedTutorials.has('intro')) {
             this.tutorialSystem.startSequence('intro');
