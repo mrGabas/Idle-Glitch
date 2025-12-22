@@ -12,15 +12,23 @@ export class ErrorHandler {
 
         window.onunhandledrejection = (event) => {
             const reason = event.reason ? (event.reason.message || event.reason) : '';
+            const reasonStr = String(reason);
 
             // Ignore screen orientation lock errors (common on desktop/non-supported devices via SDK)
-            if (reason.includes('screen.orientation.lock')) {
+            if (reasonStr.includes('screen.orientation.lock')) {
                 console.warn("Suppressed non-critical SDK error:", reason);
                 event.preventDefault();
                 return;
             }
 
-            ErrorHandler.showError(reason || 'Unknown Promise Error', event.reason);
+            // Ignore CrazySDK disabled domain errors
+            if (reasonStr.includes('CrazySDK is disabled on this domain')) {
+                console.warn("Suppressed CrazySDK domain error. Ads functionality will be limited.");
+                event.preventDefault();
+                return;
+            }
+
+            ErrorHandler.showError(reason || 'Unknown Promise Error', event.reason ? event.reason.stack : '');
             event.preventDefault();
         };
 

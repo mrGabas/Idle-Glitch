@@ -25,7 +25,12 @@ export class AdsManager {
             console.log("CrazyGames SDK: Static Initialization Complete.");
             return window.CrazyGames.SDK;
         } catch (error) {
-            console.error("CrazyGames SDK: Static Initialization Error:", error);
+            const errorStr = error ? (error.message || String(error)) : "";
+            if (errorStr.includes("sdkDisabled")) {
+                console.warn("CrazyGames SDK: Disabled on this domain. Ads will not be available.");
+            } else {
+                console.error("CrazyGames SDK: Static Initialization Error:", error);
+            }
             return null;
         }
     }
