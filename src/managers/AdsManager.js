@@ -5,25 +5,48 @@
 export class AdsManager {
     constructor(game) {
         this.game = game;
-        this.sdk = null;
-        this.initialized = false;
+        this.sdk = window.CrazyGames ? window.CrazyGames.SDK : null;
+        this.initialized = !!(this.sdk && this.sdk.data);
         this.hasAdblock = false;
+    }
+
+    /**
+     * STATIC: Initializes the SDK globally.
+     * Use this at the very beginning of the game load.
+     */
+    static async initSDK() {
+        if (!window.CrazyGames || !window.CrazyGames.SDK) {
+            console.warn("CrazyGames SDK not found during static init.");
+            return null;
+        }
+
+        try {
+            await window.CrazyGames.SDK.init();
+            console.log("CrazyGames SDK: Static Initialization Complete.");
+            return window.CrazyGames.SDK;
+        } catch (error) {
+            console.error("CrazyGames SDK: Static Initialization Error:", error);
+            return null;
+        }
     }
 
     /**
      * Initializes the SDK.
      */
     async init() {
-        if (!window.CrazyGames || !window.CrazyGames.SDK) {
-            console.warn("CrazyGames SDK not found. AdsManager disabled.");
+        if (!this.sdk) {
+            console.warn("CrazyGames SDK not available. AdsManager disabled.");
             return;
         }
 
         try {
-            this.sdk = window.CrazyGames.SDK;
-            await this.sdk.init();
-            this.initialized = true;
-            console.log("CrazyGames SDK initialized.");
+            // If not initialized yet, do it now (fallback)
+            if (!this.initialized) {
+                await this.sdk.init();
+                this.initialized = true;
+            }
+
+            console.log("AdsManager: Hooking into SDK.");
 
             // Fetch User
             this.fetchUser();
@@ -32,11 +55,11 @@ export class AdsManager {
             if (this.sdk.ad && typeof this.sdk.ad.hasAdblock === 'function') {
                 this.hasAdblock = await this.sdk.ad.hasAdblock();
                 if (this.hasAdblock) {
-                    console.log("SDK: Adblock detected.");
+                    console.log("AdsManager: Adblock detected.");
                 }
             }
         } catch (error) {
-            console.error("CrazyGames SDK Init Error:", error);
+            console.error("AdsManager Init Error:", error);
         }
     }
 

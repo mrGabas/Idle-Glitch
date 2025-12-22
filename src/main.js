@@ -8,7 +8,9 @@ import { assetLoader } from './core/AssetLoader.js';
 import { ErrorHandler } from './core/ErrorHandler.js';
 import { CORE_ASSETS, LAZY_ASSETS } from './data/assets.js';
 
-window.addEventListener('load', () => {
+import { AdsManager } from './managers/AdsManager.js';
+
+window.addEventListener('load', async () => {
     // Init Error Handler First
     ErrorHandler.init();
 
@@ -28,6 +30,9 @@ window.addEventListener('load', () => {
     document.body.appendChild(loader);
 
     const progressEl = document.getElementById('load-progress');
+
+    // 0. Initialize CrazyGames SDK early (Cloud Saves need this)
+    await AdsManager.initSDK();
 
     // Load CORE assets then start game
     assetLoader.loadAll(CORE_ASSETS, (progress) => {
@@ -53,7 +58,13 @@ window.addEventListener('load', () => {
  * @param {Function} callback - Called when game can proceed.
  */
 function checkPhotosensitivityWarning(callback) {
-    const hasSeenWarning = localStorage.getItem('glitch_photosensitivity_accepted') === 'true';
+    const key = 'glitch_photosensitivity_accepted';
+    let hasSeenWarning = localStorage.getItem(key) === 'true';
+
+    // Check Cloud Save if local is empty
+    if (!hasSeenWarning && window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.data) {
+        hasSeenWarning = window.CrazyGames.SDK.data.getItem(key) === 'true';
+    }
 
     if (hasSeenWarning) {
         callback();
@@ -77,7 +88,11 @@ function checkPhotosensitivityWarning(callback) {
     document.body.appendChild(overlay);
 
     document.getElementById('btn-accept-warning').onclick = () => {
-        localStorage.setItem('glitch_photosensitivity_accepted', 'true');
+        const key = 'glitch_photosensitivity_accepted';
+        localStorage.setItem(key, 'true');
+        if (window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.data) {
+            window.CrazyGames.SDK.data.setItem(key, 'true');
+        }
         document.body.removeChild(overlay);
         callback();
     };
