@@ -58,10 +58,13 @@ export class AdsManager {
      * Signal to SDK that gameplay has started.
      */
     gameplayStart() {
-        if (!this.initialized) return;
+        if (!this.initialized && (!window.CrazyGames || !window.CrazyGames.SDK)) return;
         try {
-            this.sdk.game.gameplayStart();
-            console.log("SDK: gameplayStart");
+            const sdk = this.sdk || window.CrazyGames.SDK;
+            if (sdk && sdk.game) {
+                sdk.game.gameplayStart();
+                console.log("SDK: gameplayStart");
+            }
         } catch (e) {
             console.warn("SDK gameplayStart error:", e);
         }
@@ -71,10 +74,13 @@ export class AdsManager {
      * Signal to SDK that gameplay has stopped.
      */
     gameplayStop() {
-        if (!this.initialized) return;
+        if (!this.initialized && (!window.CrazyGames || !window.CrazyGames.SDK)) return;
         try {
-            this.sdk.game.gameplayStop();
-            console.log("SDK: gameplayStop");
+            const sdk = this.sdk || window.CrazyGames.SDK;
+            if (sdk && sdk.game) {
+                sdk.game.gameplayStop();
+                console.log("SDK: gameplayStop");
+            }
         } catch (e) {
             console.warn("SDK gameplayStop error:", e);
         }

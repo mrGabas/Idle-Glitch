@@ -837,6 +837,9 @@ export class Game {
         // Resume Music (Sync with current theme)
         this.events.emit('theme_changed', this.themeManager.currentTheme.id);
 
+        // SDK Hook
+        this.adsManager.gameplayStart();
+
         // Check for Ending Congratulation
         if (this.state.endingSeen && !this.state.congratsShown) {
             setTimeout(() => {
