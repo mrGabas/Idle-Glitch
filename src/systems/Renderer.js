@@ -282,18 +282,17 @@ export class Renderer {
         const sw = this.w - sx;
         const iconY = this.h * 0.05; // Higher up to avoid overlap
 
-        // Distribute 4 icons: Mail, Reviews, Achievements, Archive
-        // Centers: 20%, 40%, 60%, 80% of Sidebar Width
-        const iconStep = sw / 4;
+        // Distribute 5 icons: Overclock, Mail, Reviews, Achievements, Archive
+        const iconStep = sw / 5;
         const halfStep = iconStep / 2;
 
-        const mailX = sx + halfStep;
-        const chatX = sx + halfStep + iconStep;
-        const achX = sx + halfStep + iconStep * 2;
-        const arcX = sx + halfStep + iconStep * 3;
+        const ocX = sx + halfStep;
+        const mailX = sx + halfStep + iconStep;
+        const chatX = sx + halfStep + iconStep * 2;
+        const achX = sx + halfStep + iconStep * 3;
+        const arcX = sx + halfStep + iconStep * 4;
 
-        // Overclock Button (Left of Mail)
-        const ocX = sx - halfStep;
+        // Overclock Button (1st Position)
         const isOverclocked = state.overclockEndTime > Date.now();
         // Pulse if active
         this.drawFeedbackIcon(ocX, iconY, '#00eaff', '⚡', isOverclocked);
@@ -307,17 +306,17 @@ export class Renderer {
             this.ctx.fillText(`${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`, ocX, iconY + 35);
         }
 
-        // Draw HUD Elements (Mail Icon)
+        // Draw HUD Elements (Mail Icon - 2nd Position)
         this.drawHUD(mailX, iconY, uiManager);
 
         // Draw Windows & UI Overlay (Delegated to UIManager)
         uiManager.draw(this.ctx);
 
-        // Feedback / Reviews Button
+        // Feedback / Reviews Button (3rd Position)
         this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬', uiManager.reviewsTab.hasNew);
-        // Achievements Button
+        // Achievements Button (4th Position)
         this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆', uiManager.game.achievementSystem.hasNew);
-        // Archive Button
+        // Archive Button (5th Position)
         this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁', uiManager.game.loreSystem.hasNew);
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);

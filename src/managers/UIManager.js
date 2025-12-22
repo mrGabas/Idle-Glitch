@@ -180,49 +180,50 @@ export class UIManager {
         const sx = this.game.w * CFG.game.shop.startXRatio;
         const sw = this.game.w - sx;
         const iconY = this.game.h * 0.05;
-        const iconStep = sw / 4;
+
+        // 5 Icons: Overclock, Mail, Chat, Achievements, Archive
+        const iconStep = sw / 5;
         const halfStep = iconStep / 2;
 
-        const mailX = sx + halfStep;
-        const chatX = sx + halfStep + iconStep;
-        const achX = sx + halfStep + iconStep * 2;
-        const arcX = sx + halfStep + iconStep * 3;
+        const ocX = sx + halfStep;
+        const mailX = sx + halfStep + iconStep;
+        const chatX = sx + halfStep + iconStep * 2;
+        const achX = sx + halfStep + iconStep * 3;
+        const arcX = sx + halfStep + iconStep * 4;
 
         const hitRadius = 25;
 
-        // Mail
+        // Priority 4.1: Overclock (Lightning)
+        if (Math.hypot(mx - ocX, my - iconY) < hitRadius) {
+            if (this.game.adsManager) {
+                const win = new ConfirmationWindow(
+                    this.game.w,
+                    this.game.h,
+                    "ACTIVATE OVERCLOCK",
+                    "Watch an ad to boost production\nby 2x for 15 minutes?",
+                    () => {
+                        this.game.adsManager.watchOverclockAd();
+                    }
+                );
+                this.windowManager.add(win);
+            }
+            return true;
+        }
+
+        // Priority 4.2: Mail
         if (Math.hypot(mx - mailX, my - iconY) < hitRadius) {
             // Toggle Mail
             this.toggleMail();
             return true;
         }
 
-        // Priority 4.5: Overclock Button (Left of Mail)
-        const ocX = sx - halfStep;
-
-        if (Math.hypot(mx - ocX, my - iconY) < hitRadius) {
-            // Confirmation Popup
-            const msg = "Watch Ad for x2 Production?\n(DURATION: 15 MINUTES)";
-            const win = new ConfirmationWindow(
-                this.game.w, this.game.h,
-                "OVERCLOCK SYSTEM",
-                msg,
-                () => {
-                    this.game.adsManager.watchOverclockAd();
-                }
-            );
-            this.windowManager.add(win, true);
-            this.game.events.emit('play_sound', 'click');
-            return true;
-        }
-
-        // Priority 5: HUD Icons (Reviews Icon)
+        // Priority 4.3: Reviews Icon
         if (Math.hypot(mx - chatX, my - iconY) < hitRadius) {
             this.reviewsTab.toggle();
             return true;
         }
 
-        // Priority 6: HUD Icons (Achievements)
+        // Priority 4.4: Achievements
         if (this.achievementsWindow && Math.hypot(mx - achX, my - iconY) < hitRadius) {
             this.achievementsWindow.toggle();
             // Clear flag
@@ -230,7 +231,7 @@ export class UIManager {
             return true;
         }
 
-        // Priority 6.5: HUD Icons (Archive)
+        // Priority 4.5: Archive
         if (Math.hypot(mx - arcX, my - iconY) < hitRadius) {
             if (this.archiveWindow.manager) {
                 this.archiveWindow.close();
@@ -258,21 +259,6 @@ export class UIManager {
 
     // Draw method to be called by Renderer
     draw(ctx) {
-
-        // --- DRAW HUD ICONS (Overclock) ---
-        // Ideally Renderer handles HUD, but UIManager seems to have some drawing resp?
-        // Wait, looking at Renderer.js would confirm if it draws HUD icons.
-        // `UIManager.draw` currently calls sub-systems. 
-        // `handleInput` has HUD logic, but where is HUD draw?
-        // Likely in `Renderer.js`.
-        // I will check Renderer.js. If HUD loop is there, I should modify THAT file instead for drawing.
-        // But if I add it here, I might duplicate or layer issues. 
-        // Let's assume UIManager draws OVERLAYS. 
-        // I should check Renderer.js quickly to be sure where HUD icons are drawn.
-        // For now, I'll assume they are in Renderer.js because UIManager.draw listed only windows/chat.
-        // I will revert this DRAW change here and only keep INPUT.
-        // And then I will update Renderer.js to draw the icon.
-
         // Draw Full-screen / Overlay Systems first (or last depending on desired z-order)
         // Chat is bottom-aligned console
         if (this.chat) this.chat.draw(ctx, this.game.h);
