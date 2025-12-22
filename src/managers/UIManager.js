@@ -14,6 +14,7 @@ import { MailSystem } from '../systems/MailSystem.js';
 import { WindowManager } from './WindowManager.js';
 import { assetLoader } from '../core/AssetLoader.js';
 import { CFG } from '../core/config.js';
+import { Debris } from '../entities/particles.js';
 
 export class UIManager {
     constructor(game) {
@@ -193,8 +194,20 @@ export class UIManager {
 
         const hitRadius = 25;
 
+        // Helper: Check Destruction
+        const checkBreak = (x, y) => {
+            if (this.game.canTriggerDestruction) {
+                this.game.events.emit('play_sound', 'break');
+                for (let k = 0; k < 5; k++) this.game.entities.add('debris', new Debris(x, y, '#fff'));
+                return true;
+            }
+            return false;
+        };
+
         // Priority 4.1: Overclock (Lightning)
         if (Math.hypot(mx - ocX, my - iconY) < hitRadius) {
+            if (checkBreak(ocX, iconY)) return true;
+
             if (this.game.adsManager) {
                 const win = new ConfirmationWindow(
                     this.game.w,
@@ -212,6 +225,7 @@ export class UIManager {
 
         // Priority 4.2: Mail
         if (Math.hypot(mx - mailX, my - iconY) < hitRadius) {
+            if (checkBreak(mailX, iconY)) return true;
             // Toggle Mail
             this.toggleMail();
             return true;
@@ -219,12 +233,14 @@ export class UIManager {
 
         // Priority 4.3: Reviews Icon
         if (Math.hypot(mx - chatX, my - iconY) < hitRadius) {
+            if (checkBreak(chatX, iconY)) return true;
             this.reviewsTab.toggle();
             return true;
         }
 
         // Priority 4.4: Achievements
         if (this.achievementsWindow && Math.hypot(mx - achX, my - iconY) < hitRadius) {
+            if (checkBreak(achX, iconY)) return true;
             this.achievementsWindow.toggle();
             // Clear flag
             if (this.achievementsWindow.visible && this.game.achievementSystem) this.game.achievementSystem.hasNew = false;
@@ -233,6 +249,7 @@ export class UIManager {
 
         // Priority 4.5: Archive
         if (Math.hypot(mx - arcX, my - iconY) < hitRadius) {
+            if (checkBreak(arcX, iconY)) return true;
             if (this.archiveWindow.manager) {
                 this.archiveWindow.close();
             } else {

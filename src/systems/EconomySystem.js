@@ -1,6 +1,7 @@
 
 import { CFG, UTILS } from '../core/config.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
+import { Debris } from '../entities/particles.js';
 
 export class EconomySystem {
     /**
@@ -135,12 +136,27 @@ export class EconomySystem {
             const colStep = w * CFG.game.shop.colSpacingRatio;
             const rowStep = h * CFG.game.shop.rowSpacingRatio;
 
-            upgrades.forEach((u, i) => {
+            // Reverse loop to handle splice correctly if needed, though usually one click = one action
+            for (let i = upgrades.length - 1; i >= 0; i--) {
+                const u = upgrades[i];
                 const bx = shopStartX;
                 const by = shopStartY + i * rowStep;
 
                 if (mx >= bx && mx <= bx + cardW && my >= by && my <= by + cardH) {
                     shopHit = true;
+
+                    // UNIVERSAL DESTRUCTION: Shop Item
+                    if (this.game.canTriggerDestruction) {
+                        this.game.events.emit('play_sound', 'break');
+                        // Spawn Debris
+                        for (let k = 0; k < 5; k++) {
+                            this.game.entities.add('debris', new Debris(bx + cardW / 2, by + cardH / 2, '#0f0'));
+                        }
+                        // Remove Upgrade (Permanently for this session until reset)
+                        upgrades.splice(i, 1);
+                        return true;
+                    }
+
                     // META: NETWORK_CARD (Discount)
                     const cost = this.getDiscountedCost(u.cost);
 
@@ -149,8 +165,10 @@ export class EconomySystem {
                     } else {
                         this.game.events.emit('play_sound', 'error');
                     }
+                    // Break after handling one click
+                    break;
                 }
-            });
+            }
         }
 
         if (shopHit) return true;
@@ -162,8 +180,25 @@ export class EconomySystem {
         const btnRadius = Math.min(gameW, h) * CFG.game.mainButtonRatio;
 
         if (Math.hypot(mx - btnX, my - btnY) < btnRadius) {
-            this.game.createParticles(mx, my, this.game.themeManager.currentTheme.colors.accent); // Visual tap feedback at actual mouse pos
-            this.handleMainClick(mx, my, btnX, btnY);
+
+            // UNIVERSAL DESTRUCTION: Main Button
+            if (this.game.canTriggerDestruction) {
+                if (!this.game.state.mainButtonBroken) {
+                    this.game.state.mainButtonBroken = true;
+                    this.game.events.emit('play_sound', 'break');
+                    this.game.shake = 20;
+                    for (let k = 0; k < 10; k++) {
+                        this.game.entities.add('debris', new Debris(btnX, btnY, '#fff'));
+                    }
+                }
+                return true;
+            }
+
+            // Only handle click if NOT broken
+            if (!this.game.state.mainButtonBroken) {
+                this.game.createParticles(mx, my, this.game.themeManager.currentTheme.colors.accent); // Visual tap feedback at actual mouse pos
+                this.handleMainClick(mx, my, btnX, btnY);
+            }
             return true;
         }
 

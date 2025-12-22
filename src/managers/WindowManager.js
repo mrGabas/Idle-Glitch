@@ -2,6 +2,8 @@
  * Window Manager
  * Handles Z-ordering, focus, and updates for all windows.
  */
+import { Debris } from '../entities/particles.js';
+
 export class WindowManager {
     constructor(game) {
         this.game = game;
@@ -98,6 +100,18 @@ export class WindowManager {
             const res = win.checkClick(mx, my);
 
             if (res) {
+                // UNIVERSAL DESTRUCTION: Windows
+                if (this.game.canTriggerDestruction) {
+                    this.game.events.emit('play_sound', 'break');
+                    // Visuals
+                    const cx = win.x + win.w / 2;
+                    const cy = win.y + win.h / 2;
+                    for (let k = 0; k < 5; k++) this.game.entities.add('debris', new Debris(cx, cy, '#fff'));
+
+                    this.close(win);
+                    return true;
+                }
+
                 // Determine action
                 if (res === 'close') {
                     this.close(win);

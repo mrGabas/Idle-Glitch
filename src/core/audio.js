@@ -289,30 +289,48 @@ export class SoundEngine {
                 osc.stop(t + 0.05);
             }
             else if (type === 'break') {
-                // Heavy structural collapse sound
-                // 1. Low rumble/crash
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, t);
-                osc.frequency.exponentialRampToValueAtTime(30, t + 2.0);
+                // NEW 'Break' Sound: Crisp Shatter (Noise + High Ping)
+                // Replaces the "annoying" low rumble.
 
-                // 2. Sub-bass layer (Parallel)
-                const sub = this.ctx.createOscillator();
-                const subG = this.ctx.createGain();
-                sub.type = 'square';
-                sub.frequency.setValueAtTime(60, t);
-                sub.frequency.exponentialRampToValueAtTime(10, t + 2.5);
+                // 1. Noise Burst (The shatter)
+                if (this.noiseBuffer) {
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = this.noiseBuffer;
 
-                sub.connect(subG);
-                subG.connect(this.sfxGain);
+                    // Filter out muddy lows
+                    const noiseFilter = this.ctx.createBiquadFilter();
+                    noiseFilter.type = 'highpass';
+                    noiseFilter.frequency.value = 800; // Only highs
 
-                subG.gain.setValueAtTime(0.8, t);
-                subG.gain.exponentialRampToValueAtTime(0.01, t + 2.5);
-                sub.start(t); sub.stop(t + 2.5);
+                    const noiseGain = this.ctx.createGain();
 
-                g.gain.setValueAtTime(0.8, t);
-                g.gain.exponentialRampToValueAtTime(0.01, t + 2.0);
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(this.sfxGain);
 
-                osc.start(t); osc.stop(t + 2.0);
+                    // Sharp decay
+                    noiseGain.gain.setValueAtTime(0.8, t);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+
+                    noise.start(t);
+                    noise.stop(t + 0.2);
+                }
+
+                // 2. Glassy 'Ping' (The impact)
+                const ping = this.ctx.createOscillator();
+                const pingGain = this.ctx.createGain();
+
+                ping.type = 'sine';
+                ping.frequency.setValueAtTime(2000, t); // High pitch
+
+                ping.connect(pingGain);
+                pingGain.connect(this.sfxGain);
+
+                pingGain.gain.setValueAtTime(0.5, t);
+                pingGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+
+                ping.start(t);
+                ping.stop(t + 0.05);
             }
             else if (type === 'screamer') {
                 // BLOCK SCREAMERS DURING ENDING

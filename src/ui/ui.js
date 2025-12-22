@@ -24,14 +24,14 @@ export class CrazyFakes {
         // CrazyFakes Colors
         const cardColor = isGlitchTheme ? '#222' : '#2b2b2b';
 
-        // 0. Background & Title (Initially Locked)
+        // 0. Background & Title (Unlocked for total destruction)
         this.elements.push({
             type: 'sidebar_bg',
             x: 0, y: 0, w: 240, h: h,
             color: '#161616',
             hp: 10, maxHp: 10,
             active: true,
-            locked: true
+            locked: false
         });
 
         this.elements.push({
@@ -41,7 +41,7 @@ export class CrazyFakes {
             color: '#6842ff',
             hp: 5, maxHp: 5,
             active: true,
-            locked: true
+            locked: false
         });
 
         // 1. Sidebar (Left)
@@ -119,17 +119,13 @@ export class CrazyFakes {
         if (el.hp <= 0) {
             el.active = false;
 
-            // Unlock Logic
+            // Bonus for destroying anything large (like buttons or bg)
+            this.game.state.addCorruption(1);
+
             if (el.type === 'sidebar_btn') {
-                // Check if any buttons remain
+                // Check if cleared all buttons for extra bonus?
                 const remaining = this.elements.filter(e => e.type === 'sidebar_btn' && e.active).length;
                 if (remaining === 0) {
-                    // Unlock BG and Title
-                    this.elements.forEach(e => {
-                        if (e.type === 'sidebar_bg' || e.type === 'title') {
-                            e.locked = false;
-                        }
-                    });
                     this.game.state.addCorruption(5); // Bonus corruption for clearing list
                     this.game.events.emit('play_sound', 'powerup');
                 }

@@ -225,6 +225,16 @@ export class Game {
 
 
 
+    // Helper: Is the destruction narrative active? (Level 1 + First Time)
+    get isDestructionNarrativeValid() {
+        return this.themeManager.currentTheme.id === 'rainbow_paradise' && !this.storyFlags.hasWitnessedCollapse;
+    }
+
+    // Helper: Is the Corruption Glitch active?
+    get canTriggerDestruction() {
+        return this.isDestructionNarrativeValid && this.state.corruption >= 60;
+    }
+
     /**
      * Binds DOM event listeners to UI elements.
      */
@@ -285,7 +295,54 @@ export class Game {
             }
         });
 
-        this.input.on('mousedown', (e) => this.handleInput(e));
+        this.input.on('mousedown', (e) => {
+            const target = e.target;
+            const isShift = e.shiftKey;
+
+            // Check rigid narrative constraints
+            // We allow Shift+Click (God Mode) ONLY if we are in the correct narrative phase?
+            // OR do we allow God Mode always? "Only on the first location and only once" seems strict.
+
+            // 1. Is the feature enabled narratively?
+            const narrativeValid = this.isDestructionNarrativeValid;
+            // 2. Is the corruption high enough?
+            const corruptionActive = this.canTriggerDestruction;
+
+            // UNIVERSAL DESTRUCTION
+            // Trigger: (SHIFT + Click + Narrative) OR (Corruption Active)
+            if ((narrativeValid && isShift) || corruptionActive) {
+
+                // Exclude body/html
+                if (target !== document.body && target !== document.documentElement) {
+
+                    // SAFETY: If NOT using Shift, PROTECT THE CANVAS
+                    if (!isShift && target.id === 'gameCanvas') {
+                        this.handleInput(e);
+                        return;
+                    }
+
+                    // 1. Play Break Sound
+                    this.events.emit('play_sound', 'break');
+
+                    // 2. Add visual destruction
+                    target.classList.add('broken-ui');
+
+                    // 3. Shake Screen
+                    this.shake = 10;
+
+                    // 4. Remove after animation
+                    setTimeout(() => {
+                        target.style.display = 'none';
+                    }, 2800);
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
+            this.handleInput(e);
+        });
         this.input.on('mouseup', (e) => {
             if (this.uiManager.handleMouseUp()) return;
             this.mouse.down = false;
