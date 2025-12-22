@@ -913,6 +913,7 @@ export class Renderer {
             this.ctx.strokeRect(bgX, bgY, bgW, bgH);
 
             this.ctx.fillStyle = colors.text;
+            this.ctx.textAlign = 'center';
             this.ctx.font = CFG.fonts.xl;
             this.ctx.fillText(scoreText, cx, this.h * 0.1);
 
