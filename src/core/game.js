@@ -13,17 +13,16 @@ import { EconomySystem } from '../systems/EconomySystem.js';
 import { CrazyFakes } from '../ui/ui.js';
 import { Particle, Debris, FloatingText } from '../entities/particles.js';
 
-import { Popup, NotepadWindow } from '../ui/windows.js';
+import { Popup, NotepadWindow, ConfirmationWindow } from '../ui/windows.js';
 import { PasswordWindow } from '../ui/PasswordWindow.js';
 import { MinigameWindow } from '../ui/MinigameWindow.js';
 import { InputHandler } from './Input.js';
 import { GameState } from './GameState.js';
+import { UIManager } from '../managers/UIManager.js';
 import { EntityManager } from '../managers/EntityManager.js';
-// New imports for Mail
 import { GlitchSystem } from '../systems/GlitchSystem.js';
 import { META_UPGRADES } from '../data/metaUpgrades.js';
 import { ThemeManager } from '../managers/ThemeManager.js';
-import { UIManager } from '../managers/UIManager.js';
 import { AchievementSystem } from '../systems/AchievementSystem.js';
 import { LoreSystem } from '../systems/LoreSystem.js';
 import { AchievementPopup } from '../ui/notifications.js';
@@ -648,6 +647,7 @@ export class Game {
      * @param {number} my - Mouse Y.
      */
     handleBIOSClick(mx, my) {
+        console.log(`BIOS Click: ${mx}, ${my}`);
         // View Area Check (Clipping)
         // Renderer draws box from roughly 50 to h-50.
         const viewTop = 50;
@@ -657,6 +657,26 @@ export class Game {
         if (my < viewTop || my > viewBottom) return;
 
         const startY = CFG.game.bios.startY;
+        // Check Header Button (Watch Ad)
+        if (my >= 60 && my <= 86 && mx >= 400 && mx <= 600) {
+            const win = new ConfirmationWindow(
+                this.w,
+                this.h,
+                "SYSTEM UPGRADE",
+                "Watch ad sequence for\n+300 MB Glitch Data?",
+                () => {
+                    this.adsManager.watchBIOSAd(() => {
+                        this.glitchData += 300;
+                        this.saveGame();
+                        this.events.emit('play_sound', 'success');
+                    });
+                }
+            );
+            this.uiManager.windowManager.add(win);
+            this.events.emit('play_sound', 'click');
+            return;
+        }
+
         // Apply Scroll Offset to virtual Y
         // Screen Y = Virtual Y - Scroll
         // Virtual Y = Screen Y + Scroll
@@ -758,6 +778,7 @@ export class Game {
         const my = this.mouse.y;
 
         if (this.gameState === 'BIOS') {
+            if (this.uiManager.windowManager.handleInput(mx, my)) return;
             this.handleBIOSClick(mx, my);
             return;
         }

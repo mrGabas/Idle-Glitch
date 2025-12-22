@@ -136,7 +136,7 @@ export class Renderer {
         }
 
         if (input.gameState === 'BIOS') {
-            this.drawBIOS(state, input, input.metaUpgrades, META_UPGRADES);
+            this.drawBIOS(state, input, input.metaUpgrades, META_UPGRADES, uiManager);
             return;
         }
 
@@ -988,7 +988,7 @@ export class Renderer {
         this.ctx.fillText("What failed: Reality.sys", x, y);
     }
 
-    drawBIOS(state, input, metaUpgrades, metaList) {
+    drawBIOS(state, input, metaUpgrades, metaList, uiManager) {
         this.ctx.fillStyle = '#0000aa'; // Blue BIOS bg
         this.ctx.fillRect(0, 0, this.w, this.h);
 
@@ -1021,6 +1021,26 @@ export class Renderer {
         this.ctx.fillStyle = '#ffff55';
         this.ctx.fillText(`GLITCH DATA: ${input.glitchData || 0} MB`, 40, 80);
         this.ctx.fillStyle = '#fff';
+
+        // WATCH AD BUTTON (Header)
+        const adBtnX = 400;
+        const adBtnY = 60; // Aligned roughly with text
+        const adBtnW = 200;
+        const adBtnH = 26;
+
+        const isHoverAd = input.mouse.x >= adBtnX && input.mouse.x <= adBtnX + adBtnW && input.mouse.y >= adBtnY && input.mouse.y <= adBtnY + adBtnH;
+
+        this.ctx.fillStyle = isHoverAd ? '#00ff00' : '#ffff55';
+        this.ctx.fillRect(adBtnX, adBtnY, adBtnW, adBtnH);
+        this.ctx.strokeStyle = '#000';
+        this.ctx.strokeRect(adBtnX, adBtnY, adBtnW, adBtnH);
+
+        this.ctx.fillStyle = '#000';
+        this.ctx.textAlign = 'center';
+        this.ctx.font = "bold 14px Arial"; // Slightly smaller fit
+        this.ctx.fillText("WATCH AD (+300 MB)", adBtnX + adBtnW / 2, adBtnY + 18);
+        this.ctx.textAlign = 'left'; // Reset
+        this.ctx.font = "16px 'Courier New', monospace"; // Reset
 
         // Upgrades List
         const startY = 120;
@@ -1161,6 +1181,10 @@ export class Renderer {
 
             this.ctx.fillStyle = '#fff';
             this.ctx.fillRect(sbX + 2, handleY, 6, handleH);
+        }
+
+        if (uiManager && uiManager.windowManager) {
+            uiManager.windowManager.draw(this.ctx);
         }
 
         // Explicitly draw cursor on top for BIOS

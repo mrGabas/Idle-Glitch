@@ -190,4 +190,14 @@ export class AdsManager {
             console.log("Overclock Applied");
         });
     }
+
+    /**
+     * Watch an ad in BIOS for 300 MB Glitch Data
+     */
+    watchBIOSAd(onReward) {
+        this.showRewardedAd(() => {
+            if (onReward) onReward();
+            console.log("BIOS Ad Reward Applied");
+        });
+    }
 }
