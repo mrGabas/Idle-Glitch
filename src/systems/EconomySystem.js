@@ -48,6 +48,25 @@ export class EconomySystem {
                 }
             }
         }
+
+        // NEW: Main Button Physics
+        if (this.game.state.mainButtonBroken && this.game.state.mainButtonPhysics) {
+            const p = this.game.state.mainButtonPhysics;
+            p.vy += 1500 * dt; // Gravity
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.vr * dt;
+        }
+
+        // NEW: Background Physics (Multi-Layer)
+        if (this.game.state.bgBroken && this.game.state.bgLayerPhysics) {
+            this.game.state.bgLayerPhysics.forEach(p => {
+                p.vy += p.gravity * dt;
+                p.y += p.vy * dt;
+                p.x += p.vx * dt;
+                p.rot += p.vr * dt;
+            });
+        }
         // META: SOURCE_LEAK (Lucky Tick)
         // 1% chance per second per level.
         const luckyLevel = this.game.metaUpgrades['lucky_tick'] || 0;
@@ -216,6 +235,32 @@ export class EconomySystem {
             if (this.game.canTriggerDestruction) {
                 if (!this.game.state.mainButtonBroken) {
                     this.game.state.mainButtonBroken = true;
+
+                    // Init Physics for Button
+                    this.game.state.mainButtonPhysics = {
+                        x: 0, y: 0, rot: 0,
+                        vx: (Math.random() - 0.5) * 200, // Slight horizontal scatter
+                        vy: -600, // Pop up first
+                        vr: (Math.random() - 0.5) * 5 // Rotation
+                    };
+
+                    // Init Physics for Background Layers (3 layers usually)
+                    if (!this.game.state.bgBroken) {
+                        this.game.state.bgBroken = true;
+                        this.game.state.bgLayerPhysics = [];
+
+                        // Create 3 Physics Objects for potential layers
+                        for (let i = 0; i < 3; i++) {
+                            this.game.state.bgLayerPhysics.push({
+                                x: 0, y: 0, rot: 0,
+                                vx: (Math.random() - 0.5) * 50, // Slight horizontal drift
+                                vy: (Math.random() * -200) - 100, // Small pop up
+                                vr: (Math.random() - 0.5) * 0.5, // Slow rotation
+                                gravity: 800 + (Math.random() * 400) // Varied fall speed
+                            });
+                        }
+                    }
+
                     this.game.events.emit('play_sound', 'break');
                     this.game.shake = 20;
                     for (let k = 0; k < 10; k++) {

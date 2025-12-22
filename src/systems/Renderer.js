@@ -174,6 +174,15 @@ export class Renderer {
         }
 
         // BG
+        this.ctx.save();
+        // BG
+        // (Previously handled single bgPhysics here, now handled in drawParallax per layer)
+        if (state.bgBroken && state.bgLayerPhysics) {
+            // Just fill black behind everything if broken
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(0, 0, this.w, this.h);
+        }
+
         if (currentTheme.id === 'digital_decay') {
             this.drawMatrixRain();
         } else {
@@ -184,10 +193,14 @@ export class Renderer {
                 this.drawServerFarmEffect();
             }
         }
+        this.ctx.restore();
 
         // PARALLAX
         if (currentTheme.parallax) {
-            this.drawParallax(currentTheme);
+            // PARALLAX
+            if (currentTheme.parallax) {
+                this.drawParallax(currentTheme, state);
+            }
         }
 
         // CrazyFakes Layer
@@ -674,6 +687,14 @@ export class Renderer {
 
         this.ctx.globalAlpha = btnAlpha;
 
+        this.ctx.save();
+        if (state.mainButtonBroken && state.mainButtonPhysics) {
+            const p = state.mainButtonPhysics;
+            this.ctx.translate(btnX + p.x, btnY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-btnX, -btnY);
+        }
+
         // Main Button circle
         this.ctx.beginPath();
         this.ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
@@ -729,6 +750,10 @@ export class Renderer {
             this.ctx.font = `${emojiSize}px Arial`;
             this.ctx.fillText(theme.button.emoji, btnX, btnY + btnRadius * 0.5);
         }
+
+
+
+        this.ctx.restore();
 
         this.ctx.globalAlpha = 1; // Reset
 
@@ -1315,21 +1340,45 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawParallax(theme) {
+    drawParallax(theme, state) {
         if (!theme.parallax || !theme.parallax.layers) return;
 
-        const time = Date.now() / 1000;
-
-        theme.parallax.layers.forEach(layer => {
+        theme.parallax.layers.forEach((layer, i) => {
             const img = assetLoader.getImage(layer.src);
-            // Strict check: must be loaded and have dimensions (not broken)
-            if (img && img.complete && img.naturalWidth > 0) {
-                // Scroll logic
-                const x = -(time * layer.speed) % this.w;
+            if (img && img.complete) {
+                // Calculate Offset based on time/mouse (simple scroll)
+                // For idle game, maybe constant slow scroll
+                const speed = layer.speed || 0;
+                // Use global time or just a counter
+                const time = Date.now() / 1000;
+                const offset = (time * speed) % this.w;
 
-                // Draw twice for seamless loop
-                this.ctx.drawImage(img, x, 0, this.w, this.h);
-                this.ctx.drawImage(img, x + this.w, 0, this.w, this.h);
+                // Physics Transform for this layer
+                let dx = 0, dy = 0, rot = 0;
+                if (state && state.bgBroken && state.bgLayerPhysics && state.bgLayerPhysics[i]) {
+                    const p = state.bgLayerPhysics[i];
+                    dx = p.x;
+                    dy = p.y;
+                    rot = p.rot;
+                }
+
+                this.ctx.save();
+
+                // Apply physics transform
+                if (rot !== 0 || dx !== 0 || dy !== 0) {
+                    // Pivot around center of screen approx? Or center of image?
+                    // Let's pivot around center of screen for dramatic effect
+                    this.ctx.translate(this.w / 2 + dx, this.h / 2 + dy);
+                    this.ctx.rotate(rot);
+                    this.ctx.translate(-this.w / 2, -this.h / 2);
+                }
+
+                // Draw Tiled (Horizontal)
+                // Draw 2 copies to loop
+                this.ctx.drawImage(img, -offset, 0, this.w, this.h);
+                this.ctx.drawImage(img, -offset + this.w, 0, this.w, this.h);
+
+                this.ctx.restore();
             }
         });
     }
