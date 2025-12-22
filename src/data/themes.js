@@ -200,8 +200,8 @@ export const THEMES = {
         // Parallax Settings
         parallax: {
             layers: [
-                { src: 'assets/Levels/Ad Purgatory/parallax/layer 1.webp', speed: 0 },
-                { src: 'assets/Levels/Ad Purgatory/parallax/layer 2.webp', speed: 20 }
+                { src: 'assets/Levels/Ad Purgatory/parallax/layer 1.webp', speed: 10, direction: 'vertical' },
+                { src: 'assets/Levels/Ad Purgatory/parallax/layer 2.webp', speed: 20, direction: 'vertical' }
             ]
         },
 

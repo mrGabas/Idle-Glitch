@@ -1529,17 +1529,18 @@ export class Renderer {
             const img = assetLoader.getImage(layer.src);
             if (img && img.complete) {
                 // Calculate Offset based on time/mouse (simple scroll)
-                // For idle game, maybe constant slow scroll
                 const speed = layer.speed || 0;
-                // Use global time or just a counter
                 const time = Date.now() / 1000;
-                const offset = (time * speed) % this.w;
+                const isVertical = layer.direction === 'vertical';
+
+                // Use different dimension for offset if vertical
+                const dim = isVertical ? this.h : this.w;
+                const offset = (time * speed) % dim;
 
                 // Physics Transform for this layer
                 let dx = 0, dy = 0, rot = 0;
 
                 // FIX: Persistence check
-                // If broken but no physics (reload), do NOT draw (assume fallen into void)
                 if (state.bgBroken && (!state.bgLayerPhysics || !state.bgLayerPhysics[i])) {
                     return;
                 }
@@ -1555,17 +1556,20 @@ export class Renderer {
 
                 // Apply physics transform
                 if (rot !== 0 || dx !== 0 || dy !== 0) {
-                    // Pivot around center of screen approx? Or center of image?
-                    // Let's pivot around center of screen for dramatic effect
                     this.ctx.translate(this.w / 2 + dx, this.h / 2 + dy);
                     this.ctx.rotate(rot);
                     this.ctx.translate(-this.w / 2, -this.h / 2);
                 }
 
-                // Draw Tiled (Horizontal)
-                // Draw 2 copies to loop
-                this.ctx.drawImage(img, -offset, 0, this.w, this.h);
-                this.ctx.drawImage(img, -offset + this.w, 0, this.w, this.h);
+                if (isVertical) {
+                    // Draw Tiled (Vertical)
+                    this.ctx.drawImage(img, 0, offset - this.h, this.w, this.h);
+                    this.ctx.drawImage(img, 0, offset, this.w, this.h);
+                } else {
+                    // Draw Tiled (Horizontal)
+                    this.ctx.drawImage(img, -offset, 0, this.w, this.h);
+                    this.ctx.drawImage(img, -offset + this.w, 0, this.w, this.h);
+                }
 
                 this.ctx.restore();
             }
