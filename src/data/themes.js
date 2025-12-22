@@ -136,7 +136,7 @@ export const THEMES = {
             ui: '#00ff00',              // Acid green
             uiBorder: '#ff00ff',        // Magenta border
             text: '#0000ff',            // Blue text
-            accent: '#ff0000',          // Red accent
+            accent: '#000000',          // Red accent
             accent2: '#00ffff',         // Cyan
             accent3: '#ffaa00',
             warn: '#ff0000',

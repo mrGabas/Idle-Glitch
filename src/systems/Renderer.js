@@ -305,9 +305,18 @@ export class Renderer {
         const achX = sx + halfStep + iconStep * 3;
         const arcX = sx + halfStep + iconStep * 4;
 
-        // Overclock Button (1st Position)
+
+
+        // 1. Overclock
+        this.ctx.save();
+        if (state.hudPhysics && state.hudPhysics[0]) {
+            const p = state.hudPhysics[0];
+            this.ctx.translate(ocX + p.x, iconY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-ocX, -iconY);
+        }
+
         const isOverclocked = state.overclockEndTime > Date.now();
-        // Pulse if active
         this.drawFeedbackIcon(ocX, iconY, '#00eaff', '⚡', isOverclocked);
 
         // Show Timer if active
@@ -331,19 +340,54 @@ export class Renderer {
             this.ctx.fillText(timeText, ocX, iconY + 32);
             this.ctx.textBaseline = 'alphabetic'; // Reset
         }
+        this.ctx.restore();
 
-        // Draw HUD Elements (Mail Icon - 2nd Position)
+        // 2. Mail Icon (2nd Position) - Index 1
+        this.ctx.save();
+        if (state.hudPhysics && state.hudPhysics[1]) {
+            const p = state.hudPhysics[1];
+            this.ctx.translate(mailX + p.x, iconY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-mailX, -iconY);
+        }
         this.drawHUD(mailX, iconY, uiManager);
+        this.ctx.restore();
 
         // Draw Windows & UI Overlay (Delegated to UIManager)
         uiManager.draw(this.ctx);
 
-        // Feedback / Reviews Button (3rd Position)
+        // 3. Feedback / Reviews Button (3rd Position) - Index 2
+        this.ctx.save();
+        if (state.hudPhysics && state.hudPhysics[2]) {
+            const p = state.hudPhysics[2];
+            this.ctx.translate(chatX + p.x, iconY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-chatX, -iconY);
+        }
         this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬', uiManager.reviewsTab.hasNew);
-        // Achievements Button (4th Position)
+        this.ctx.restore();
+
+        // 4. Achievements Button (4th Position) - Index 3
+        this.ctx.save();
+        if (state.hudPhysics && state.hudPhysics[3]) {
+            const p = state.hudPhysics[3];
+            this.ctx.translate(achX + p.x, iconY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-achX, -iconY);
+        }
         this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆', uiManager.game.achievementSystem.hasNew);
-        // Archive Button (5th Position)
+        this.ctx.restore();
+
+        // 5. Archive Button (5th Position) - Index 4
+        this.ctx.save();
+        if (state.hudPhysics && state.hudPhysics[4]) {
+            const p = state.hudPhysics[4];
+            this.ctx.translate(arcX + p.x, iconY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-arcX, -iconY);
+        }
         this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁', uiManager.game.loreSystem.hasNew);
+        this.ctx.restore();
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
@@ -773,6 +817,17 @@ export class Renderer {
         const bgX = cx - bgW / 2;
         const bgY = this.h * 0.02; // Start a bit from top
 
+        // SCORE PHYSICS WRAPPER
+        this.ctx.save();
+        if (state.bgBroken && state.scorePhysics) {
+            const p = state.scorePhysics;
+            // Pivot around approximate center of score box (cx, h*0.08 is rough center)
+            const pivY = this.h * 0.08;
+            this.ctx.translate(cx + p.x, pivY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-cx, -pivY);
+        }
+
         // Draw Background
         this.ctx.save();
         this.ctx.fillStyle = colors.ui;
@@ -793,6 +848,8 @@ export class Renderer {
         this.ctx.font = CFG.fonts.m;
         this.ctx.fillText(rateText, cx, this.h * 0.14);
 
+        this.ctx.restore(); // End Score Physics
+
         // Progress Bar (Bottom Center of Game Area)
         const barW = gameW * 0.8; // 80% Width of Game Area
         const barH = Math.max(10, this.h * 0.03); // 3% Height
@@ -806,6 +863,17 @@ export class Renderer {
             if (mx >= bx && mx <= bx + barW && my >= by && my <= by + barH) barAlpha = 1; else barAlpha = 0;
         }
         this.ctx.globalAlpha = barAlpha;
+
+        // PROGRESS BAR PHYSICS WRAPPER
+        this.ctx.save();
+        if (state.bgBroken && state.barPhysics) {
+            const p = state.barPhysics;
+            // Pivot around center of bar
+            const pivY = by + barH / 2;
+            this.ctx.translate(bx + barW / 2 + p.x, pivY + p.y);
+            this.ctx.rotate(p.rot);
+            this.ctx.translate(-(bx + barW / 2), -pivY);
+        }
 
         this.ctx.fillStyle = theme.progressBar.bgColor;
         this.ctx.fillRect(bx, by, barW, barH);
@@ -841,6 +909,8 @@ export class Renderer {
 
         this.ctx.strokeStyle = colors.uiBorder;
         this.ctx.strokeRect(bx, by, barW, barH);
+
+        this.ctx.restore(); // End Progress Bar Physics
 
         this.ctx.globalAlpha = 1;
 

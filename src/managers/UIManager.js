@@ -178,6 +178,9 @@ export class UIManager {
         // Mail Window is now in WindowManager
 
         // Priority 4: HUD Icons (Header Config)
+        // IF DESTRUCTION IS POSSIBLE, LET ECONOMYSYSTEM HANDLE IT (IT HAS PRIORITY)
+        if (this.game.canTriggerDestruction) return false;
+
         const sx = this.game.w * CFG.game.shop.startXRatio;
         const sw = this.game.w - sx;
         const iconY = this.game.h * 0.05;

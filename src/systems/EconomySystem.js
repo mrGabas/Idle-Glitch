@@ -67,6 +67,36 @@ export class EconomySystem {
                 p.rot += p.vr * dt;
             });
         }
+
+        // NEW: Score Physics
+        if (this.game.state.bgBroken && this.game.state.scorePhysics) {
+            const p = this.game.state.scorePhysics;
+            p.vy += p.gravity * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.vr * dt;
+        }
+
+        // NEW: Progress Bar Physics
+        if (this.game.state.bgBroken && this.game.state.barPhysics) {
+            const p = this.game.state.barPhysics;
+            p.vy += p.gravity * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.vr * dt;
+        }
+
+        // NEW: HUD Icons Physics (Independent of bgBroken)
+        if (this.game.state.hudPhysics) {
+            this.game.state.hudPhysics.forEach(p => {
+                if (p) { // Check if not null
+                    p.vy += p.gravity * dt;
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.rot += p.vr * dt;
+                }
+            });
+        }
         // META: SOURCE_LEAK (Lucky Tick)
         // 1% chance per second per level.
         const luckyLevel = this.game.metaUpgrades['lucky_tick'] || 0;
@@ -157,12 +187,54 @@ export class EconomySystem {
      * @returns {boolean} True if a click was handled.
      */
     handleClick(mx, my) {
-        // 1. Shop Upgrades (Only if open)
-        let shopHit = false;
-
         const w = this.game.w;
         const h = this.game.h;
 
+        // 0. HUD Icons (Top Right Sidebar) - PRIORITY
+        // Allow breaking them if canTriggerDestruction is true
+        if (this.game.canTriggerDestruction) {
+            const sx = w * CFG.game.shop.startXRatio;
+            const sw = w - sx;
+            const iconY = h * 0.05;
+            const iconStep = sw / 5;
+            const halfStep = iconStep / 2;
+
+            for (let i = 0; i < 5; i++) {
+                // If already broken/physics active, skip
+                if (this.game.state.hudPhysics && this.game.state.hudPhysics[i]) continue;
+
+                // Position Logic (Matches Renderer.js)
+                const ix = sx + halfStep + iconStep * i;
+                const iy = iconY;
+
+                // Rectangular Hitbox (Full Width, Generous Height)
+                // dx < iconStep / 2 ensures overlap-free coverage of the column
+                // dy < 60 gives a 120px vertical strip (highly forgiving)
+                const dx = Math.abs(mx - ix);
+                const dy = Math.abs(my - iy);
+
+                if (dx < iconStep / 2 && dy < 60) {
+                    // BREAK THIS ICON
+                    if (!this.game.state.hudPhysics) this.game.state.hudPhysics = [null, null, null, null, null];
+
+                    this.game.state.hudPhysics[i] = {
+                        x: 0, y: 0, rot: 0,
+                        vx: (Math.random() - 0.5) * 150,
+                        vy: -400, // Pop up
+                        vr: (Math.random() - 0.5) * 8,
+                        gravity: 1200
+                    };
+
+                    this.game.events.emit('play_sound', 'break');
+                    return true; // Handle click
+                }
+            }
+        }
+
+        let shopHit = false;
+
+        // 1. Shop Upgrades (Only if open)
+        // HUD Icons check is now done at step 0 for priority
         if (this.shopOpen) {
             // Access upgrades via themeManager
             const upgrades = this.game.themeManager.upgrades;
@@ -223,7 +295,43 @@ export class EconomySystem {
 
         if (shopHit) return true;
 
-        // 2. Main Button (Game Area Center)
+        // 2. HUD Icons (Top Right Sidebar)
+        // Allow breaking them if canTriggerDestruction is true
+        if (this.game.canTriggerDestruction) {
+            const sx = w * CFG.game.shop.startXRatio;
+            const sw = w - sx;
+            const iconY = h * 0.05;
+            const iconStep = sw / 5;
+            const halfStep = iconStep / 2;
+
+            for (let i = 0; i < 5; i++) {
+                // If already broken/physics active, skip or allow re-hit? Skip.
+                if (this.game.state.hudPhysics && this.game.state.hudPhysics[i]) continue;
+
+                // Position Logic (Matches Renderer.js)
+                const ix = sx + halfStep + iconStep * i;
+                const iy = iconY;
+
+                // Hitbox (Circle ~30 radius covers it)
+                if (Math.hypot(mx - ix, my - iy) < 30) {
+                    // BREAK THIS ICON
+                    if (!this.game.state.hudPhysics) this.game.state.hudPhysics = [null, null, null, null, null];
+
+                    this.game.state.hudPhysics[i] = {
+                        x: 0, y: 0, rot: 0,
+                        vx: (Math.random() - 0.5) * 150,
+                        vy: -400, // Pop up
+                        vr: (Math.random() - 0.5) * 8,
+                        gravity: 1200
+                    };
+
+                    this.game.events.emit('play_sound', 'break');
+                    return true; // Handle click
+                }
+            }
+        }
+
+        // 3. Main Button (Game Area Center)
         const gameW = w * CFG.game.gameAreaWidthRatio;
         const btnX = gameW / 2;
         const btnY = h * 0.5;
@@ -259,6 +367,26 @@ export class EconomySystem {
                                 gravity: 800 + (Math.random() * 400) // Varied fall speed
                             });
                         }
+
+                        // Init Physics for Score/Money (Top Center)
+                        this.game.state.scorePhysics = {
+                            x: 0, y: 0, rot: 0,
+                            vx: (Math.random() - 0.5) * 100,
+                            vy: -300,
+                            vr: (Math.random() - 0.5) * 3,
+                            gravity: 1200
+                        };
+
+                        // Init Physics for Progress Bar (Bottom)
+                        this.game.state.barPhysics = {
+                            x: 0, y: 0, rot: 0,
+                            vx: (Math.random() - 0.5) * 50,
+                            vy: 200, // Drop down
+                            vr: (Math.random() - 0.5) * 2,
+                            gravity: 1500
+                        };
+
+                        // HUD Physics removed (Handled by individual clicks)
                     }
 
                     this.game.events.emit('play_sound', 'break');

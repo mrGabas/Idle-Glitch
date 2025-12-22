@@ -69,6 +69,11 @@ export class ThemeManager {
         this.game.state.bgBroken = false;
         this.game.state.bgLayerPhysics = null;
 
+        // NEW: UI Physics Reset
+        this.game.state.scorePhysics = null;
+        this.game.state.barPhysics = null;
+        this.game.state.hudPhysics = [null, null, null, null, null]; // Sparse array for 5 icons
+
         // Also reset debris? Usually they life-out naturally.
         // Reset trigger flag (Game Logic should handle when it comes back on)
         // this.game.canTriggerDestruction = false; // Managed by Game.js loop usually
