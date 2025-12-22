@@ -710,6 +710,8 @@ export class SoundEngine {
 
     unmute() {
         if (!this.master) return;
+        // Don't unmute if still suppressed by ad or hidden tab
+        if (this.game && (this.game.isAdPlaying || this.game.tabHidden)) return;
         this.master.gain.value = 1.0;
     }
 }

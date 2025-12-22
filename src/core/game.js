@@ -180,6 +180,7 @@ export class Game {
         this.gameState = 'MENU'; // MENU, PLAYING, PAUSED, SETTINGS, BIOS
         this.previousState = 'MENU';
         this.returnScreenId = null;
+        this.tabHidden = false;
 
         // Bind UI Elements
         this.bindUI();
@@ -441,6 +442,8 @@ export class Game {
         this.input.on('visibilitychange', () => {
             if (document.hidden) {
                 // Player left
+                this.tabHidden = true;
+                this.audio.mute();
                 this.adsManager.gameplayStop();
                 awayStartTime = Date.now();
                 let i = 0;
@@ -450,6 +453,8 @@ export class Game {
                 }, 2000);
             } else {
                 // Player returned
+                this.tabHidden = false;
+                this.audio.unmute();
                 this.adsManager.gameplayStart();
                 document.title = originalTitle;
                 if (titleInterval) clearInterval(titleInterval);
@@ -1197,7 +1202,7 @@ export class Game {
         this.state.totalPlayTime += dt;
         this.lastTime = t;
 
-        if (this.isAdPlaying || (this.gameState !== 'PLAYING' && this.gameState !== 'BIOS' && this.gameState !== 'ENDING' && !this.state.crashed && !this.state.rebooting)) {
+        if (this.tabHidden || this.isAdPlaying || (this.gameState !== 'PLAYING' && this.gameState !== 'BIOS' && this.gameState !== 'ENDING' && !this.state.crashed && !this.state.rebooting)) {
             // Still draw even if paused, just don't update
             this.draw();
             this.input.update(); // Update input even when paused to prevent stuck keys
