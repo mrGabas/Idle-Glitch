@@ -26,6 +26,7 @@ export class CrazyFakes {
 
         // 0. Background & Title (Unlocked for total destruction)
         this.elements.push({
+            id: 'sidebar_bg', // Added ID for persistence
             type: 'sidebar_bg',
             x: 0, y: 0, w: 240, h: h,
             color: '#161616',
@@ -35,6 +36,7 @@ export class CrazyFakes {
         });
 
         this.elements.push({
+            id: 'title', // Added ID for persistence
             type: 'title',
             x: 20, y: 15, w: 150, h: 30, // Approx rect for text
             text: "CrazyFakes",
@@ -49,6 +51,7 @@ export class CrazyFakes {
         const cats = ['New', 'Trending', 'Action', 'Driving', 'Clicker', 'Horror', 'Multiplayer'];
         cats.forEach((txt, i) => {
             this.elements.push({
+                id: `sidebar_btn_${i}`, // Added ID for persistence
                 type: 'sidebar_btn',
                 x: 20, y: 80 + i * 50, w: 180, h: 35,
                 text: txt,
@@ -60,8 +63,34 @@ export class CrazyFakes {
             });
         });
 
-        // 2. Game Grid REMOVED as per request.
-        // Only Sidebar remains.
+        // Load saved state if available
+        if (this.game.saveSystem) {
+            const savedData = this.game.saveSystem.load('fake_ui_data', null);
+            if (savedData) this.importData(savedData);
+        }
+    }
+
+    exportData() {
+        // Map element ID to active status
+        const data = {};
+        this.elements.forEach(el => {
+            if (el.id) {
+                data[el.id] = {
+                    active: el.active,
+                    hp: el.hp
+                };
+            }
+        });
+        return data;
+    }
+
+    importData(data) {
+        this.elements.forEach(el => {
+            if (el.id && data[el.id]) {
+                el.active = data[el.id].active;
+                el.hp = data[el.id].hp;
+            }
+        });
     }
 
     draw(ctx) {

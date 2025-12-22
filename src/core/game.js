@@ -211,6 +211,11 @@ export class Game {
             this.saveSystem.save('mail_data', this.uiManager.mail.exportData());
         }
 
+        // NEW: Save Fake UI Data
+        if (this.fakeUI) {
+            this.saveSystem.save('fake_ui_data', this.fakeUI.exportData());
+        }
+
         // Save Lore Data
         this.saveSystem.save('lore_data', this.loreSystem.getSaveData());
 
