@@ -713,7 +713,6 @@ export class Game {
      * @param {number} my - Mouse Y.
      */
     handleBIOSClick(mx, my) {
-        console.log(`BIOS Click: ${mx}, ${my}`);
         // View Area Check (Clipping)
         // Renderer draws box from roughly 50 to h-50.
         const viewTop = 50;

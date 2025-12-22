@@ -60,6 +60,21 @@ export class EconomySystem {
             p.x += p.vx * dt;
             p.y += p.vy * dt;
             p.rot += p.vr * dt;
+
+            // SAFEGUARD: Passive Corruption Gain (Entropy)
+            // If the button is broken, the player cannot click to gain corruption.
+            // We ensure they can still progress (slowly) to the collapse.
+            // Also counters potential corruption loss from enemies.
+            if (this.game.themeManager.currentTheme.id === 'rainbow_paradise') {
+                this.game.state.addCorruption(0.5 * dt); // Increased rate
+
+                // CRITICAL SAFEGUARD: Prevent backsliding below destruction threshold
+                // If enemies drain corruption, we clamp it so the user never loses 'progress' 
+                // capability (destruction phase starts at 60).
+                if (this.game.state.corruption < 60) {
+                    this.game.state.setCorruption(60);
+                }
+            }
         }
 
         // NEW: Background Physics (Multi-Layer)
