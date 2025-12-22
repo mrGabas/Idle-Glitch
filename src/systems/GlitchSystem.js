@@ -75,9 +75,10 @@ export class GlitchSystem {
             this.game.mouse.y = this.game.realMouse.y;
         }
 
-        // Mouse Inversion
-        if (state.corruption > 85) {
+        // Mouse Inversion (One-time glitch in the first location)
+        if (currentTheme.id === 'rainbow_paradise' && !state.cursorGlitchFixed && state.corruption > 85) {
             this.game.mouse.x = this.game.w - this.game.mouse.x;
+            this.game.mouse.y = this.game.h - this.game.mouse.y;
         }
 
         // --- FALSE CRASH LOGIC ---

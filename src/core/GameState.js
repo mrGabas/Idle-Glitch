@@ -81,6 +81,8 @@ export class GameState {
         this.overclockEndTime = 0;
         /** @type {number} Current overclock multiplier (1 or 2 typically) */
         this.overclockMultiplier = 1;
+        /** @type {boolean} Has the one-time cursor inversion glitch been cleared? */
+        this.cursorGlitchFixed = false;
     }
 
     get score() {
@@ -219,7 +221,8 @@ export class GameState {
             // Destruction
             mainButtonBroken: this.mainButtonBroken,
             bgBroken: this.bgBroken,
-            hudBroken: this.hudBroken
+            hudBroken: this.hudBroken,
+            cursorGlitchFixed: this.cursorGlitchFixed
         };
     }
 
@@ -249,10 +252,10 @@ export class GameState {
         this.congratsShown = data.congratsShown || false;
         this.overclockEndTime = data.overclockEndTime || 0;
 
-        // Destruction
         this.mainButtonBroken = data.mainButtonBroken || false;
         this.bgBroken = data.bgBroken || false;
         this.hudBroken = data.hudBroken || [false, false, false, false, false];
+        this.cursorGlitchFixed = data.cursorGlitchFixed || false;
 
         events.emit('state_updated', this);
     }

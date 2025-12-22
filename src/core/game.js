@@ -52,7 +52,7 @@ export class Game {
         this.renderer = new Renderer('gameCanvas');
         this.input = new InputHandler();
         this.virtualControls = new VirtualControls(this);
-        this.audio = new SoundEngine(); // Keep for resume()
+        this.audio = new SoundEngine(this); // Pass this for initial theme sync
 
         // Load Audio Settings
         const sfxVol = this.saveSystem.loadNumber('sfx_volume', 0.3);
@@ -370,21 +370,22 @@ export class Game {
             if (this.uiManager.handleMouseMove(mx, my)) return;
 
             if (this.gameState === 'PLAYING' || this.gameState === 'BIOS') { // Allow mouse in BIOS
-                // Track REAL mouse position separately
-                this.realMouse.x = e.clientX;
-                this.realMouse.y = e.clientY;
+                const rect = this.renderer.canvas.getBoundingClientRect();
+
+                // Track REAL mouse position separately (Canvas relative)
+                this.realMouse.x = e.clientX - rect.left;
+                this.realMouse.y = e.clientY - rect.top;
 
                 if (this.gameState === 'BIOS' || this.state.corruption <= 60) {
-                    const rect = this.renderer.canvas.getBoundingClientRect();
-                    this.mouse.x = e.clientX - rect.left;
-                    this.mouse.y = e.clientY - rect.top;
+                    this.mouse.x = this.realMouse.x;
+                    this.mouse.y = this.realMouse.y;
                     this.mouse.down = false; // Hovering
                 }
 
-                // Add to history for lag effect
+                // Add to history for lag effect (Use adjusted coordinates)
                 this.mouseHistory.push({
-                    x: e.clientX,
-                    y: e.clientY,
+                    x: this.realMouse.x,
+                    y: this.realMouse.y,
                     time: Date.now()
                 });
 
@@ -922,9 +923,11 @@ export class Game {
         this.mouse.y = e.clientY - rect.top;
         this.mouse.down = true;
 
-        // Mouse Inversion Fix
-        if (this.state.corruption > 85) {
+        // Mouse Inversion (One-time glitch in the first location)
+        const currentTheme = this.themeManager.currentTheme;
+        if (currentTheme.id === 'rainbow_paradise' && !this.state.cursorGlitchFixed && this.state.corruption > 85) {
             this.mouse.x = this.w - this.mouse.x;
+            this.mouse.y = this.h - this.mouse.y;
         }
 
         const mx = this.mouse.x;

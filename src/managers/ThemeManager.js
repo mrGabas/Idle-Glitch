@@ -62,6 +62,11 @@ export class ThemeManager {
     }
 
     switchTheme(newThemeId) {
+        // Fix the one-time cursor glitch if we are leaving the first location
+        if (this.currentTheme.id === 'rainbow_paradise') {
+            this.game.state.cursorGlitchFixed = true;
+        }
+
         this.setTheme(newThemeId);
 
         // Reset corruption for the new theme

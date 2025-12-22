@@ -28,7 +28,8 @@ const MUSIC_TRACKS = {
 };
 
 export class SoundEngine {
-    constructor() {
+    constructor(game = null) {
+        this.game = game || window.game;
         this.ctx = null;
         this.master = null;
         this.sfxGain = null;
@@ -90,9 +91,9 @@ export class SoundEngine {
         this.corporateSynth = new CorporateSynth(this.ctx);
         this.corporateSynth.connect(this.musicGain);
 
-        // Sync with current theme immediately
-        if (window.game && window.game.themeManager) {
-            this.handleThemeChange(window.game.themeManager.currentTheme.id);
+        const activeGame = this.game;
+        if (activeGame && activeGame.themeManager) {
+            this.handleThemeChange(activeGame.themeManager.currentTheme.id);
         }
     }
 
@@ -181,8 +182,8 @@ export class SoundEngine {
 
             // Glitch Audio Logic
             let corruption = 0;
-            if (window.game && window.game.state) {
-                corruption = window.game.state.corruption || 0;
+            if (this.game && this.game.state) {
+                corruption = this.game.state.corruption || 0;
             }
 
             // Calculate audio degradation
@@ -382,7 +383,7 @@ export class SoundEngine {
             }
             else if (type === 'screamer') {
                 // BLOCK SCREAMERS DURING ENDING
-                if (window.game && window.game.gameState === 'ENDING') {
+                if (this.game && this.game.gameState === 'ENDING') {
                     return;
                 }
 
@@ -517,7 +518,7 @@ export class SoundEngine {
     handleThemeChange(themeId) {
         // Guard: If in BIOS, ignore theme previews/changes until actual boot (which changes gameState first)
         // Exception: If the event is explicitly switching TO bios (e.g. from reset), allow it.
-        if (window.game && window.game.gameState === 'BIOS' && themeId !== 'bios') {
+        if (this.game && this.game.gameState === 'BIOS' && themeId !== 'bios') {
             return;
         }
 
@@ -535,7 +536,7 @@ export class SoundEngine {
             targetTrack = MUSIC_TRACKS.pixel_party;
             // Listen to corruption for progressive glitch
             events.on('corruption_changed', this.corruptionListener);
-            if (window.game && window.game.state) {
+            if (this.game && this.game.state) {
                 // specific handling for rainbow intensity usually handled by listener, 
                 // but we can init here if needed.
                 // For now, let's stick to the existing logic re: intensity
@@ -589,8 +590,8 @@ export class SoundEngine {
             // Just update effects
             if (themeId === 'rainbow_paradise') {
                 // Update rainbow logic if needed (it uses listener)
-                if (window.game && window.game.state) {
-                    this.handleCorruptionUpdate(window.game.state.corruption);
+                if (this.game && this.game.state) {
+                    this.handleCorruptionUpdate(this.game.state.corruption);
                 }
             } else {
                 // Update glitch intensity
@@ -605,8 +606,8 @@ export class SoundEngine {
 
                 if (themeId === 'rainbow_paradise') {
                     events.on('corruption_changed', this.corruptionListener);
-                    if (window.game && window.game.state) {
-                        this.handleCorruptionUpdate(window.game.state.corruption);
+                    if (this.game && this.game.state) {
+                        this.handleCorruptionUpdate(this.game.state.corruption);
                     }
                 } else {
                     this.startGlitchEffect(targetIntensity);
