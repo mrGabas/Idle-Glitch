@@ -63,6 +63,16 @@ export class ThemeManager {
         // Reset corruption for the new theme
         this.game.state.corruption = 0;
 
+        // Reset Destruction State
+        this.game.state.mainButtonBroken = false;
+        this.game.state.mainButtonPhysics = null;
+        this.game.state.bgBroken = false;
+        this.game.state.bgLayerPhysics = null;
+
+        // Also reset debris? Usually they life-out naturally.
+        // Reset trigger flag (Game Logic should handle when it comes back on)
+        // this.game.canTriggerDestruction = false; // Managed by Game.js loop usually
+
         // Boot Sequence Lore
         if (this.currentTheme.bootSequence && this.game.uiManager && this.game.uiManager.chat) {
             this.currentTheme.bootSequence.forEach((msg, index) => {
