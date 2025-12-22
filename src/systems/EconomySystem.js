@@ -62,10 +62,28 @@ export class EconomySystem {
         if (this.game.state.bgBroken && this.game.state.bgLayerPhysics) {
             this.game.state.bgLayerPhysics.forEach(p => {
                 p.vy += p.gravity * dt;
-                p.y += p.vy * dt;
                 p.x += p.vx * dt;
+                p.y += p.vy * dt;
                 p.rot += p.vr * dt;
             });
+        }
+
+        // Update Vignette Physics
+        if (this.game.state.vignettePhysics) {
+            const p = this.game.state.vignettePhysics;
+            p.vy += p.gravity * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.vr * dt;
+        }
+
+        // Update Sidebar Physics
+        if (this.game.state.sidebarPhysics) {
+            const p = this.game.state.sidebarPhysics;
+            p.vy += p.gravity * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.vr * dt;
         }
 
         // NEW: Score Physics
@@ -201,7 +219,8 @@ export class EconomySystem {
 
             for (let i = 0; i < 5; i++) {
                 // If already broken/physics active, skip
-                if (this.game.state.hudPhysics && this.game.state.hudPhysics[i]) continue;
+                // Check boolean flag first (persistence) or physics presence
+                if ((this.game.state.hudBroken && this.game.state.hudBroken[i]) || (this.game.state.hudPhysics && this.game.state.hudPhysics[i])) continue;
 
                 // Position Logic (Matches Renderer.js)
                 const ix = sx + halfStep + iconStep * i;
@@ -225,7 +244,12 @@ export class EconomySystem {
                         gravity: 1200
                     };
 
-                    this.game.events.emit('play_sound', 'break');
+                    // KEY FIX: Persist the broken state
+                    if (!this.game.state.hudBroken) this.game.state.hudBroken = [false, false, false, false, false];
+                    this.game.state.hudBroken[i] = true;
+
+                    this.game.events.emit('play_sound', 'break_fake');
+                    this.game.saveGame(); // Force save
                     return true; // Handle click
                 }
             }
@@ -276,6 +300,7 @@ export class EconomySystem {
                         for (let k = 0; k < 5; k++) {
                             this.game.entities.add('debris', new Debris(bx + cardW / 2, by + cardH / 2, '#0f0'));
                         }
+                        this.game.saveGame(); // Force save
                         return true;
                     }
 
@@ -295,43 +320,7 @@ export class EconomySystem {
 
         if (shopHit) return true;
 
-        // 2. HUD Icons (Top Right Sidebar)
-        // Allow breaking them if canTriggerDestruction is true
-        if (this.game.canTriggerDestruction) {
-            const sx = w * CFG.game.shop.startXRatio;
-            const sw = w - sx;
-            const iconY = h * 0.05;
-            const iconStep = sw / 5;
-            const halfStep = iconStep / 2;
-
-            for (let i = 0; i < 5; i++) {
-                // If already broken/physics active, skip or allow re-hit? Skip.
-                if (this.game.state.hudPhysics && this.game.state.hudPhysics[i]) continue;
-
-                // Position Logic (Matches Renderer.js)
-                const ix = sx + halfStep + iconStep * i;
-                const iy = iconY;
-
-                // Hitbox (Circle ~30 radius covers it)
-                if (Math.hypot(mx - ix, my - iy) < 30) {
-                    // BREAK THIS ICON
-                    if (!this.game.state.hudPhysics) this.game.state.hudPhysics = [null, null, null, null, null];
-
-                    this.game.state.hudPhysics[i] = {
-                        x: 0, y: 0, rot: 0,
-                        vx: (Math.random() - 0.5) * 150,
-                        vy: -400, // Pop up
-                        vr: (Math.random() - 0.5) * 8,
-                        gravity: 1200
-                    };
-
-                    this.game.events.emit('play_sound', 'break');
-                    return true; // Handle click
-                }
-            }
-        }
-
-        // 3. Main Button (Game Area Center)
+        // 2. Main Button (Game Area Center)
         const gameW = w * CFG.game.gameAreaWidthRatio;
         const btnX = gameW / 2;
         const btnY = h * 0.5;
@@ -343,64 +332,94 @@ export class EconomySystem {
             if (this.game.canTriggerDestruction) {
                 if (!this.game.state.mainButtonBroken) {
                     this.game.state.mainButtonBroken = true;
+                    this.game.events.emit('play_sound', 'break');
 
                     // Init Physics for Button
                     this.game.state.mainButtonPhysics = {
                         x: 0, y: 0, rot: 0,
-                        vx: (Math.random() - 0.5) * 200, // Slight horizontal scatter
-                        vy: -600, // Pop up first
-                        vr: (Math.random() - 0.5) * 5 // Rotation
+                        vx: (Math.random() - 0.5) * 500,
+                        vy: -100, // Slight pop
+                        vr: (Math.random() - 0.5) * 15,
+                        gravity: 1500
                     };
 
-                    // Init Physics for Background Layers (3 layers usually)
-                    if (!this.game.state.bgBroken) {
-                        this.game.state.bgBroken = true;
-                        this.game.state.bgLayerPhysics = [];
+                    // UNIVERSAL DESTRUCTION: Trigger Everything Else
+                    this.game.state.bgBroken = true;
 
-                        // Create 3 Physics Objects for potential layers
-                        for (let i = 0; i < 3; i++) {
-                            this.game.state.bgLayerPhysics.push({
-                                x: 0, y: 0, rot: 0,
-                                vx: (Math.random() - 0.5) * 50, // Slight horizontal drift
-                                vy: (Math.random() * -200) - 100, // Small pop up
-                                vr: (Math.random() - 0.5) * 0.5, // Slow rotation
-                                gravity: 800 + (Math.random() * 400) // Varied fall speed
-                            });
-                        }
+                    // 1. Score Physics
+                    this.game.state.scorePhysics = {
+                        x: 0, y: 0, rot: 0,
+                        vx: (Math.random() - 0.5) * 200,
+                        vy: -300,
+                        vr: (Math.random() - 0.5) * 5,
+                        gravity: 1000
+                    };
 
-                        // Init Physics for Score/Money (Top Center)
-                        this.game.state.scorePhysics = {
+                    // 2. Progress Bar Physics
+                    this.game.state.barPhysics = {
+                        x: 0, y: 0, rot: 0,
+                        vx: (Math.random() - 0.5) * 100,
+                        vy: 0, // Just drop
+                        vr: (Math.random() - 0.5) * 2,
+                        gravity: 1200
+                    };
+
+                    // 3. Sidebar Physics
+                    this.game.state.sidebarPhysics = {
+                        x: 0, y: 0, rot: 0,
+                        vx: 50, // Slight push right
+                        vy: 0,
+                        vr: 0.5, // Slow rotation
+                        gravity: 800
+                    };
+
+                    // 4. Background Layers Physics
+                    const theme = this.game.themeManager.currentTheme;
+                    if (theme.parallax && theme.parallax.layers) {
+                        this.game.state.bgLayerPhysics = theme.parallax.layers.map(() => ({
                             x: 0, y: 0, rot: 0,
                             vx: (Math.random() - 0.5) * 100,
-                            vy: -300,
-                            vr: (Math.random() - 0.5) * 3,
-                            gravity: 1200
-                        };
-
-                        // Init Physics for Progress Bar (Bottom)
-                        this.game.state.barPhysics = {
-                            x: 0, y: 0, rot: 0,
-                            vx: (Math.random() - 0.5) * 50,
-                            vy: 200, // Drop down
-                            vr: (Math.random() - 0.5) * 2,
-                            gravity: 1500
-                        };
-
-                        // HUD Physics removed (Handled by individual clicks)
+                            vy: (Math.random() * 200), // Some might just slide down
+                            vr: (Math.random() - 0.5) * 1,
+                            gravity: 500 + Math.random() * 500
+                        }));
                     }
 
-                    this.game.events.emit('play_sound', 'break');
+                    // 5. HUD Icons Physics (Break them all)
+                    if (!this.game.state.hudPhysics) this.game.state.hudPhysics = [null, null, null, null, null];
+                    if (!this.game.state.hudBroken) this.game.state.hudBroken = [false, false, false, false, false];
+
+                    for (let i = 0; i < 5; i++) {
+                        if (!this.game.state.hudPhysics[i]) {
+                            this.game.state.hudPhysics[i] = {
+                                x: 0, y: 0, rot: 0,
+                                vx: (Math.random() - 0.5) * 150,
+                                vy: -200 + (Math.random() * 100),
+                                vr: (Math.random() - 0.5) * 8,
+                                gravity: 1200
+                            };
+                            this.game.state.hudBroken[i] = true;
+                        }
+                    }
+
+                    // Debris
                     this.game.shake = 20;
-                    for (let k = 0; k < 10; k++) {
-                        this.game.entities.add('debris', new Debris(btnX, btnY, '#fff'));
+                    for (let k = 0; k < 20; k++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = Math.random() * btnRadius;
+                        const dx = btnX + Math.cos(angle) * dist;
+                        const dy = btnY + Math.sin(angle) * dist;
+                        this.game.entities.add('debris', new Debris(dx, dy, '#fff'));
                     }
+                    this.game.saveGame(); // Force Save
+                    this.game.saveGame(); // Force Save
                 }
                 return true;
             }
 
-            // Only handle click if NOT broken
+            // Normal Click (Only if NOT broken)
             if (!this.game.state.mainButtonBroken) {
-                this.game.createParticles(mx, my, this.game.themeManager.currentTheme.colors.accent); // Visual tap feedback at actual mouse pos
+                this.game.createParticles(mx, my, this.game.themeManager.currentTheme.colors.accent);
                 this.handleMainClick(mx, my, btnX, btnY);
             }
             return true;

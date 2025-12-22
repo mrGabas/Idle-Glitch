@@ -56,7 +56,7 @@ export class Game {
 
         // Load Audio Settings
         const sfxVol = this.saveSystem.loadNumber('sfx_volume', 0.5);
-        const musicVol = this.saveSystem.loadNumber('music_volume', 0.5);
+        const musicVol = this.saveSystem.loadNumber('music_volume', 0.1);
         this.audio.setSFXVolume(sfxVol);
         this.audio.setMusicVolume(musicVol);
 
@@ -1109,7 +1109,7 @@ export class Game {
                 this.shake = 3;
 
 
-                this.events.emit('play_sound', 'glitch');
+                this.events.emit('play_sound', 'break_fake');
                 this.state.addCorruption(0.2);
             }
         }

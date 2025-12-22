@@ -18,7 +18,7 @@ export class ThemeManager {
 
     loadThemeUpgrades(savedData = null) {
         if (this.currentTheme && this.currentTheme.upgrades) {
-            this.upgrades = this.currentTheme.upgrades.map(u => ({ ...u, count: 0, cost: u.baseCost }));
+            this.upgrades = this.currentTheme.upgrades.map(u => ({ ...u, count: 0, cost: u.baseCost, isBroken: false }));
 
             // If we have saved data, restore counts and costs
             if (savedData && savedData.upgrades) {
@@ -26,6 +26,9 @@ export class ThemeManager {
                     const upgrade = this.upgrades.find(u => u.id === savedUpgrade.id);
                     if (upgrade) {
                         upgrade.count = savedUpgrade.count;
+                        // Restore broken state
+                        upgrade.isBroken = savedUpgrade.isBroken || false;
+
                         // Recalculate cost: base * (1.4 ^ count)
                         upgrade.cost = upgrade.baseCost;
                         for (let i = 0; i < upgrade.count; i++) {
@@ -43,7 +46,8 @@ export class ThemeManager {
         return {
             upgrades: this.upgrades.map(u => ({
                 id: u.id,
-                count: u.count
+                count: u.count,
+                isBroken: u.isBroken
             }))
         };
     }
@@ -63,15 +67,19 @@ export class ThemeManager {
         // Reset corruption for the new theme
         this.game.state.corruption = 0;
 
+
         // Reset Destruction State
         this.game.state.mainButtonBroken = false;
         this.game.state.mainButtonPhysics = null;
         this.game.state.bgBroken = false;
         this.game.state.bgLayerPhysics = null;
+        this.game.state.hudBroken = [false, false, false, false, false];
 
         // NEW: UI Physics Reset
         this.game.state.scorePhysics = null;
         this.game.state.barPhysics = null;
+        this.game.state.sidebarPhysics = null;
+        this.game.state.vignettePhysics = null;
         this.game.state.hudPhysics = [null, null, null, null, null]; // Sparse array for 5 icons
 
         // Also reset debris? Usually they life-out naturally.

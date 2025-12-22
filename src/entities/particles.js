@@ -75,7 +75,7 @@ export class Debris extends Particle {
                     this.collected = true;
                     // Handle collection side-effect directly
                     context.state.addScore(10 * context.state.multiplier);
-                    context.events.emit('play_sound', 'click');
+                    context.events.emit('play_sound', 'collect');
                     return 'collected';
                 }
             }

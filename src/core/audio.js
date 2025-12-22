@@ -36,7 +36,7 @@ export class SoundEngine {
         this.enabled = false;
 
         this.sfxVolume = 0.5;
-        this.musicVolume = 0.6;
+        this.musicVolume = 0.1;
 
         // Event Subscription
         events.on('play_sound', (type) => this.play(type));
@@ -202,8 +202,8 @@ export class SoundEngine {
             g.connect(this.sfxGain);
 
             if (type === 'click') {
-                // Modified based on feedback: Lower pitch, "woodblock" style
-                osc.type = 'sine';
+                // Pleasant click -> Harsh mechanical clank
+                osc.type = useHarshWaveform ? 'sawtooth' : 'sine';
 
                 // 500Hz -> 300Hz gives a solid "thock" sound
                 let freqStart = 600;
@@ -308,48 +308,77 @@ export class SoundEngine {
                 osc.stop(t + 0.04);
             }
             else if (type === 'break') {
-                // NEW 'Break' Sound: Crisp Shatter (Noise + High Ping)
-                // Replaces the "annoying" low rumble.
+                // MODIFIED: HOLLOW POP (Minimalist, pleasant)
+                // No noise, just a soft low thud/pop
 
-                // 1. Noise Burst (The shatter)
-                if (this.noiseBuffer) {
-                    const noise = this.ctx.createBufferSource();
-                    noise.buffer = this.noiseBuffer;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
 
-                    // Filter out muddy lows
-                    const noiseFilter = this.ctx.createBiquadFilter();
-                    noiseFilter.type = 'highpass';
-                    noiseFilter.frequency.value = 800; // Only highs
+                osc.connect(g);
+                g.connect(this.sfxGain);
 
-                    const noiseGain = this.ctx.createGain();
+                // "Hollow" sound signature
+                osc.type = 'triangle';
 
-                    noise.connect(noiseFilter);
-                    noiseFilter.connect(noiseGain);
-                    noiseGain.connect(this.sfxGain);
+                // Pitch drop (Pop effect)
+                // 150Hz -> 50Hz
+                osc.frequency.setValueAtTime(150, t);
+                osc.frequency.exponentialRampToValueAtTime(50, t + 0.1);
 
-                    // Sharp decay
-                    noiseGain.gain.setValueAtTime(0.8, t);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                // Smooth envelope (No clicks)
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.5, t + 0.01); // Fast attack
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.15); // Quick decay
 
-                    noise.start(t);
-                    noise.stop(t + 0.2);
-                }
+                osc.start(t);
+                osc.stop(t + 0.15);
+            }
+            else if (type === 'break_fake') {
+                // MODIFIED: HOLLOW POP (Same as 'break')
+                // For Consistency
 
-                // 2. Glassy 'Ping' (The impact)
-                const ping = this.ctx.createOscillator();
-                const pingGain = this.ctx.createGain();
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
 
-                ping.type = 'sine';
-                ping.frequency.setValueAtTime(2000, t); // High pitch
+                osc.connect(g);
+                g.connect(this.sfxGain);
 
-                ping.connect(pingGain);
-                pingGain.connect(this.sfxGain);
+                osc.type = 'triangle';
 
-                pingGain.gain.setValueAtTime(0.5, t);
-                pingGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                // Pitch drop (Pop effect)
+                osc.frequency.setValueAtTime(150, t);
+                osc.frequency.exponentialRampToValueAtTime(50, t + 0.1);
 
-                ping.start(t);
-                ping.stop(t + 0.05);
+                // Smooth envelope
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.5, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+
+                osc.start(t);
+                osc.stop(t + 0.15);
+            }
+            else if (type === 'collect') {
+                // MODIFIED: SOFT BUBBLE POP
+                // Falling pitch = "drop" / "bubble" feel
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+
+                osc.connect(g);
+                g.connect(this.sfxGain);
+
+                osc.type = 'sine';
+
+                // Falling pitch (600Hz -> 100Hz)
+                osc.frequency.setValueAtTime(600, t);
+                osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
+
+                // Very soft envelope
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.1, t + 0.01); // Lower volume
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+                osc.start(t);
+                osc.stop(t + 0.1);
             }
             else if (type === 'screamer') {
                 // BLOCK SCREAMERS DURING ENDING

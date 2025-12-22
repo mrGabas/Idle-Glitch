@@ -67,9 +67,16 @@ export class GameState {
         /** @type {boolean} Whether the player has seen the true ending */
         this.endingSeen = false;
         /** @type {boolean} Whether the post-game congratulatory message has been shown */
+        /** @type {boolean} Whether the post-game congratulatory message has been shown */
         this.congratsShown = false;
 
-        // Overclock State
+        // Destruction State (Persistence)
+        /** @type {boolean} Is the main button destroyed? */
+        this.mainButtonBroken = false;
+        /** @type {boolean} Is the background destroyed? */
+        this.bgBroken = false;
+        /** @type {boolean[]} Status of broken HUD icons (indices 0-4) */
+        this.hudBroken = [false, false, false, false, false];
         /** @type {number} Timestamp when overclock effect ends */
         this.overclockEndTime = 0;
         /** @type {number} Current overclock multiplier (1 or 2 typically) */
@@ -205,8 +212,14 @@ export class GameState {
             hacksSolved: this.hacksSolved,
             hacksSolved: this.hacksSolved,
             endingSeen: this.endingSeen,
+            hacksSolved: this.hacksSolved,
+            endingSeen: this.endingSeen,
             congratsShown: this.congratsShown,
-            overclockEndTime: this.overclockEndTime
+            overclockEndTime: this.overclockEndTime,
+            // Destruction
+            mainButtonBroken: this.mainButtonBroken,
+            bgBroken: this.bgBroken,
+            hudBroken: this.hudBroken
         };
     }
 
@@ -233,7 +246,13 @@ export class GameState {
         this.hacksSolved = data.hacksSolved || 0;
         this.endingSeen = data.endingSeen || false;
         this.congratsShown = data.congratsShown || false;
+        this.congratsShown = data.congratsShown || false;
         this.overclockEndTime = data.overclockEndTime || 0;
+
+        // Destruction
+        this.mainButtonBroken = data.mainButtonBroken || false;
+        this.bgBroken = data.bgBroken || false;
+        this.hudBroken = data.hudBroken || [false, false, false, false, false];
 
         events.emit('state_updated', this);
     }

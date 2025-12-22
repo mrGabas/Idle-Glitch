@@ -177,20 +177,23 @@ export class Renderer {
         this.ctx.save();
         // BG
         // (Previously handled single bgPhysics here, now handled in drawParallax per layer)
-        if (state.bgBroken && state.bgLayerPhysics) {
+        // BG
+        // Check if BG is broken (either by flag or physics active)
+        // Check if BG is broken (either by flag or physics active)
+        if (state.bgBroken) {
             // Just fill black behind everything if broken
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(0, 0, this.w, this.h);
-        }
-
-        if (currentTheme.id === 'digital_decay') {
-            this.drawMatrixRain();
         } else {
-            this.ctx.fillStyle = currentTheme.colors.bg;
-            this.ctx.fillRect(0, 0, this.w, this.h);
+            if (currentTheme.id === 'digital_decay') {
+                this.drawMatrixRain();
+            } else {
+                this.ctx.fillStyle = currentTheme.colors.bg;
+                this.ctx.fillRect(0, 0, this.w, this.h);
 
-            if (currentTheme.id === 'server_farm') {
-                this.drawServerFarmEffect();
+                if (currentTheme.id === 'server_farm') {
+                    this.drawServerFarmEffect();
+                }
             }
         }
         this.ctx.restore();
@@ -218,8 +221,27 @@ export class Renderer {
             this.vignetteGrad = grad;
             this.vignetteGradTheme = currentTheme.id;
         }
-        this.ctx.fillStyle = this.vignetteGrad;
-        this.ctx.fillRect(0, 0, this.w, this.h);
+
+        // VIGNETTE PHYSICS WRAPPER
+        if (!state.mainButtonBroken && !state.bgBroken) {
+            this.ctx.save();
+            if (state.vignettePhysics) {
+                const p = state.vignettePhysics;
+                const gameW = this.w * CFG.game.gameAreaWidthRatio;
+                const cx = gameW / 2;
+                const cy = this.h / 2;
+                this.ctx.translate(cx + p.x, cy + p.y);
+                this.ctx.rotate(p.rot);
+                this.ctx.translate(-cx, -cy);
+            }
+            // Also hide if bgBroken?
+            // Actually, if bgBroken, we might want it hidden too as per previous logic.
+            // But mainButtonBroken is the primary check now since we decoupled them.
+
+            this.ctx.fillStyle = this.vignetteGrad;
+            this.ctx.fillRect(0, 0, this.w, this.h);
+            this.ctx.restore();
+        }
 
         this.drawGameUI(state, currentTheme, entities.upgrades, mouse, shopOpen, activeHighlightTarget);
 
@@ -307,87 +329,118 @@ export class Renderer {
 
 
 
-        // 1. Overclock
+        // 1. Overclock (Index 0)
+        let ocDrawn = false;
         this.ctx.save();
         if (state.hudPhysics && state.hudPhysics[0]) {
             const p = state.hudPhysics[0];
             this.ctx.translate(ocX + p.x, iconY + p.y);
             this.ctx.rotate(p.rot);
             this.ctx.translate(-ocX, -iconY);
-        }
 
-        const isOverclocked = state.overclockEndTime > Date.now();
-        this.drawFeedbackIcon(ocX, iconY, '#00eaff', '⚡', isOverclocked);
-
-        // Show Timer if active
-        if (isOverclocked) {
-            const remaining = Math.ceil((state.overclockEndTime - Date.now()) / 1000);
-            const timeText = `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
-
-            this.ctx.font = 'bold 10px monospace';
-            const tw = this.ctx.measureText(timeText).width + 8;
-            const th = 14;
-
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Dark semi-transparent background
-            this.ctx.fillRect(ocX - tw / 2, iconY + 25, tw, th);
-            this.ctx.strokeStyle = '#00eaff';
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeRect(ocX - tw / 2, iconY + 25, tw, th);
-
-            this.ctx.fillStyle = '#00eaff';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(timeText, ocX, iconY + 32);
-            this.ctx.textBaseline = 'alphabetic'; // Reset
+            const isOverclocked = state.overclockEndTime > Date.now();
+            this.drawFeedbackIcon(ocX, iconY, '#00eaff', '⚡', isOverclocked);
+            ocDrawn = true;
         }
         this.ctx.restore();
 
-        // 2. Mail Icon (2nd Position) - Index 1
+        if (!ocDrawn && (!state.hudBroken || !state.hudBroken[0])) {
+            const isOverclocked = state.overclockEndTime > Date.now();
+            this.drawFeedbackIcon(ocX, iconY, '#00eaff', '⚡', isOverclocked);
+
+            // Show Timer if active
+            if (isOverclocked) {
+                const remaining = Math.ceil((state.overclockEndTime - Date.now()) / 1000);
+                const timeText = `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+
+                this.ctx.font = 'bold 10px monospace';
+                const tw = this.ctx.measureText(timeText).width + 8;
+                const th = 14;
+
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Dark semi-transparent background
+                this.ctx.fillRect(ocX - tw / 2, iconY + 25, tw, th);
+                this.ctx.strokeStyle = '#00eaff';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(ocX - tw / 2, iconY + 25, tw, th);
+
+                this.ctx.fillStyle = '#00eaff';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(timeText, ocX, iconY + 32);
+                this.ctx.textBaseline = 'alphabetic'; // Reset
+            }
+        }
+
+        // 2. Mail Icon (Index 1)
+        let mailDrawn = false;
         this.ctx.save();
         if (state.hudPhysics && state.hudPhysics[1]) {
             const p = state.hudPhysics[1];
             this.ctx.translate(mailX + p.x, iconY + p.y);
             this.ctx.rotate(p.rot);
             this.ctx.translate(-mailX, -iconY);
+            this.drawHUD(mailX, iconY, uiManager);
+            mailDrawn = true;
         }
-        this.drawHUD(mailX, iconY, uiManager);
         this.ctx.restore();
 
-        // Draw Windows & UI Overlay (Delegated to UIManager)
+        if (!mailDrawn && (!state.hudBroken || !state.hudBroken[1])) {
+            this.drawHUD(mailX, iconY, uiManager);
+        }
+
+        // Draw Windows & UI Overlay (Delegated to UIManager) - Always draw windows
         uiManager.draw(this.ctx);
 
-        // 3. Feedback / Reviews Button (3rd Position) - Index 2
+        // 3. Feedback / Reviews Button (Index 2)
+        let chatDrawn = false;
         this.ctx.save();
         if (state.hudPhysics && state.hudPhysics[2]) {
             const p = state.hudPhysics[2];
             this.ctx.translate(chatX + p.x, iconY + p.y);
             this.ctx.rotate(p.rot);
             this.ctx.translate(-chatX, -iconY);
+            this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬', uiManager.reviewsTab.hasNew);
+            chatDrawn = true;
         }
-        this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬', uiManager.reviewsTab.hasNew);
         this.ctx.restore();
 
-        // 4. Achievements Button (4th Position) - Index 3
+        if (!chatDrawn && (!state.hudBroken || !state.hudBroken[2])) {
+            this.drawFeedbackIcon(chatX, iconY, '#6d2af7', '💬', uiManager.reviewsTab.hasNew);
+        }
+
+        // 4. Achievements Button (Index 3)
+        let achDrawn = false;
         this.ctx.save();
         if (state.hudPhysics && state.hudPhysics[3]) {
             const p = state.hudPhysics[3];
             this.ctx.translate(achX + p.x, iconY + p.y);
             this.ctx.rotate(p.rot);
             this.ctx.translate(-achX, -iconY);
+            this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆', uiManager.game.achievementSystem.hasNew);
+            achDrawn = true;
         }
-        this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆', uiManager.game.achievementSystem.hasNew);
         this.ctx.restore();
 
-        // 5. Archive Button (5th Position) - Index 4
+        if (!achDrawn && (!state.hudBroken || !state.hudBroken[3])) {
+            this.drawFeedbackIcon(achX, iconY, '#FFD700', '🏆', uiManager.game.achievementSystem.hasNew);
+        }
+
+        // 5. Archive Button (Index 4)
+        let arcDrawn = false;
         this.ctx.save();
         if (state.hudPhysics && state.hudPhysics[4]) {
             const p = state.hudPhysics[4];
             this.ctx.translate(arcX + p.x, iconY + p.y);
             this.ctx.rotate(p.rot);
             this.ctx.translate(-arcX, -iconY);
+            this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁', uiManager.game.loreSystem.hasNew);
+            arcDrawn = true;
         }
-        this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁', uiManager.game.loreSystem.hasNew);
         this.ctx.restore();
+
+        if (!arcDrawn && (!state.hudBroken || !state.hudBroken[4])) {
+            this.drawFeedbackIcon(arcX, iconY, '#ebb434', '📁', uiManager.game.loreSystem.hasNew);
+        }
 
         if (entities.fakeCursor) entities.fakeCursor.draw(this.ctx);
 
@@ -696,8 +749,22 @@ export class Renderer {
         const cx = gameW / 2;
 
         // --- SIDEBAR BACKGROUND ---
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Subtle darken
-        this.ctx.fillRect(gameW, 0, sideW, this.h);
+        // --- SIDEBAR BACKGROUND ---
+        // Only draw if NOT broken or if Physics is active
+        if (!state.bgBroken || state.sidebarPhysics) {
+            this.ctx.save();
+            if (state.sidebarPhysics) {
+                const p = state.sidebarPhysics;
+                const centerSideX = gameW + sideW / 2;
+                const centerSideY = this.h / 2;
+                this.ctx.translate(centerSideX + p.x, centerSideY + p.y);
+                this.ctx.rotate(p.rot);
+                this.ctx.translate(-centerSideX, -centerSideY);
+            }
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Subtle darken
+            this.ctx.fillRect(gameW, 0, sideW, this.h);
+            this.ctx.restore();
+        }
 
         // --- POSITIONING CONSTANTS (RESPONSIVE) ---
         const btnX = cx; // Center of Game Area
@@ -739,60 +806,62 @@ export class Renderer {
             this.ctx.translate(-btnX, -btnY);
         }
 
-        // Main Button circle
-        this.ctx.beginPath();
-        this.ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
 
-        // Check for Image
+        // If broken, don't draw the button proper (handled by physics or just emptiness)
+        // If physics exists, we draw parts elsewhere (Debris?). 
+        // Actually the button itself stops rendering when broken.
         let img = null;
-        if (theme.button.image) {
-            img = assetLoader.getImage(theme.button.image);
-        }
-
-        if (img && img.complete && img.naturalWidth > 0) {
-            // Draw full image without clipping
-            this.ctx.drawImage(img, btnX - btnRadius, btnY - btnRadius, btnRadius * 2, btnRadius * 2);
+        if (state.mainButtonBroken) {
+            // Do not render the main button circle/image or text
         } else {
-            // Gradient Fallback
-            let grad = this.mainButtonGrad;
-            // Ideally invalidate gradient if size changes, but for now just recreate/use
-            // Simpler: Just make new gradient every frame is expensive? No.
-            // But we cache.
-            // If radius changes, gradient should be rebuilt?
-            // "this.mainButtonGrad" cache might be stale if window resizes.
-            // "setSize" invalidates it. So we are good.
-            if (!grad) {
-                grad = this.ctx.createLinearGradient(btnX - btnRadius, btnY - btnRadius, btnX + btnRadius, btnY + btnRadius);
-                theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
-                this.mainButtonGrad = grad;
+            // Main Button circle
+            this.ctx.beginPath();
+            this.ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
+
+            // Check for Image
+            if (theme.button.image) {
+                img = assetLoader.getImage(theme.button.image);
             }
 
-            this.ctx.fillStyle = grad;
-            this.ctx.fill();
-            this.ctx.lineWidth = Math.max(2, btnRadius * 0.05); // Dynamic stroke
-            this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
-            this.ctx.stroke();
-        }
+            if (img && img.complete && img.naturalWidth > 0) {
+                // Draw full image without clipping
+                this.ctx.drawImage(img, btnX - btnRadius, btnY - btnRadius, btnRadius * 2, btnRadius * 2);
+            } else {
+                // Gradient Fallback
+                let grad = this.mainButtonGrad;
+                if (!grad) {
+                    grad = this.ctx.createLinearGradient(btnX - btnRadius, btnY - btnRadius, btnX + btnRadius, btnY + btnRadius);
+                    theme.button.gradient.forEach((c, i) => grad.addColorStop(i / (theme.button.gradient.length - 1), c));
+                    this.mainButtonGrad = grad;
+                }
 
-        this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
-        this.ctx.textAlign = 'center';
-
-        // Dynamic Font
-        const btnFontSize = Math.floor(btnRadius * 0.3); // 30% of radius
-        this.ctx.font = `bold ${btnFontSize}px Arial`;
-
-        // Hide Text/Emoji if we have an image
-        if (!img || !img.complete) {
-            // UI GASLIGHTING: Main Button
-            let btnText = theme.button.text;
-            if (state.corruption > 50) {
-                btnText = this.getGlitchText(btnText, state.corruption);
+                this.ctx.fillStyle = grad;
+                this.ctx.fill();
+                this.ctx.lineWidth = Math.max(2, btnRadius * 0.05); // Dynamic stroke
+                this.ctx.strokeStyle = theme.id === 'null_void' ? '#000' : '#fff'; // Black outline for Null Void
+                this.ctx.stroke();
             }
-            this.ctx.fillText(btnText, btnX, btnY - btnRadius * 0.3);
 
-            const emojiSize = Math.floor(btnRadius * 0.6);
-            this.ctx.font = `${emojiSize}px Arial`;
-            this.ctx.fillText(theme.button.emoji, btnX, btnY + btnRadius * 0.5);
+            this.ctx.fillStyle = theme.id === 'null_void' ? '#000' : '#fff';
+            this.ctx.textAlign = 'center';
+
+            // Dynamic Font
+            const btnFontSize = Math.floor(btnRadius * 0.3); // 30% of radius
+            this.ctx.font = `bold ${btnFontSize}px Arial`;
+
+            // Hide Text/Emoji if we have an image
+            if (!img || !img.complete) {
+                // UI GASLIGHTING: Main Button
+                let btnText = theme.button.text;
+                if (state.corruption > 50) {
+                    btnText = this.getGlitchText(btnText, state.corruption);
+                }
+                this.ctx.fillText(btnText, btnX, btnY - btnRadius * 0.3);
+
+                const emojiSize = Math.floor(btnRadius * 0.6);
+                this.ctx.font = `${emojiSize}px Arial`;
+                this.ctx.fillText(theme.button.emoji, btnX, btnY + btnRadius * 0.5);
+            }
         }
 
 
@@ -817,38 +886,41 @@ export class Renderer {
         const bgX = cx - bgW / 2;
         const bgY = this.h * 0.02; // Start a bit from top
 
-        // SCORE PHYSICS WRAPPER
-        this.ctx.save();
-        if (state.bgBroken && state.scorePhysics) {
-            const p = state.scorePhysics;
-            // Pivot around approximate center of score box (cx, h*0.08 is rough center)
-            const pivY = this.h * 0.08;
-            this.ctx.translate(cx + p.x, pivY + p.y);
-            this.ctx.rotate(p.rot);
-            this.ctx.translate(-cx, -pivY);
+        // Only draw if NOT broken or if Physics is active
+        if (!state.bgBroken || state.scorePhysics) {
+            // SCORE PHYSICS WRAPPER
+            this.ctx.save();
+            if (state.bgBroken && state.scorePhysics) {
+                const p = state.scorePhysics;
+                // Pivot around approximate center of score box (cx, h*0.08 is rough center)
+                const pivY = this.h * 0.08;
+                this.ctx.translate(cx + p.x, pivY + p.y);
+                this.ctx.rotate(p.rot);
+                this.ctx.translate(-cx, -pivY);
+            }
+
+            // Draw Background
+            this.ctx.save();
+            this.ctx.fillStyle = colors.ui;
+            this.ctx.shadowColor = colors.accent;
+            this.ctx.shadowBlur = 15;
+            this.ctx.fillRect(bgX, bgY, bgW, bgH);
+            this.ctx.shadowBlur = 0;
+            this.ctx.restore();
+
+            this.ctx.strokeStyle = colors.uiBorder;
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(bgX, bgY, bgW, bgH);
+
+            this.ctx.fillStyle = colors.text;
+            this.ctx.font = CFG.fonts.xl;
+            this.ctx.fillText(scoreText, cx, this.h * 0.1);
+
+            this.ctx.font = CFG.fonts.m;
+            this.ctx.fillText(rateText, cx, this.h * 0.14);
+
+            this.ctx.restore(); // End Score Physics
         }
-
-        // Draw Background
-        this.ctx.save();
-        this.ctx.fillStyle = colors.ui;
-        this.ctx.shadowColor = colors.accent;
-        this.ctx.shadowBlur = 15;
-        this.ctx.fillRect(bgX, bgY, bgW, bgH);
-        this.ctx.shadowBlur = 0;
-        this.ctx.restore();
-
-        this.ctx.strokeStyle = colors.uiBorder;
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(bgX, bgY, bgW, bgH);
-
-        this.ctx.fillStyle = colors.text;
-        this.ctx.font = CFG.fonts.xl;
-        this.ctx.fillText(scoreText, cx, this.h * 0.1);
-
-        this.ctx.font = CFG.fonts.m;
-        this.ctx.fillText(rateText, cx, this.h * 0.14);
-
-        this.ctx.restore(); // End Score Physics
 
         // Progress Bar (Bottom Center of Game Area)
         const barW = gameW * 0.8; // 80% Width of Game Area
@@ -864,53 +936,56 @@ export class Renderer {
         }
         this.ctx.globalAlpha = barAlpha;
 
-        // PROGRESS BAR PHYSICS WRAPPER
-        this.ctx.save();
-        if (state.bgBroken && state.barPhysics) {
-            const p = state.barPhysics;
-            // Pivot around center of bar
-            const pivY = by + barH / 2;
-            this.ctx.translate(bx + barW / 2 + p.x, pivY + p.y);
-            this.ctx.rotate(p.rot);
-            this.ctx.translate(-(bx + barW / 2), -pivY);
+        // Only draw if NOT broken or if Physics is active
+        if (!state.bgBroken || state.barPhysics) {
+            // PROGRESS BAR PHYSICS WRAPPER
+            this.ctx.save();
+            if (state.bgBroken && state.barPhysics) {
+                const p = state.barPhysics;
+                // Pivot around center of bar
+                const pivY = by + barH / 2;
+                this.ctx.translate(bx + barW / 2 + p.x, pivY + p.y);
+                this.ctx.rotate(p.rot);
+                this.ctx.translate(-(bx + barW / 2), -pivY);
+            }
+
+            this.ctx.fillStyle = theme.progressBar.bgColor;
+            this.ctx.fillRect(bx, by, barW, barH);
+
+            // 1. Draw Base Text (Color = Fill Color)
+            this.ctx.fillStyle = theme.progressBar.color;
+            this.ctx.font = "bold 12px Arial";
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(theme.progressBar.label, cx, by + barH / 2);
+
+            // 2. Draw Fill & Top Text (Clipped)
+            this.ctx.save();
+
+            let pct = state.corruption;
+            if (theme.progressBar.invert) pct = 100 - pct;
+            const fillW = barW * (pct / 100);
+
+            // Clip to the Filled Area
+            this.ctx.beginPath();
+            this.ctx.rect(bx, by, fillW, barH);
+            this.ctx.clip();
+
+            // Draw Fill
+            this.ctx.fillStyle = theme.progressBar.color;
+            this.ctx.fillRect(bx, by, fillW, barH);
+
+            // Draw Key Text (Color = Bg Color) - "Inverted" look
+            this.ctx.fillStyle = theme.progressBar.bgColor;
+            this.ctx.fillText(theme.progressBar.label, cx, by + barH / 2);
+
+            this.ctx.restore();
+            this.ctx.textBaseline = 'alphabetic';
+
+            this.ctx.strokeStyle = colors.uiBorder;
+            this.ctx.strokeRect(bx, by, barW, barH);
+
+            this.ctx.restore(); // End Progress Bar Physics
         }
-
-        this.ctx.fillStyle = theme.progressBar.bgColor;
-        this.ctx.fillRect(bx, by, barW, barH);
-
-        // 1. Draw Base Text (Color = Fill Color)
-        this.ctx.fillStyle = theme.progressBar.color;
-        this.ctx.font = "bold 12px Arial";
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(theme.progressBar.label, cx, by + barH / 2);
-
-        // 2. Draw Fill & Top Text (Clipped)
-        this.ctx.save();
-
-        let pct = state.corruption;
-        if (theme.progressBar.invert) pct = 100 - pct;
-        const fillW = barW * (pct / 100);
-
-        // Clip to the Filled Area
-        this.ctx.beginPath();
-        this.ctx.rect(bx, by, fillW, barH);
-        this.ctx.clip();
-
-        // Draw Fill
-        this.ctx.fillStyle = theme.progressBar.color;
-        this.ctx.fillRect(bx, by, fillW, barH);
-
-        // Draw Key Text (Color = Bg Color) - "Inverted" look
-        this.ctx.fillStyle = theme.progressBar.bgColor;
-        this.ctx.fillText(theme.progressBar.label, cx, by + barH / 2);
-
-        this.ctx.restore();
-        this.ctx.textBaseline = 'alphabetic';
-
-        this.ctx.strokeStyle = colors.uiBorder;
-        this.ctx.strokeRect(bx, by, barW, barH);
-
-        this.ctx.restore(); // End Progress Bar Physics
 
         this.ctx.globalAlpha = 1;
 
@@ -973,20 +1048,56 @@ export class Renderer {
                 }
 
                 // PHYSICS TRANSFORM (Falling)
-                this.ctx.save();
+                // Only draw if NOT broken or physics active
+                let drawUpgrade = true;
+                if (u.isBroken) { // Note: EconomySystem usually sets game.state.brokenUpgrades or similar, but here we just check if it's falling.
+                    // ACTUALLY: EconomySystem updates u.x_off/y_off/vy directly on the upgrade object.
+                    // The issue is Renderer loop draws it based on grid.
+                    // If u.isBroken is true, we should use its physics transform.
+                    // If it's broken AND has fallen off screen (handled in economy cleanup), it won't be in list?
+                    // Wait, EconomySystem splices it out if y > 2000.
+                    // So if it's still in list, we draw it.
+
+                    // BUT, if it is broken, we must use its offset.
+                    // The normal drawing code below (around line 1125) uses bx, by.
+                    // We need to incorporate u.x_off, u.y_off, u.rot
+                }
+
+                // If broken, check if we should draw "void" behind it? No, just draw it falling.
+                // If it is broken, we apply transform. 
+                // But if we reload, Economy doesn't re-init the physics vars (vx, vy). 
+                // So u.x_off will be 0? 
+                // If u.isBroken is true from save, and we lack physics, it should probably be NOT DRAWN (fell into void).
+
+                // FIX: If u.isBroken is set from load, assume it's gone.
+                // DUALITY:
+                // 1. Reloaded: isBroken=true, no physics/animation intent -> Don't Draw.
+                // 2. Just Clicked: isBroken=true, physics active -> Draw Falling.
+
+                // Check if physics values are plausible 'active' or if it's just a static 'true' flag.
+                // EconomySystem initializes vy=500 on break.
+                // On load, u.vy is undefined/0.
                 if (u.isBroken) {
-                    const cx = ux + cardW / 2; // STATIC Center
+                    if (!u.vy && !u.y_off) {
+                        return; // Skip (Gone)
+                    }
+                }
+
+                this.ctx.save();
+                // Physics (Destruction)
+                // EconomySystem updates u.x_off, u.y_off, u.rot directly
+                if (u.x_off || u.y_off || u.rot) {
+                    const cx = ux + cardW / 2;
                     const cy = uy + cardH / 2;
-
-                    // Move to NEW position
-                    this.ctx.translate(cx + (u.x_off || 0), cy + (u.y_off || 0));
-                    this.ctx.rotate(u.rot || 0);
-
-                    // Map local origin back to global coordinates so (ux, uy) draws correctly
+                    this.ctx.translate(cx + u.x_off, cy + u.y_off);
+                    this.ctx.rotate(u.rot);
                     this.ctx.translate(-cx, -cy);
+                }
 
-                    // Fade out
-                    alpha *= 1.0;
+                // Hover Effect
+                let isHover = false;
+                if (!u.isBroken && mouse.x >= ux && mouse.x <= ux + cardW && mouse.y >= uy && mouse.y <= uy + cardH) {
+                    isHover = true;
                 }
 
                 this.ctx.globalAlpha = alpha;
