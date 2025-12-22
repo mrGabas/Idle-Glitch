@@ -312,8 +312,8 @@ export class Game {
             // Trigger: (SHIFT + Click + Narrative) OR (Corruption Active)
             if ((narrativeValid && isShift) || corruptionActive) {
 
-                // Exclude body/html
-                if (target !== document.body && target !== document.documentElement) {
+                // Exclude body/html AND System Menus (Start, Pause, Settings)
+                if (target !== document.body && target !== document.documentElement && !target.closest('.menu-screen')) {
 
                     // SAFETY: If NOT using Shift, PROTECT THE CANVAS
                     if (!isShift && target.id === 'gameCanvas') {
