@@ -5,7 +5,7 @@
  */
 
 export const ASSETS = {
-    // Parallax Background Layers
+    // Parallax Background Layers & UI Images
     images: [
         // Main Buttons
         'assets/Levels/Rainbow Paradise/main button.webp',
@@ -33,6 +33,18 @@ export const ASSETS = {
         'assets/Levels/Dev Desktop/parallax/layer 2.webp',
         'assets/Levels/Dev Desktop/parallax/layer 3.webp',
 
+        // Firewall
+        'assets/Levels/Firewall/parallax/layer 1.webp',
+        'assets/Levels/Firewall/parallax/layer 2.webp',
+
+        // Corporate
+        'assets/Levels/Corporate/parallax/layer 1.webp',
+        'assets/Levels/Corporate/parallax/layer 2.webp',
+
+        // Beta Build
+        'assets/Levels/Beta Build/parallax/layer 1.webp',
+        'assets/Levels/Beta Build/parallax/layer 2.webp',
+
         // Legacy System
         'assets/Levels/Legacy System/parallax/layer 1.webp',
         'assets/Levels/Legacy System/parallax/layer 2.webp',
@@ -42,15 +54,44 @@ export const ASSETS = {
         'assets/Levels/Null Void/parallax/layer 2.webp',
         'assets/Levels/Null Void/parallax/layer 3.webp',
 
-        // Subliminal / 25fps
+        // Subliminal / 25fps images
         'assets/25fps/Larry.webp',
         'assets/25fps/Scarycat.webp',
-        'assets/25fps/Scarycat2.webp'
+        'assets/25fps/Scarycat2.webp',
+
+        // Review Avatars
+        'assets/Reviews/1.webp',
+        'assets/Reviews/2.webp',
+        'assets/Reviews/3.webp',
+        'assets/Reviews/4.webp',
+        'assets/Reviews/5.webp',
+        'assets/Reviews/6.webp',
+        'assets/Reviews/7.webp',
+        'assets/Reviews/8.webp',
+        'assets/Reviews/9.webp',
+        'assets/Reviews/10.webp',
+        'assets/Reviews/11.webp',
+        'assets/Reviews/12.webp',
+        'assets/Reviews/13.webp',
+        'assets/Reviews/14.webp',
+        'assets/Reviews/15.webp',
+        'assets/Reviews/16.webp',
+
+        // Common Collection Items (Memes)
+        'assets/Media/1. Common/AAAAAAAA.webp',
+        'assets/Media/1. Common/Bug Report.webp',
+        'assets/Media/1. Common/Chill Guy.webp',
+        'assets/Media/1. Common/Elgato.webp',
+        'assets/Media/1. Common/Ginger Truck.webp',
+        'assets/Media/1. Common/Im about to be mad.webp',
+        'assets/Media/1. Common/Plush Guardian.webp',
+        'assets/Media/1. Common/Truck from below.webp'
     ],
 
     // Audio files
     audio: [
         'assets/Audios/Terminal comands/felix/purr.mp3',
+        'assets/Audios/Terminal comands/0xdead/I AM ALIVE.MP3',
         'assets/Audios/BIOS/Boot.mp3',
         'assets/Audios/BIOS/error.mp3',
         'assets/Audios/BIOS/working.mp3',
@@ -58,6 +99,9 @@ export const ASSETS = {
         'assets/Audios/Screamer sounds/Screamer 1.mp3',
         'assets/Audios/Screamer sounds/Connect.mp3',
         'assets/Audios/Screamer sounds/Disconnect.mp3',
-        'assets/Audios/Terminal comands/0xdead/I AM ALIVE.MP3'
+
+        // Background Music
+        'assets/Music/Pixel Party.mp3',
+        'assets/Music/Digital Drift.mp3'
     ]
 };
