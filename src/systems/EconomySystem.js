@@ -391,22 +391,7 @@ export class EconomySystem {
                         }));
                     }
 
-                    // 5. HUD Icons Physics (Break them all)
-                    if (!this.game.state.hudPhysics) this.game.state.hudPhysics = [null, null, null, null, null];
-                    if (!this.game.state.hudBroken) this.game.state.hudBroken = [false, false, false, false, false];
 
-                    for (let i = 0; i < 5; i++) {
-                        if (!this.game.state.hudPhysics[i]) {
-                            this.game.state.hudPhysics[i] = {
-                                x: 0, y: 0, rot: 0,
-                                vx: (Math.random() - 0.5) * 150,
-                                vy: -200 + (Math.random() * 100),
-                                vr: (Math.random() - 0.5) * 8,
-                                gravity: 1200
-                            };
-                            this.game.state.hudBroken[i] = true;
-                        }
-                    }
 
                     // Debris
                     this.game.shake = 20;
