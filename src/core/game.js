@@ -670,7 +670,8 @@ export class Game {
                         this.saveGame();
                         this.events.emit('play_sound', 'success');
                     });
-                }
+                },
+                'bios' // Style
             );
             this.uiManager.windowManager.add(win);
             this.events.emit('play_sound', 'click');

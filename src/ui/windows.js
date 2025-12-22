@@ -789,7 +789,7 @@ export class NotepadWindow extends Window {
 }
 
 export class ConfirmationWindow extends Window {
-    constructor(gameW, gameH, title, message, onConfirm) {
+    constructor(gameW, gameH, title, message, onConfirm, style = 'default') {
         const w = 320;
         const h = 180;
         const x = (gameW - w) / 2;
@@ -799,18 +799,59 @@ export class ConfirmationWindow extends Window {
 
         this.message = message || "Are you sure?";
         this.onConfirm = onConfirm;
+        this.style = style; // 'default' or 'bios'
+    }
+
+    draw(ctx) {
+        if (this.style === 'bios') {
+            if (!this.active) return;
+
+            // BIOS Style Draw
+            // Blue Background
+            ctx.fillStyle = '#c0c0c0'; // Shadow/Outer
+            ctx.fillRect(this.x + 4, this.y + 4, this.w, this.h);
+
+            ctx.fillStyle = '#0000aa'; // Main Blue
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+
+            // Double Border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x + 2, this.y + 2, this.w - 4, this.h - 4);
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x + 5, this.y + 5, this.w - 10, this.h - 10);
+
+            // Title (Centered, White on Blue)
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.title.toUpperCase(), this.x + this.w / 2, this.y + 25);
+
+            // Separator Line
+            ctx.beginPath();
+            ctx.moveTo(this.x + 10, this.y + 35);
+            ctx.lineTo(this.x + this.w - 10, this.y + 35);
+            ctx.stroke();
+
+            // Delegate to drawContent for internals
+            // Content area usually starts below title.
+            this.drawContent(ctx, this.x + 10, this.y + 40, this.w - 20, this.h - 50);
+        } else {
+            // Default Win95 Style
+            super.draw(ctx);
+        }
     }
 
     drawContent(ctx, x, y, w, h) {
         // Message
-        ctx.fillStyle = '#000';
-        ctx.font = '14px Arial';
+        ctx.fillStyle = this.style === 'bios' ? '#fff' : '#000';
+        ctx.font = this.style === 'bios' ? '14px Courier New' : '14px Arial';
         ctx.textAlign = 'center';
 
         // Multi-line support
         const lines = this.message.split('\n');
         lines.forEach((line, i) => {
-            ctx.fillText(line, x + w / 2, y + 40 + (i * 20));
+            ctx.fillText(line, x + w / 2, y + 30 + (i * 20)); // Adjusted Y for content area
         });
 
         // Buttons
@@ -819,24 +860,76 @@ export class ConfirmationWindow extends Window {
         const gap = 20;
 
         // Yes/Confirm
-        const by = y + h - 50;
+        // Calculate Relative bottom
+        // With override draw, we pass specific content area.
+        // In default, draw passes this.y + 24.
+        // In BIOS, we pass this.y + 40.
+        // So let's align buttons to bottom of H.
+
+        const by = y + h - 40; // 40px from bottom of content area
         const b1x = x + w / 2 - bw - gap / 2;
         const b2x = x + w / 2 + gap / 2;
 
-        this.drawBevelButton(ctx, b1x, by, bw, bh, "CONFIRM");
-        this.drawBevelButton(ctx, b2x, by, bw, bh, "CANCEL");
+        if (this.style === 'bios') {
+            this.drawBiosButton(ctx, b1x, by, bw, bh, "CONFIRM");
+            this.drawBiosButton(ctx, b2x, by, bw, bh, "CANCEL");
+        } else {
+            this.drawBevelButton(ctx, b1x, by, bw, bh, "CONFIRM");
+            this.drawBevelButton(ctx, b2x, by, bw, bh, "CANCEL");
+        }
+    }
+
+    /**
+     * Helper for BIOS style buttons
+     */
+    drawBiosButton(ctx, x, y, w, h, text) {
+        // Simple White/Grey rect with text? Or Blue logic?
+        // Let's use Red/Green logic like in BIOS implementation
+        // But we don't have mouse hover state accessible easily inside specific button draw without tracking
+        // For simplicity: White Background, Black Text (Classic BIOS selected look) or Grey.
+
+        // Actually let's use Simple Border
+        ctx.fillStyle = '#0000aa';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, w, h);
+
+        // Text
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x + w / 2, y + h / 2);
     }
 
     checkClick(mx, my) {
         const baseRes = super.checkClick(mx, my);
         if (baseRes === 'close' || baseRes === 'drag') return baseRes;
 
+        // Re-Calculate Button Positions
+        // NOTE: We need to match drawContent logic exactly.
         const bw = 100;
         const bh = 30;
         const gap = 20;
-        const by = this.y + this.h - 50;
-        const b1x = this.x + this.w / 2 - bw - gap / 2;
-        const b2x = this.x + this.w / 2 + gap / 2;
+
+        let contentX, contentY, contentW, contentH;
+
+        if (this.style === 'bios') {
+            contentX = this.x + 10;
+            contentY = this.y + 40;
+            contentW = this.w - 20;
+            contentH = this.h - 50;
+        } else {
+            contentX = this.x + 4;
+            contentY = this.y + 24;
+            contentW = this.w - 8;
+            contentH = this.h - 28;
+        }
+
+        const by = contentY + contentH - 40;
+        const b1x = contentX + contentW / 2 - bw - gap / 2;
+        const b2x = contentX + contentW / 2 + gap / 2;
 
         // Confirm
         if (mx >= b1x && mx <= b1x + bw && my >= by && my <= by + bh) {
