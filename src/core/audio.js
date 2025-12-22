@@ -202,64 +202,78 @@ export class SoundEngine {
             g.connect(this.sfxGain);
 
             if (type === 'click') {
-                // Pleasant click -> Harsh mechanical clank
-                osc.type = useHarshWaveform ? 'sawtooth' : 'sine';
+                // Modified based on feedback: Lower pitch, "woodblock" style
+                osc.type = 'sine';
 
+                // 500Hz -> 300Hz gives a solid "thock" sound
                 let freqStart = 600;
-                let freqEnd = 100;
-                let duration = 0.1;
+                let freqEnd = 300;
+                let duration = 0.08;
+
+                // Random variation allowed
+                const variation = (Math.random() * 50) - 25;
+                freqStart += variation;
+                freqEnd += variation;
 
                 if (isVeryGlitchy) {
-                    // Dying machine sound
                     freqStart = 300;
                     freqEnd = 50;
-                    duration = 0.3; // Slower
-                    osc.type = 'sawtooth'; // Always harsh
-                    // Add some noise to frequency if possible, or just extreme drops
+                    duration = 0.2;
+                    osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(freqStart, t);
-                    osc.frequency.linearRampToValueAtTime(freqEnd, t + duration); // Linear sounds more mechanical/falling
+                    osc.frequency.linearRampToValueAtTime(freqEnd, t + duration);
                 } else {
                     osc.frequency.setValueAtTime(freqStart, t);
                     osc.frequency.exponentialRampToValueAtTime(freqEnd, t + duration);
                 }
 
-                g.gain.setValueAtTime(0.5, t);
-                g.gain.exponentialRampToValueAtTime(0.01, t + duration);
+                // Snappy envelope (Instant attack)
+                g.gain.setValueAtTime(0.4, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + duration);
 
                 osc.start(t); osc.stop(t + duration);
             }
             else if (type === 'buy') {
-                // Success (8-bit coin) -> Distorted confirm
-                osc.type = useHarshWaveform ? 'sawtooth' : 'square';
+                // Modified: Classic "Coin" sound (Clean Sine, fast pitch up)
+                osc.type = useHarshWaveform ? 'square' : 'sine'; // Sine is cleaner than triangle
 
-                let freq1 = 440;
-                let freq2 = 880;
-                let duration = 0.2;
+                let freq1 = 500;
+                let freq2 = 1000;
+                let duration = 0.2; // Faster
 
                 if (isVeryGlitchy) {
-                    freq1 = 220; // Lower pitch
-                    freq2 = 110; // Drop pitch instead of rise
+                    freq1 = 220;
+                    freq2 = 110;
                     duration = 0.4;
+                    osc.type = 'sawtooth';
                 }
 
                 osc.frequency.setValueAtTime(freq1, t);
-                // If glitchy, maybe slide down instead of up
+
                 if (isVeryGlitchy) {
                     osc.frequency.linearRampToValueAtTime(freq2, t + duration);
                 } else {
-                    osc.frequency.setValueAtTime(freq2, t + 0.1);
+                    // Fast slide up
+                    osc.frequency.exponentialRampToValueAtTime(freq2, t + 0.1);
                 }
 
-                g.gain.setValueAtTime(0.1, t);
-                g.gain.linearRampToValueAtTime(0, t + duration);
+                // Instant attack, longer sustain for "ring"
+                g.gain.setValueAtTime(0.2, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+
                 osc.start(t); osc.stop(t + duration);
             }
             else if (type === 'error') {
-                // Windows error style
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150 - (corruption), t); // Lower pitch with corruption
-                g.gain.setValueAtTime(0.5, t);
-                g.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                // USER LIKED THIS - KEEP AS IS (Triangle Bonk)
+                osc.type = 'triangle';
+
+                const baseFreq = 150 - (corruption);
+                osc.frequency.setValueAtTime(baseFreq, t);
+                osc.frequency.linearRampToValueAtTime(baseFreq * 0.8, t + 0.2);
+
+                g.gain.setValueAtTime(0.3, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
                 osc.start(t); osc.stop(t + 0.3);
             }
             else if (type === 'glitch') {
@@ -274,19 +288,24 @@ export class SoundEngine {
                 osc.start(t); osc.stop(t + 0.2);
             }
             else if (type === 'typewriter') {
-                // Soft, short blip for text
-                osc.type = 'sine';
-                // Slight random pitch for natural feel
-                const freq = 600 + (Math.random() * 50);
+                // Modified: Lower pitch "mechanical" blip
+                osc.type = 'square'; // Square gives it "body" like a switch
+
+                // Low pitch
+                const freq = 300 + (Math.random() * 50);
+
+                // Low-pass filter effect via simple wave choice? 
+                // Actually Triangle is muted square. Let's try Triangle for "thump"
+                osc.type = 'triangle';
 
                 osc.frequency.setValueAtTime(freq, t);
 
-                // Very short envelope
-                g.gain.setValueAtTime(0.15, t); // Quiet
-                g.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+                // Short
+                g.gain.setValueAtTime(0.3, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
                 osc.start(t);
-                osc.stop(t + 0.05);
+                osc.stop(t + 0.04);
             }
             else if (type === 'break') {
                 // NEW 'Break' Sound: Crisp Shatter (Noise + High Ping)
