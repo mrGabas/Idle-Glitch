@@ -14,6 +14,8 @@ export class TutorialSystem {
         this.isActive = false;
         this.currentSequenceId = null;
         this.completedTutorials = new Set();
+        this.pendingTimeout = null;
+        this.isStepPresented = false;
 
         // Define tutorial sequences here or load them from a data file
         this.sequences = {
@@ -129,7 +131,7 @@ export class TutorialSystem {
      * @param {number} dt 
      */
     update(dt) {
-        if (!this.isActive || !this.steps.length) return;
+        if (!this.isActive || !this.steps.length || !this.isStepPresented) return;
 
         const currentStep = this.steps[this.currentStepIndex];
 
@@ -144,6 +146,14 @@ export class TutorialSystem {
      */
     nextStep() {
         if (!this.isActive) return;
+
+        // Clear any pending showStep if we skip ahead
+        if (this.pendingTimeout) {
+            clearTimeout(this.pendingTimeout);
+            this.pendingTimeout = null;
+        }
+
+        this.isStepPresented = false;
 
         // Clean up previous step
         this.clearHighlight();
@@ -161,7 +171,10 @@ export class TutorialSystem {
             // Show next step
             const next = this.steps[this.currentStepIndex];
             if (next.delay) {
-                setTimeout(() => this.showStep(next), next.delay);
+                this.pendingTimeout = setTimeout(() => {
+                    this.pendingTimeout = null;
+                    this.showStep(next);
+                }, next.delay);
             } else {
                 this.showStep(next);
             }
@@ -173,6 +186,9 @@ export class TutorialSystem {
      * @param {Object} step 
      */
     showStep(step) {
+        // Mark as presented so update loop can check triggers
+        this.isStepPresented = true;
+
         // Chat Message
         if (step.message) {
             // Determine sender, default to 'SYSTEM' or specific character
