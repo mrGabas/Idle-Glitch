@@ -36,7 +36,7 @@ export class SoundEngine {
         this.enabled = false;
 
         this.sfxVolume = 0.5;
-        this.musicVolume = 0.5;
+        this.musicVolume = 0.6;
 
         // Event Subscription
         events.on('play_sound', (type) => this.play(type));
@@ -287,6 +287,32 @@ export class SoundEngine {
 
                 osc.start(t);
                 osc.stop(t + 0.05);
+            }
+            else if (type === 'break') {
+                // Heavy structural collapse sound
+                // 1. Low rumble/crash
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, t);
+                osc.frequency.exponentialRampToValueAtTime(30, t + 2.0);
+
+                // 2. Sub-bass layer (Parallel)
+                const sub = this.ctx.createOscillator();
+                const subG = this.ctx.createGain();
+                sub.type = 'square';
+                sub.frequency.setValueAtTime(60, t);
+                sub.frequency.exponentialRampToValueAtTime(10, t + 2.5);
+
+                sub.connect(subG);
+                subG.connect(this.sfxGain);
+
+                subG.gain.setValueAtTime(0.8, t);
+                subG.gain.exponentialRampToValueAtTime(0.01, t + 2.5);
+                sub.start(t); sub.stop(t + 2.5);
+
+                g.gain.setValueAtTime(0.8, t);
+                g.gain.exponentialRampToValueAtTime(0.01, t + 2.0);
+
+                osc.start(t); osc.stop(t + 2.0);
             }
             else if (type === 'screamer') {
                 // BLOCK SCREAMERS DURING ENDING

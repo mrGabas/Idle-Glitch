@@ -94,6 +94,11 @@ export class ThemeManager {
 
         // Theme Transition Logic
         if (state.corruption >= 100) {
+            // SPECIAL: Rainbow Paradise handled by Game.js (Collapse Event)
+            if (currentId === 'rainbow_paradise') {
+                return;
+            }
+
             const currentIndex = THEME_ORDER.indexOf(currentId);
             if (currentIndex !== -1 && currentIndex < THEME_ORDER.length - 1) {
                 // Transition to next theme

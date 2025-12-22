@@ -93,6 +93,7 @@ export class Game {
         this.lifetimeGlitchData = this.saveSystem.loadNumber('lifetime_glitch_data', 0);
         this.lastBiosAdTime = this.saveSystem.loadNumber('last_bios_ad_time', 0);
         this.metaUpgrades = this.saveSystem.load('meta_upgrades', {});
+        this.storyFlags = this.saveSystem.load('story_flags', { hasWitnessedCollapse: false });
 
         // Load Lore Data
         this.loreSystem.load(this.saveSystem.load('lore_data', null));
@@ -193,6 +194,7 @@ export class Game {
         this.saveSystem.saveNumber('lifetime_glitch_data', this.lifetimeGlitchData);
         this.saveSystem.saveNumber('last_bios_ad_time', this.lastBiosAdTime);
         this.saveSystem.save('meta_upgrades', this.metaUpgrades);
+        this.saveSystem.save('story_flags', this.storyFlags);
         this.saveSystem.saveNumber('last_save', Date.now());
         // Save rate for offline calc
         this.saveSystem.saveNumber('last_auto_rate', this.state.autoRate);
@@ -783,6 +785,71 @@ export class Game {
     }
 
     /**
+     * Handles the specific "Great Collapse" transition event from Level 1.
+     */
+    triggerLevelCollapse() {
+        if (this.isCollapsing) return;
+
+        // Condition: Level 1 (Rainbow Paradise) + Max Corruption
+        if (this.themeManager.currentTheme.id === 'rainbow_paradise' && this.state.corruption >= 100) {
+
+            // Scenario A: First Time (Witnessing the collapse)
+            if (!this.storyFlags.hasWitnessedCollapse) {
+                this.isCollapsing = true;
+
+                // 1. Audio Impact
+                this.events.emit('play_sound', 'break');
+                this.shake = 50; // Violent shake
+
+                // 2. Visual Chaos (Animation)
+                // Select critical UI elements
+                const selectors = [
+                    '#ui-layer > *',       // All UI windows/overlays
+                    '.menu-btn',           // Buttons
+                    'canvas',              // The game view itself
+                    '.fake-ui-element'     // Any remaining fake UI
+                ];
+
+                const elements = document.querySelectorAll(selectors.join(','));
+
+                // Apply 'broken-ui' class with randomized staggering for chaos
+                elements.forEach(el => {
+                    if (el.style.display !== 'none') {
+                        // Random delay between 0 and 500ms
+                        el.style.animationDelay = (Math.random() * 0.5) + 's';
+                        el.classList.add('broken-ui');
+                    }
+                });
+
+                // 3. Transition Logic after animation
+                setTimeout(() => {
+                    this.storyFlags.hasWitnessedCollapse = true;
+                    this.saveGame();
+
+                    // Switch Theme
+                    this.themeManager.switchTheme('ad_purgatory');
+
+                    // Cleanup CSS
+                    elements.forEach(el => {
+                        el.classList.remove('broken-ui');
+                        el.style.animationDelay = '0s';
+                        // Reset transforms if needed, but class removal should suffice
+                    });
+
+                    this.isCollapsing = false;
+                    // corruption reset handled by switchTheme
+
+                }, 3000); // 3 seconds matching CSS animation
+
+            }
+            // Scenario B: Replay (Skip animation)
+            else {
+                this.themeManager.switchTheme('ad_purgatory');
+            }
+        }
+    }
+
+    /**
      * Handles global input dispatching.
      * @param {MouseEvent} e - The mouse event.
      */
@@ -1122,6 +1189,7 @@ export class Game {
         // Crash Logic handled by GlitchSystem
         // Theme Transition & Mechanics handled by Manager
         this.themeManager.update(dt);
+        this.triggerLevelCollapse();
 
         // Entities
         this.entities.update(dt, this);
