@@ -89,24 +89,21 @@ export class AdsManager {
         const callbacks = {
             adStarted: () => {
                 console.log("Ad Started");
+                this.game.isAdPlaying = true;
                 this.game.audio.mute(); // Mute game audio
-                // Logic is already paused via gameplayStop from hook? 
-                // Usually SDK calls gameplayStop implicitly? No, docs say we should call it manually before ad?
-                // Actually v3 docs say: "The SDK will automatically pause the game loop... if you use the game object properly?"
-                // The provided requirements said: "Ensure the game pauses audio and logic while an ad is playing."
-                // Usually the ad callbacks are the best place to force this state if not already handled.
-                if (this.game.gameState !== 'PAUSED') {
-                    // Force pause just in case, or just mute audio if the game loop pauses itself
-                    // Let's rely on standard ad flow:
-                }
+                this.gameplayStop();
             },
             adFinished: () => {
                 console.log("Ad Finished");
+                this.game.isAdPlaying = false;
                 this.game.audio.unmute();
+                this.gameplayStart();
             },
             adError: (error) => {
                 console.warn("Ad Error:", error);
+                this.game.isAdPlaying = false;
                 this.game.audio.unmute();
+                this.gameplayStart();
             }
         };
 
@@ -130,18 +127,21 @@ export class AdsManager {
         const callbacks = {
             adStarted: () => {
                 console.log("Rewarded Ad Started");
+                this.game.isAdPlaying = true;
                 this.game.audio.mute();
+                this.gameplayStop();
             },
             adFinished: () => {
                 console.log("Rewarded Ad Finished");
+                this.game.isAdPlaying = false;
                 this.game.audio.unmute();
+                this.gameplayStart();
             },
             adError: (error) => {
                 console.warn("Rewarded Ad Error:", error);
+                this.game.isAdPlaying = false;
                 this.game.audio.unmute();
-            },
-            adFinished: () => {
-                this.game.audio.unmute();
+                this.gameplayStart();
             }
         };
 
