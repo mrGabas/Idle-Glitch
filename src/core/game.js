@@ -142,6 +142,8 @@ export class Game {
         this.scareTimer = 0;
         this.scareText = "";
         this.selectedBIOSIndex = 0;
+        this.buttonScale = 1.0;
+        this.buttonScaleTarget = 1.0;
 
 
 
@@ -1059,7 +1061,21 @@ export class Game {
         if (popupHit) return;
 
         // 2. Shop & Main Button checks delegated to EconomySystem
-        if (this.economySystem.handleClick(mx, my)) return;
+        // 2. Shop & Main Button checks delegated to EconomySystem
+        if (this.economySystem.handleClick(mx, my)) {
+            // Visual Click Feedback (Main Button Only check for Animation)
+            const gameW = this.w * CFG.game.gameAreaWidthRatio;
+            const btnRadius = Math.min(gameW, this.h) * CFG.game.mainButtonRatio;
+            // Check distance to center (Main Button)
+            // We can roughly assume if economy handled it and it wasn't a shop click (which we can't distinguish easily without return value).
+            // Actually, checking distance is safer.
+            const cx = gameW / 2;
+            const cy = this.h * 0.5;
+            if (Math.hypot(mx - cx, my - cy) < btnRadius) {
+                this.buttonScaleTarget = 0.80;
+            }
+            return;
+        }
 
 
 
@@ -1189,6 +1205,14 @@ export class Game {
             return;
         }
 
+        // Button Animation (Smooth Lerp in both directions)
+        this.buttonScale += (this.buttonScaleTarget - this.buttonScale) * 15 * dt;
+
+        // If we reached the compression target, go back to 1.0
+        if (this.buttonScaleTarget < 1.0 && Math.abs(this.buttonScale - this.buttonScaleTarget) < 0.01) {
+            this.buttonScaleTarget = 1.0;
+        }
+
         this.handleGlobalInput();
 
         // Update Virtual Controls Context
@@ -1316,7 +1340,8 @@ export class Game {
             shopOpen: this.economySystem.shopOpen,
             activeHighlightTarget: this.tutorialSystem.activeHighlightTarget,
             biosState: this.biosState,
-            lastBiosAdTime: this.lastBiosAdTime
+            lastBiosAdTime: this.lastBiosAdTime,
+            buttonScale: this.buttonScale
         };
 
         const entities = {

@@ -117,7 +117,7 @@ export class Renderer {
      * @param {Object} uiManager - The UI Manager instance
      */
     draw(state, entities, input, uiManager) {
-        const { currentTheme, mouse, shake, scareTimer, scareText, shopOpen, gameState, activeHighlightTarget } = input;
+        const { currentTheme, mouse, shake, scareTimer, scareText, shopOpen, gameState, activeHighlightTarget, buttonScale } = input;
 
         // Optimize Time String (Update once per second)
         const now = Date.now();
@@ -243,7 +243,7 @@ export class Renderer {
             this.ctx.restore();
         }
 
-        this.drawGameUI(state, currentTheme, entities.upgrades, mouse, shopOpen, activeHighlightTarget);
+        this.drawGameUI(state, currentTheme, entities.upgrades, mouse, shopOpen, activeHighlightTarget, buttonScale);
 
         // Entities
         if (entities.debris) entities.debris.forEach(d => d.draw(this.ctx));
@@ -736,7 +736,7 @@ export class Renderer {
         this.ctx.restore();
     }
 
-    drawGameUI(state, theme, upgrades, mouse, shopOpen, activeHighlightTarget) {
+    drawGameUI(state, theme, upgrades, mouse, shopOpen, activeHighlightTarget, buttonScale = 1.0) {
 
         const cy = this.h / 2;
         const colors = theme.colors;
@@ -787,7 +787,7 @@ export class Renderer {
         }
 
         // Dynamic Radius based on screen size (min of w,h)
-        const btnRadius = Math.min(gameW, this.h) * CFG.game.mainButtonRatio;
+        const btnRadius = Math.min(gameW, this.h) * CFG.game.mainButtonRatio * buttonScale;
 
         // NULL VOID MECHANIC: Main Button Invisibility
         let btnAlpha = 1;
