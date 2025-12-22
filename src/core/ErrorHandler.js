@@ -11,7 +11,16 @@ export class ErrorHandler {
         };
 
         window.onunhandledrejection = (event) => {
-            ErrorHandler.showError(event.reason ? event.reason.message : 'Unknown Promise Error', event.reason);
+            const reason = event.reason ? (event.reason.message || event.reason) : '';
+
+            // Ignore screen orientation lock errors (common on desktop/non-supported devices via SDK)
+            if (reason.includes('screen.orientation.lock')) {
+                console.warn("Suppressed non-critical SDK error:", reason);
+                event.preventDefault();
+                return;
+            }
+
+            ErrorHandler.showError(reason || 'Unknown Promise Error', event.reason);
             event.preventDefault();
         };
 
