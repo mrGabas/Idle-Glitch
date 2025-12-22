@@ -1,4 +1,4 @@
-this.game.state.corruption += 100
+this.game.state.corruption = 60
 
 game.glitchData += 100
 
@@ -12,3 +12,6 @@ game.metaUpgrades['offline_progress'] = 1;
 game.lastSaveTime = Date.now() - (4 * 60 * 60 * 1000);
 // 4. Запусти проверку офлайн прогресса
 game.economySystem.checkOfflineProgress();
+
+git checkout 0.311
+git reset --hard origin/0.311

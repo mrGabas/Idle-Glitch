@@ -41,9 +41,13 @@ export class EconomySystem {
                     u.x_off += u.vx * dt;
                     u.rot += u.vr * dt;
 
-                    // Garbage Collect (below screen)
+                    // Garbage Collect (Stop Updating, but KEEP in array for save persistence)
                     if (u.y_off > 2000) {
-                        upgrades.splice(i, 1);
+                        // updates.splice(i, 1); <-- CAUSES BUG: Removes from save data
+                        // Instead, we just stop updating specific physics if we want optimization,
+                        // but for < 100 items it's fine.
+                        // Or we can flag it as 'fallen'.
+                        u.hidden = true; // Optimization flag
                     }
                 }
             }
@@ -278,6 +282,8 @@ export class EconomySystem {
                 const u = upgrades[i];
                 const bx = shopStartX;
                 const by = shopStartY + i * rowStep;
+
+                if (u.isBroken) continue; // Skip interactions if broken
 
                 if (mx >= bx && mx <= bx + cardW && my >= by && my <= by + cardH) {
                     shopHit = true;
