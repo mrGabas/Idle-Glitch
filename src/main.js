@@ -32,7 +32,7 @@ window.addEventListener('load', () => {
 
         // Init Game
         const game = new Game();
-        window.game = game; // Expose for console commands
+        //window.game = game; // Expose for console commands
 
 
     });
