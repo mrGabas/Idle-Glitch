@@ -156,36 +156,53 @@ export class UIManager {
 
 
     handleInput(mx, my) {
-        // Priority 1: Windows (Top to Bottom)
+        // Priority 1: Console / Chat (Topmost)
+        if (this.chat) {
+            const res = this.chat.checkClick(mx, my, this.game.h);
+            if (res === 'toggle') return true;
+            if (res === 'consumed') {
+                this.startScrollDrag(this.chat, my);
+                return true;
+            }
+            if (res === true) return true;
+        }
+
+        // Priority 2: Modal Overlays (Reviews, Achievements)
+        if (this.reviewsTab && this.reviewsTab.visible) {
+            const res = this.reviewsTab.checkClick(mx, my);
+            if (res === 'close') {
+                this.reviewsTab.toggle();
+                return true;
+            }
+            if (res === 'consumed') {
+                this.startScrollDrag(this.reviewsTab, my);
+                return true;
+            }
+        }
+
+        if (this.achievementsWindow && this.achievementsWindow.visible) {
+            const res = this.achievementsWindow.checkClick(mx, my);
+            if (res === 'close') {
+                this.achievementsWindow.toggle();
+                return true;
+            }
+            if (res === 'consumed') {
+                this.startScrollDrag(this.achievementsWindow, my);
+                return true;
+            }
+        }
+
+        // Priority 3: Windows (Manager)
         if (this.windowManager.handleInput(mx, my)) {
             return true;
         }
 
-        // Priority 2: Reviews Tab
-        if (this.reviewsTab.visible) {
-            if (this.reviewsTab.checkClick(mx, my)) {
-                return true;
-            }
-        }
-
-        // Priority 3: Achievements Window
-        if (this.achievementsWindow && this.achievementsWindow.visible) {
-            if (this.achievementsWindow.checkClick(mx, my)) {
-                return true;
-            }
-        }
-
-        // Mail Window is now in WindowManager
-
-        // Priority 4: HUD Icons (Header Config)
-        // IF DESTRUCTION IS POSSIBLE, LET ECONOMYSYSTEM HANDLE IT (IT HAS PRIORITY)
+        // Priority 4: HUD Icons (Header)
         if (this.game.canTriggerDestruction) return false;
 
         const sx = this.game.w * CFG.game.shop.startXRatio;
         const sw = this.game.w - sx;
         const iconY = this.game.h * 0.05;
-
-        // 5 Icons: Overclock, Mail, Chat, Achievements, Archive
         const iconStep = sw / 5;
         const halfStep = iconStep / 2;
 
@@ -194,10 +211,8 @@ export class UIManager {
         const chatX = sx + halfStep + iconStep * 2;
         const achX = sx + halfStep + iconStep * 3;
         const arcX = sx + halfStep + iconStep * 4;
-
         const hitRadius = 25;
 
-        // Helper: Check Destruction
         const checkBreak = (x, y) => {
             if (this.game.canTriggerDestruction) {
                 this.game.events.emit('play_sound', 'break');
@@ -207,50 +222,45 @@ export class UIManager {
             return false;
         };
 
-        // Priority 4.1: Overclock (Lightning)
+        // 4.1 Overclock
         if (Math.hypot(mx - ocX, my - iconY) < hitRadius) {
             if (checkBreak(ocX, iconY)) return true;
-
             if (this.game.adsManager) {
                 const win = new ConfirmationWindow(
                     this.game.w,
                     this.game.h,
                     "ACTIVATE OVERCLOCK",
                     "Watch an ad to boost production\nby 2x for 10 minutes?",
-                    () => {
-                        this.game.adsManager.watchOverclockAd();
-                    }
+                    () => { this.game.adsManager.watchOverclockAd(); }
                 );
                 this.windowManager.add(win);
             }
             return true;
         }
 
-        // Priority 4.2: Mail
+        // 4.2 Mail
         if (Math.hypot(mx - mailX, my - iconY) < hitRadius) {
             if (checkBreak(mailX, iconY)) return true;
-            // Toggle Mail
             this.toggleMail();
             return true;
         }
 
-        // Priority 4.3: Reviews Icon
+        // 4.3 Reviews Icon
         if (Math.hypot(mx - chatX, my - iconY) < hitRadius) {
             if (checkBreak(chatX, iconY)) return true;
             this.reviewsTab.toggle();
             return true;
         }
 
-        // Priority 4.4: Achievements
-        if (this.achievementsWindow && Math.hypot(mx - achX, my - iconY) < hitRadius) {
+        // 4.4 Achievements
+        if (Math.hypot(mx - achX, my - iconY) < hitRadius) {
             if (checkBreak(achX, iconY)) return true;
             this.achievementsWindow.toggle();
-            // Clear flag
             if (this.achievementsWindow.visible && this.game.achievementSystem) this.game.achievementSystem.hasNew = false;
             return true;
         }
 
-        // Priority 4.5: Archive
+        // 4.5 Archive
         if (Math.hypot(mx - arcX, my - iconY) < hitRadius) {
             if (checkBreak(arcX, iconY)) return true;
             if (this.archiveWindow.manager) {
@@ -258,35 +268,56 @@ export class UIManager {
             } else {
                 this.windowManager.add(this.archiveWindow, true);
                 this.game.events.emit('play_sound', 'archive');
-                // Clear flag
                 if (this.game.loreSystem) this.game.loreSystem.hasNew = false;
             }
             return true;
         }
 
-        // Priority 7: Chat Console Focus
-        if (this.chat.checkClick(mx, my, this.game.h)) {
+        return false;
+    }
+
+    startScrollDrag(target, my) {
+        this.currentScrollTarget = target;
+        this.lastMouseY = my;
+    }
+
+    handleMouseMove(mx, my) {
+        // 1. Handle Global Scroll Drag
+        if (this.currentScrollTarget) {
+            const dy = this.lastMouseY - my; // Drag down -> scroll up
+            if (this.currentScrollTarget.handleScroll) {
+                this.currentScrollTarget.handleScroll(dy);
+            }
+            this.lastMouseY = my;
             return true;
         }
 
-        // Handle clicking outside to blur chat
-        if (this.chat.isFocused) {
-            this.chat.isFocused = false;
+        // 2. Window Manager Drag
+        if (this.windowManager.handleMouseMove(mx, my)) return true;
+
+        return false;
+    }
+
+    handleMouseUp() {
+        if (this.currentScrollTarget) {
+            this.currentScrollTarget = null;
+            return true;
         }
 
-        return false; // Not consumed by UI
+        if (this.windowManager.handleMouseUp()) return true;
+
+        return false;
     }
 
     // Draw method to be called by Renderer
     draw(ctx) {
         // Draw Full-screen / Overlay Systems first (or last depending on desired z-order)
-        // Chat is bottom-aligned console
         if (this.chat) this.chat.draw(ctx, this.game.h);
 
         // Windows (WindowManager)
         this.windowManager.draw(ctx);
 
-        // Overlays (Reviews, Achievements) - behave like modal overlays currently
+        // Overlays (Reviews, Achievements)
         if (this.reviewsTab) this.reviewsTab.draw(ctx);
         if (this.achievementsWindow) this.achievementsWindow.draw(ctx);
     }
@@ -294,13 +325,4 @@ export class UIManager {
     startDrag(windowObj, mx, my) {
         this.windowManager.startDrag(windowObj, mx, my);
     }
-
-    handleMouseMove(mx, my) {
-        return this.windowManager.handleMouseMove(mx, my);
-    }
-
-    handleMouseUp() {
-        return this.windowManager.handleMouseUp();
-    }
 }
-

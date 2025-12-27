@@ -134,17 +134,22 @@ export class ChatSystem {
         }
     }
 
+    handleScroll(deltaY) {
+        this.handleWheel(deltaY);
+    }
+
     handleWheel(deltaY) {
         if (this.collapsed) return; // No scroll if collapsed
 
-        const scrollSpeed = 20;
-        if (deltaY < 0) {
-            // Scroll Up (History)
-            this.scrollOffset += scrollSpeed;
-        } else {
-            // Scroll Down (Newest)
-            this.scrollOffset -= scrollSpeed;
-        }
+        // Invert delta because dragging Down (negative dy) should move content Down (increase offset)
+        // Wheel Down (positive) -> scrollOffset decreases (Show Newest)
+        // DeltaY from MouseMove: lastY - currY. 
+        // Drag Down -> currY > lastY -> deltaY < 0.
+        // We want Drag Down -> Scroll Up (History). offset increases.
+        // So if deltaY < 0, offset should increase.
+        // this.scrollOffset -= deltaY; // -(-5) = +5.
+
+        this.scrollOffset -= deltaY;
 
         // Clamp
         if (this.scrollOffset < 0) this.scrollOffset = 0;
@@ -347,13 +352,13 @@ export class ChatSystem {
             if (mx >= btnX && mx <= x + boxW && my >= y && my <= y + 20) {
                 this.collapsed = !this.collapsed;
                 this.game.events.emit('play_sound', 'click');
-                return true;
+                return 'toggle';
             }
 
             if (!this.collapsed) {
                 this.isFocused = true;
             }
-            return true;
+            return 'consumed';
         } else {
             this.isFocused = false;
             return false;

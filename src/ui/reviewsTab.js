@@ -168,17 +168,17 @@ export class ReviewsTab {
         // Close button (top right)
         if (mx > this.x + this.w - 40 && mx < this.x + this.w &&
             my > this.y && my < this.y + 40) {
-            this.toggle();
-            return true;
+            // this.toggle(); // Handled by UIManager now
+            return 'close';
         }
 
         // Click outside?
         if (mx < this.x || mx > this.x + this.w || my < this.y || my > this.y + this.h) {
-            this.toggle();
-            return true;
+            // this.toggle(); // Handled by UIManager
+            return 'close';
         }
 
-        return true; // Consume click inside
+        return 'consumed'; // Consume click inside
     }
 
     glitchText(text, intensity) {

@@ -196,4 +196,13 @@ export class Window {
 
         return 'consumed';
     }
+
+    /**
+     * Called when a click is validated (MouseUp without Drag).
+     * @param {number} mx 
+     * @param {number} my 
+     */
+    onContentClick(mx, my) {
+        // Override me
+    }
 }

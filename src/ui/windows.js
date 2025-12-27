@@ -438,24 +438,27 @@ export class MailWindow extends Window {
         if (baseRes === 'close' || baseRes === 'drag') return baseRes;
 
         if (baseRes === 'consumed') {
-            // Check List Click
-            // Calc list bounds
-            const listW = this.w * 0.4 - 5; // Matches draw
-            const listX = this.x + 4; // contentX = x + 4
-            const listY = this.y + 24; // contentY = y + 24
-
-            if (mx >= listX && mx <= listX + listW && my >= listY && my <= listY + (this.h - 28)) {
-                const iy = my - listY;
-                const index = Math.floor(iy / 30);
-                const inbox = this.mailSystem.inbox;
-                if (index >= 0 && index < inbox.length) {
-                    this.selectedId = inbox[index].id;
-                    this.mailSystem.markRead(this.selectedId);
-                }
-            }
             return 'consumed';
         }
         return null;
+    }
+
+    onContentClick(mx, my) {
+        // Check List Click
+        // Calc list bounds
+        const listW = this.w * 0.4 - 5; // Matches draw
+        const listX = this.x + 4; // contentX = x + 4
+        const listY = this.y + 24; // contentY = y + 24
+
+        if (mx >= listX && mx <= listX + listW && my >= listY && my <= listY + (this.h - 28)) {
+            const iy = my - listY;
+            const index = Math.floor(iy / 30);
+            const inbox = this.mailSystem.inbox;
+            if (index >= 0 && index < inbox.length) {
+                this.selectedId = inbox[index].id;
+                this.mailSystem.markRead(this.selectedId);
+            }
+        }
     }
 }
 
@@ -487,8 +490,7 @@ export class NotepadWindow extends Window {
     onScroll(deltaY) {
         if (this.locked) return;
 
-        const scrollSpeed = 30;
-        this.scrollY += Math.sign(deltaY) * scrollSpeed;
+        this.scrollY += deltaY;
 
         // Clamp
         if (this.scrollY < 0) this.scrollY = 0;

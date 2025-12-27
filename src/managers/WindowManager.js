@@ -13,6 +13,14 @@ export class WindowManager {
         this.draggedWindow = null;
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
+
+        // Content Drag/Scroll Tracking
+        this.potentialScrollWindow = null;
+        this.scrollStartX = 0;
+        this.scrollStartY = 0;
+        this.isDragScrolling = false;
+        this.dragThreshold = 5; // Pixels
+        this.lastScrollY = 0;
     }
 
     /**
@@ -37,6 +45,9 @@ export class WindowManager {
             window.manager = null;
             if (this.draggedWindow === window) {
                 this.draggedWindow = null;
+            }
+            if (this.potentialScrollWindow === window) {
+                this.potentialScrollWindow = null;
             }
         }
     }
@@ -66,14 +77,9 @@ export class WindowManager {
      * @returns {boolean}
      */
     hasActiveInputWindow() {
-        // Only MinigameWindow grabs input for now
-        // We look from top (active) down
-        // If the top window is a MinigameWindow, return true.
         if (this.windows.length === 0) return false;
 
         const top = this.windows[this.windows.length - 1];
-        // We need to import MinigameWindow or match by name/prop to avoid circular dependency if we imported class
-        // Check constructor name provided minification doesn't mangle it too much or property
         if (top.constructor.name === 'MinigameWindow') return true;
 
         return false;
@@ -120,6 +126,15 @@ export class WindowManager {
                     this.startDrag(win, mx, my);
                 } else if (res === 'consumed') {
                     this.focus(win); // Bring to front on click
+
+                    // START POTENTIAL DRAG SCROLL
+                    this.potentialScrollWindow = win;
+                    this.scrollStartX = mx;
+                    this.scrollStartY = my;
+                    this.isDragScrolling = false;
+                    this.lastScrollY = my;
+
+                    // Do NOT execute action here. Wait for MouseUp.
                 }
                 return true; // Input blocked by this window
             }
@@ -151,27 +166,75 @@ export class WindowManager {
     }
 
     handleMouseMove(mx, my) {
+        let consumed = false;
+
+        // 1. Handle Window Drag (Moving the window itself)
         if (this.draggedWindow) {
             this.draggedWindow.x = mx - this.dragOffsetX;
             this.draggedWindow.y = my - this.dragOffsetY;
-
-            // Simple clamping
-            /*
-            if (this.draggedWindow.x < 0) this.draggedWindow.x = 0;
-            if (this.draggedWindow.y < 0) this.draggedWindow.y = 0;
-            if (this.draggedWindow.x + this.draggedWindow.w > this.game.w) this.draggedWindow.x = this.game.w - this.draggedWindow.w;
-            if (this.draggedWindow.y + this.draggedWindow.h > this.game.h) this.draggedWindow.y = this.game.h - this.draggedWindow.h;
-            */
-            return true;
+            consumed = true;
         }
-        return false;
+
+        // 2. Handle Content Drag (Scrolling)
+        if (this.potentialScrollWindow) {
+            // Only scroll if window HAS scroll capability
+            if (this.potentialScrollWindow.onScroll) {
+                const dy = my - this.scrollStartY;
+                const dx = mx - this.scrollStartX; // Track for threshold
+
+                // Check threshold
+                if (!this.isDragScrolling) {
+                    if (Math.hypot(dx, dy) > this.dragThreshold) {
+                        this.isDragScrolling = true;
+                        this.lastScrollY = my; // Reset to avoid jump
+                    }
+                }
+
+                if (this.isDragScrolling) {
+                    const deltaY = this.lastScrollY - my; // Drag Down -> delta negative -> scroll decreases (move up?)
+                    // Wait, standard wheel: Wheel Down (Positive) -> Scroll Offset Increases -> Content Moves UP (View moves down)
+                    // Drag Mouse Down (Active Move): I want to pull the paper DOWN. Content Moves DOWN. 
+                    // So View moves UP. Scroll Offset DECREASES.
+                    // Drag Down => my increases => (last - my) is negative.
+                    // deltaY negative -> Scroll Offset decreases.
+
+                    // Multiplier for feel
+                    this.potentialScrollWindow.onScroll(deltaY);
+
+                    this.lastScrollY = my;
+                    consumed = true;
+                }
+            }
+        }
+
+        return consumed;
     }
 
     handleMouseUp() {
+        // Window Drag
         if (this.draggedWindow) {
             this.draggedWindow = null;
             return true;
         }
+
+        // Content Drag/Click
+        if (this.potentialScrollWindow) {
+            const win = this.potentialScrollWindow;
+
+            // If it WASN'T a drag scroll, treat as Click
+            if (!this.isDragScrolling) {
+                // We use game input coordinates because handleMouseUp doesn't always get args depending on caller,
+                // but usually we rely on current state.
+                const mx = this.game.input.x;
+                const my = this.game.input.y;
+                win.onContentClick(mx, my);
+            }
+
+            this.potentialScrollWindow = null;
+            this.isDragScrolling = false;
+            return true;
+        }
+
         return false;
     }
 }

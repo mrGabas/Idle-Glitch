@@ -104,20 +104,16 @@ export class ArchiveWindow extends Window {
         // Window x is this.x. Sidebar ends at this.x + 154 theoretically
         const sidebarEnd = this.x + 154;
 
-        const speed = 50;
-
         if (mx < sidebarEnd) {
             // Sidebar Scroll
-            if (deltaY > 0) this.sidebarScrollY += speed;
-            else this.sidebarScrollY -= speed;
+            this.sidebarScrollY += deltaY;
 
             // Clamp Sidebar
             if (this.sidebarScrollY < 0) this.sidebarScrollY = 0;
             if (this.sidebarScrollY > this.sidebarMaxScroll) this.sidebarScrollY = this.sidebarMaxScroll;
         } else {
             // Main Content Scroll
-            if (deltaY > 0) this.scrollY += speed;
-            else this.scrollY -= speed;
+            this.scrollY += deltaY;
 
             // Clamp Content
             if (this.scrollY < 0) this.scrollY = 0;
@@ -572,15 +568,15 @@ export class ArchiveWindow extends Window {
 
     checkClick(mx, my) {
         const res = super.checkClick(mx, my);
-
-        // 1. If close button clicked or drag started - return immediately
         if (res === 'close' || res === 'drag') return res;
-
-        // 2. If click was outside window - return null
         if (res === null) return null;
 
-        // 3. If res === 'consumed', click was inside window body.
+        // If click was inside window body (super returns consumed), 
+        // return consumed to allow WindowManager to track potential drag/scroll.
+        return 'consumed';
+    }
 
+    onContentClick(mx, my) {
         // Need Context for measuring text in sidebar click (since we re-run layout)
         const ctx = this.game.renderer.ctx;
 
@@ -594,35 +590,25 @@ export class ArchiveWindow extends Window {
 
         if (mx > contentStartX && mx < contentStartX + sidebarW && my > contentStartY && my < this.y + this.h) {
             // Apply Scroll to click detection
-            // We pass y - scrollY effectively into getSidebarLayout to match draw logic
-            // But getSidebarLayout changes Y. 
-            // We need to match the item.y which will be drawn at (Y_layout - scrollY).
-            // Actually getSidebarLayout is pure.
-            // In draw: getSidebarLayout(..., y - scroll) -> items have y shifted.
-
             const layout = this.getSidebarLayout(ctx, contentStartX, contentStartY - this.sidebarScrollY);
 
             for (let item of layout) {
-                // Clipping check: is item visible? 
-                // Simple version: if click Y is valid within sidebar view
-                // We already checked my > contentStartY && my < this.y + this.h above.
-
                 if (my >= item.y && my < item.y + item.h) {
                     if (item.type === 'root') {
                         this.currentPath = [];
                         this.selectedFolderKey = null;
                         this.scrollY = 0; // Reset scroll
                         this.game.events.emit('play_sound', 'archive');
-                        return 'consumed';
+                        return;
                     } else if (item.key === 'COLLECTION') {
                         this.currentPath = [];
                         this.selectedFolderKey = 'COLLECTION';
                         this.scrollY = 0; // Reset scroll
                         this.game.events.emit('play_sound', 'archive');
-                        return 'consumed';
+                        return;
                     } else if (item.type === 'folder') {
-                        const opened = this.selectFolder(item.key);
-                        return opened ? 'no_focus' : 'consumed';
+                        this.selectFolder(item.key);
+                        return;
                     }
                 }
             }
@@ -652,8 +638,8 @@ export class ArchiveWindow extends Window {
 
                 if (targetIdx >= 0 && targetIdx < folder.files.length) {
                     const file = folder.files[targetIdx];
-                    const opened = this.handleFileClick(file);
-                    return opened ? 'no_focus' : 'consumed';
+                    this.handleFileClick(file);
+                    return;
                 } else if (targetIdx === folder.files.length) {
                     // ".." button
                     this.currentPath = []; // Go to root
@@ -661,10 +647,8 @@ export class ArchiveWindow extends Window {
                     this.selectedFileId = null;
                     this.scrollY = 0; // Reset scroll
                     this.game.events.emit('play_sound', 'archive');
-                    return 'consumed';
+                    return;
                 }
-
-
 
             } else if (this.selectedFolderKey === 'COLLECTION') {
                 const allItems = COLLECTION_DB.items;
@@ -677,10 +661,10 @@ export class ArchiveWindow extends Window {
                             src: item.src,
                             name: item.name
                         });
-                        return 'no_focus';
+                        return;
                     } else {
                         this.game.events.emit('play_sound', 'error');
-                        return 'consumed';
+                        return;
                     }
                 }
 
@@ -693,7 +677,7 @@ export class ArchiveWindow extends Window {
                     this.selectedFolderKey = 'COLLECTION';
                     this.scrollY = 0; // Reset scroll
                     this.game.events.emit('play_sound', 'archive');
-                    return 'consumed';
+                    return;
                 }
 
                 // Check other folders (Index 1+)
@@ -702,14 +686,11 @@ export class ArchiveWindow extends Window {
 
                 if (folderIdx >= 0 && folderIdx < visibleKeys.length) {
                     const key = visibleKeys[folderIdx];
-                    const opened = this.selectFolder(key);
-                    return opened ? 'no_focus' : 'consumed';
+                    this.selectFolder(key);
+                    return;
                 }
             }
         }
-
-        // If clicked inside window but not on folder/file - consume click anyway
-        return 'consumed';
     }
 
     selectFolder(key) {

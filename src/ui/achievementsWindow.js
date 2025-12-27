@@ -48,17 +48,17 @@ export class AchievementsWindow {
         // Close button
         if (mx > this.x + this.w - 40 && mx < this.x + this.w &&
             my > this.y && my < this.y + 40) {
-            this.toggle();
-            return true;
+            // this.toggle();
+            return 'close';
         }
 
         // Click outside
         if (mx < this.x || mx > this.x + this.w || my < this.y || my > this.y + this.h) {
-            this.toggle();
-            return true;
+            // this.toggle();
+            return 'close';
         }
 
-        return true; // Consume click
+        return 'consumed'; // Consume click
     }
 
     draw(ctx) {

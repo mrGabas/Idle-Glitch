@@ -13,5 +13,5 @@ game.lastSaveTime = Date.now() - (4 * 60 * 60 * 1000);
 // 4. Запусти проверку офлайн прогресса
 game.economySystem.checkOfflineProgress();
 
-git checkout 0.311
-git reset --hard origin/0.311
+git checkout 0.28
+git reset --hard origin/0.28
